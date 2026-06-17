@@ -40,3 +40,42 @@ This document records important architectural and process decisions made during 
 - Avoids over-documentation in early stages
 
 **Status:** In Progress
+
+---
+
+### 2026-06-16 – Added PMXT MCP Server
+
+**Decision:** Clone `pmxt-mcp` into the project to enable MCP-based agent integration.
+
+**Rationale:**  
+- Provides standardized MCP tools for AI agents
+- Complements the existing PMXT CLI
+- Enables future Hermes agent workflows
+
+**Status:** Implemented
+
+---
+
+### 2026-06-16 – Added molt-pmxt Agent Skill
+
+**Decision:** Clone `molt-pmxt` into the project and copy it into Hermes skills.
+
+**Rationale:**  
+- Ready-made agent skill for prediction market trading
+- Can be used directly in Hermes
+- Serves as reference for custom tool development
+
+**Status:** Implemented
+
+---
+
+### 2026-06-16 – Created MCP Wrapper Script
+
+**Decision:** Create `scripts/start-pmxt-mcp.sh` to automatically use the CLI auth key.
+
+**Rationale:**  
+- Simplifies running the MCP server
+- Reuses existing authentication
+- Avoids managing multiple API keys
+
+**Status:** Implemented
