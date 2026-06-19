@@ -1,88 +1,219 @@
+"""
+Trading dashboard — WTF modules, cointop watchlist, GoAccess stats + access log.
+"""
+
 from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Button, Static
+from textual.widgets import Button, DataTable, RichLog, Static
+from textual.worker import Worker, WorkerState
 
-from apps.cockpit.bridge import parse, pmx
-from apps.cockpit.widgets.output_log import OutputLog
+from apps.cockpit.bridge.live import LiveSnapshot, fetch_dashboard
+from apps.cockpit.widgets.access_log import access_line
+from apps.cockpit.widgets.sparkline import bar_gauge, fmt_price_color, sparkline
+from apps.cockpit.widgets.stats_bar import StatsBar
+
+
+def _safe_float(raw: str | None) -> float:
+    try:
+        return float(raw) if raw else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _vol_bar(volume: str, max_vol: float, width: int = 10) -> str:
+    try:
+        v = float(str(volume).replace(",", ""))
+    except (TypeError, ValueError):
+        return "░" * width
+    return bar_gauge(v, max(max_vol, 1.0), width)
 
 
 class HomePane(Vertical):
+    """Primary dashboard — GoAccess summary + modular panels, 12s refresh."""
+
     DEFAULT_CSS = """
     HomePane {
-        padding: 1 0;
+        height: 1fr;
+        padding: 0 1 1;
+        background: #010409;
     }
-    .card-row {
+    #dash-toolbar {
         height: auto;
         margin-bottom: 1;
+        color: #c9d1d9;
     }
-    .stat-card {
+    #dash-top, #dash-bottom {
+        height: 1fr;
+        min-height: 10;
+    }
+    .module {
+        border: solid #30363d;
+        background: #0d1117;
+        height: 1fr;
         width: 1fr;
-        height: auto;
-        border: solid $border;
-        background: $panel;
-        padding: 1;
-        margin: 0 1 0 0;
+        min-height: 8;
     }
-    .stat-card:last-child {
-        margin-right: 0;
+    #mod-markets {
+        width: 2fr;
     }
-    .actions {
-        height: auto;
-        margin: 1 0;
+    #mod-activity {
+        width: 2fr;
+    }
+    .mod-title {
+        dock: top;
+        height: 1;
+        background: #161b22;
+        color: #58a6ff;
+        text-align: center;
+        text-style: bold;
+    }
+    #mod-markets-table {
+        height: 1fr;
+        min-height: 6;
+        background: #0d1117;
+    }
+    #mod-positions-log, #mod-activity-log {
+        height: 1fr;
+        background: #0d1117;
+    }
+    #mod-balances-body, #mod-health-body {
+        height: 1fr;
+        padding: 0 1;
+        color: #c9d1d9;
     }
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("[bold]Trading dashboard[/bold] — press [cyan]1-6[/cyan] to switch panels")
-        with Horizontal(classes="card-row"):
-            yield Static("Loading…", id="card-kalshi", classes="stat-card")
-            yield Static("Loading…", id="card-poly", classes="stat-card")
-            yield Static("Loading…", id="card-session", classes="stat-card")
-        with Horizontal(classes="actions"):
-            yield Button("Analyze link [a]", id="go-analyze", variant="primary")
-            yield Button("AI chat [2]", id="go-chat", variant="success")
-            yield Button("Diagnostics [5]", id="go-diag")
-            yield Button("Refresh [r]", id="refresh")
-            yield Button("Web dashboard", id="go-web")
-        yield Static("Output", classes="section-label")
-        yield OutputLog(id="home-log", markup=True)
+        with Horizontal(id="dash-toolbar"):
+            yield Static(
+                "[bold #58a6ff]pmxtrader[/]  [dim]GoAccess stats · WTF modules · cointop watchlist[/dim]",
+                markup=True,
+            )
+            yield Button("↻", id="go-refresh", variant="primary")
+            yield Button("Analyze", id="go-analyze")
+            yield Button("AI", id="go-chat", variant="success")
+            yield Button("Diag", id="go-diag")
+
+        yield StatsBar(id="stats-bar")
+
+        with Horizontal(id="dash-top"):
+            with Vertical(classes="module", id="mod-balances"):
+                yield Static(" BALANCES ", classes="mod-title")
+                yield Static("Loading…", id="mod-balances-body", markup=True)
+
+            with Vertical(classes="module", id="mod-health"):
+                yield Static(" SYSTEM HEALTH ", classes="mod-title")
+                yield Static("…", id="mod-health-body", markup=True)
+
+            with Vertical(classes="module", id="mod-markets"):
+                yield Static(" TOP MARKETS ", classes="mod-title")
+                yield DataTable(id="mod-markets-table", zebra_stripes=True, cursor_type="row")
+
+        with Horizontal(id="dash-bottom"):
+            with Vertical(classes="module", id="mod-positions"):
+                yield Static(" POSITIONS ", classes="mod-title")
+                yield RichLog(id="mod-positions-log", markup=True, wrap=True)
+
+            with Vertical(classes="module", id="mod-activity"):
+                yield Static(" ACCESS LOG ", classes="mod-title")
+                yield RichLog(id="mod-activity-log", markup=True, wrap=True)
 
     def on_mount(self) -> None:
-        self.refresh_status()
+        table = self.query_one("#mod-markets-table", DataTable)
+        table.add_columns("Market", "Slug", "Price", "Vol", "Hits")
+        act = self.query_one("#mod-activity-log", RichLog)
+        act.write("[dim]GoAccess-style live log — timestamp · status · command[/dim]")
+        self.load_live_data()
+        self.set_interval(12.0, self.load_live_data)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        app = self.app
-        if event.button.id == "go-analyze":
-            app.action_tab("analyze")
-        elif event.button.id == "go-chat":
-            app.action_tab("chat")
-        elif event.button.id == "go-diag":
-            app.action_tab("diagnostics")
-        elif event.button.id == "refresh":
-            self.refresh_status()
-        elif event.button.id == "go-web":
-            pmx.run_script("pmxt-dashboard.sh", "start")
+        mapping = {
+            "go-analyze": "analyze",
+            "go-chat": "chat",
+            "go-diag": "diagnostics",
+        }
+        if event.button.id == "go-refresh":
+            self.load_live_data()
+        elif event.button.id in mapping:
+            self.app.action_tab(mapping[event.button.id])
 
-    def refresh_status(self) -> None:
-        r = pmx.run_pmx("status")
-        s = parse.parse_status(r.get("stdout") or "")
-        self.query_one("#card-kalshi", Static).update(
-            f"[bold]Kalshi[/bold]\n"
-            f"Kill: [bold]{'red' if s.kill_switch == 'ON' else 'green'}]{s.kill_switch}[/]\n"
-            f"Avail: ${s.kalshi_available or '?'}\n"
-            f"Total: ${s.kalshi_total or '?'}"
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        table = event.data_table
+        row = table.get_row(event.row_key)
+        if row and len(row) >= 2 and row[1]:
+            slug = str(row[1])
+            msg = f"Selected: {slug}"
+            if hasattr(self.app, "log_activity"):
+                self.app.log_activity("poly quote", msg, ok=True)
+            self.app.notify(f"./pmx poly quote {slug} long")
+
+    def load_live_data(self) -> None:
+        self.run_worker(fetch_dashboard, thread=True, exclusive=True, group="home-live")
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.worker.group != "home-live":
+            return
+        if event.state == WorkerState.ERROR:
+            self.app.notify("Dashboard refresh failed", severity="error")
+            return
+        if event.state != WorkerState.SUCCESS:
+            return
+        self._render(event.worker.result)
+
+    def _render(self, snap: LiveSnapshot) -> None:
+        if hasattr(self.app, "update_live_bar"):
+            self.app.update_live_bar(snap)
+        self.query_one("#stats-bar", StatsBar).apply_snapshot(snap)
+
+        ks = snap.kill_switch
+        ks_c = "#f85149" if ks == "ON" else "#3fb950"
+        k_avail = _safe_float(snap.kalshi_available)
+        p_avail = _safe_float(snap.poly_available)
+
+        self.query_one("#mod-balances-body", Static).update(
+            f"[bold #58a6ff]Kalshi[/]  [{ks_c}]kill {ks}[/]\n"
+            f"  cash [#39c5cf]${snap.kalshi_available or '?'}[/]  "
+            f"total ${snap.kalshi_total or '?'}\n"
+            f"  {bar_gauge(k_avail, max(k_avail, 100))}\n"
+            f"  [#8b949e]{sparkline(snap.spark_kalshi)}[/]\n\n"
+            f"[bold #58a6ff]Poly US[/]\n"
+            f"  cash [#39c5cf]${snap.poly_available or '?'}[/]  "
+            f"total ${snap.poly_total or '?'}\n"
+            f"  {bar_gauge(p_avail, max(p_avail, 500))}\n"
+            f"  [#8b949e]{sparkline(snap.spark_poly)}[/]"
         )
-        self.query_one("#card-poly", Static).update(
-            f"[bold]Poly US[/bold]\n"
-            f"Avail: ${s.poly_available or '?'}\n"
-            f"Total: ${s.poly_total or '?'}"
+
+        health = "\n".join(snap.health_lines) if snap.health_lines else "[dim]checking…[/dim]"
+        self.query_one("#mod-health-body", Static).update(health)
+
+        vols: list[float] = []
+        for m in snap.markets:
+            try:
+                vols.append(float(str(m.get("volume", "0")).replace(",", "")))
+            except (TypeError, ValueError):
+                pass
+        max_vol = max(vols) if vols else 1.0
+
+        table = self.query_one("#mod-markets-table", DataTable)
+        table.clear(columns=False)
+        for m in snap.markets:
+            price = fmt_price_color(str(m.get("price", "—")))
+            vol = m.get("volume", "")
+            hits = _vol_bar(str(vol), max_vol)
+            table.add_row(m.get("title", ""), m.get("slug", ""), price, vol, hits)
+
+        pos = self.query_one("#mod-positions-log", RichLog)
+        pos.clear()
+        pos.write(snap.positions_preview or "[dim]No positions[/dim]")
+
+        act = self.query_one("#mod-activity-log", RichLog)
+        act.write(
+            access_line(
+                "status",
+                f"Kalshi ${snap.kalshi_available} · Poly ${snap.poly_available} · "
+                f"{len(snap.markets)} markets · {snap.positions_count} positions",
+                ok=snap.sidecar_ok,
+            )
         )
-        sidecar = "● live" if r.get("ok") else "○ check diagnostics"
-        self.query_one("#card-session", Static).update(
-            f"[bold]Session[/bold]\nSidecar: {sidecar}\n[dim]Tab 5 = full health[/dim]"
-        )
-        log = self.query_one("#home-log", OutputLog)
-        log.clear()
-        log.write_block("status", r.get("stdout") or r.get("stderr") or r.get("error", ""))

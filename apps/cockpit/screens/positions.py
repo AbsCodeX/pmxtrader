@@ -3,35 +3,39 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Button, Static
+from textual.worker import Worker, WorkerState
 
-from apps.cockpit.bridge import pmx
+from apps.cockpit.bridge.live import fetch_positions_text
 from apps.cockpit.widgets.output_log import OutputLog
 
 
 class PositionsPane(Vertical):
     DEFAULT_CSS = """
-    PositionsPane { padding: 1 0; }
+    PositionsPane { padding: 1; height: 1fr; }
+    #pos-log { height: 1fr; }
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("[bold]Open positions & orders[/bold]")
-        yield Button("Refresh", id="pos-refresh", variant="primary")
+        yield Static("[bold]Positions & orders[/bold]  [dim]Kalshi + Poly US[/dim]", markup=True)
+        yield Button("Reload", id="pos-refresh", variant="primary")
         yield OutputLog(id="pos-log", markup=True)
 
     def on_mount(self) -> None:
-        self.refresh()
+        self.reload_positions()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "pos-refresh":
-            self.refresh()
+            self.reload_positions()
 
-    def refresh(self) -> None:
+    def reload_positions(self) -> None:
         log = self.query_one("#pos-log", OutputLog)
         log.clear()
-        for title, args in (
-            ("Kalshi positions", ("positions",)),
-            ("Poly US positions", ("poly", "positions")),
-            ("Poly US open orders", ("poly", "orders")),
-        ):
-            r = pmx.run_pmx(*args)
-            log.write_block(title, r.get("stdout") or r.get("stderr") or "")
+        log.write("[dim]Loading…[/dim]")
+        self.run_worker(fetch_positions_text, thread=True, exclusive=True, group="positions")
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.worker.group != "positions" or event.state != WorkerState.SUCCESS:
+            return
+        log = self.query_one("#pos-log", OutputLog)
+        log.clear()
+        log.write(event.worker.result)

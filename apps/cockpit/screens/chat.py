@@ -40,9 +40,10 @@ class ChatPane(Vertical):
             "[bold]AI assistant[/bold] — ask about markets, links, volume, commands. "
             "Trade orders require your confirm.",
             classes="hint",
+            markup=True,
         )
         with Horizontal():
-            yield Select(self.PROVIDERS, id="chat-provider", value="grok")
+            yield Select(self.PROVIDERS, id="chat-provider", prompt="Provider")
             yield Button("Clear chat", id="chat-clear")
             yield Button("New session", id="chat-new")
         yield RichLog(id="chat-log", markup=True, wrap=True)
@@ -81,7 +82,12 @@ class ChatPane(Vertical):
         self.run_worker(lambda: ai.chat_turn(msg, str(provider)), thread=True, exclusive=True, group="chat")
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "chat" or event.state != WorkerState.SUCCESS:
+        if event.worker.group != "chat":
+            return
+        if event.state == WorkerState.ERROR:
+            self.query_one("#chat-log", RichLog).write("[red]AI request failed[/red]\n")
+            return
+        if event.state != WorkerState.SUCCESS:
             return
         result = event.worker.result
         log = self.query_one("#chat-log", RichLog)

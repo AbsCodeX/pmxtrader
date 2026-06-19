@@ -15,7 +15,7 @@ class DiagnosticsPane(Vertical):
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("[bold]System diagnostics[/bold] — sidecar, keys, providers, Hermes")
+        yield Static("[bold]System diagnostics[/bold] — sidecar, keys, providers, Hermes", markup=True)
         yield Button("Run all checks", id="diag-run", variant="primary")
         yield DataTable(id="diag-table", zebra_stripes=True)
         yield Static("", id="diag-summary")
@@ -34,7 +34,12 @@ class DiagnosticsPane(Vertical):
         self.run_worker(lambda: diag.run_all(), thread=True, exclusive=True, group="diag")
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "diag" or event.state != WorkerState.SUCCESS:
+        if event.worker.group != "diag":
+            return
+        if event.state == WorkerState.ERROR:
+            self.query_one("#diag-summary", Static).update("[red]Diagnostics failed[/red]")
+            return
+        if event.state != WorkerState.SUCCESS:
             return
         checks = event.worker.result
         table = self.query_one("#diag-table", DataTable)
