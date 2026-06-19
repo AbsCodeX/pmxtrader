@@ -293,12 +293,12 @@ case "$cmd" in
     ;;
   orders|open-orders)
     require_poly_us_env
-    pmxt orders:open --exchange "$EXCHANGE" --local --json
+    pmxt_cli orders:open --exchange "$EXCHANGE" --local --json
     ;;
   cancel)
     require_poly_us_env
     order_id="${1:?Usage: $0 cancel ORDER_ID}"
-    pmxt order:cancel "$order_id" --exchange "$EXCHANGE" --local --json
+    pmxt_cli order:cancel "$order_id" --exchange "$EXCHANGE" --local --json
     ;;
   cancel-all|cancelall|cancel-all-orders)
     require_poly_us_env
@@ -308,10 +308,10 @@ case "$cmd" in
     while IFS= read -r order_id; do
       [[ -z "$order_id" ]] && continue
       echo "Canceling $order_id"
-      pmxt order:cancel "$order_id" --exchange "$EXCHANGE" --local --json
+      pmxt_cli order:cancel "$order_id" --exchange "$EXCHANGE" --local --json
       count=$((count + 1))
     done < <(
-      pmxt orders:open --exchange "$EXCHANGE" --local --json | python3 -c "
+      pmxt_cli orders:open --exchange "$EXCHANGE" --local --json | python3 -c "
 import json, sys
 slug = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else None
 orders = json.load(sys.stdin)

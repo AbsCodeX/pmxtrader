@@ -25,6 +25,11 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from apps.bridge.pmxt_cli import pmxt_argv  # noqa: E402
+
 ENV_FILE = ROOT / "pmxt" / ".env"
 API_BASE = os.environ.get("KALSHI_BASE_URL", "https://external-api.kalshi.com").rstrip("/")
 API_PREFIX = "/trade-api/v2"
@@ -113,12 +118,14 @@ def api_request(method: str, path: str, *, query: dict[str, Any] | None = None, 
 
 
 def pmxt_json(args: list[str]) -> Any:
+    argv = pmxt_argv([*args, "--json"], root=ROOT)
     result = subprocess.run(
-        ["pmxt", *args, "--json"],
+        argv,
         capture_output=True,
         text=True,
         check=False,
-        cwd=str(ROOT / "pmxt"),
+        cwd=str(ROOT),
+        env={**os.environ, "PMXTRADER_ROOT": str(ROOT), "PMXT_DIR": str(ROOT / "pmxt")},
     )
     if result.returncode != 0:
         err = (result.stderr or result.stdout or "").strip()
