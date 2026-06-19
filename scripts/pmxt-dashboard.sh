@@ -21,6 +21,29 @@ stop_server() {
   fi
 }
 
+start_server() {
+  local detach="${1:-0}"
+  if [[ -f "$PIDFILE" ]]; then
+    pid="$(cat "$PIDFILE")"
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "Dashboard already running (pid $pid) — $URL"
+      open "$URL" 2>/dev/null || true
+      return 0
+    fi
+  fi
+  python3 "$SERVER" &
+  echo $! >"$PIDFILE"
+  sleep 0.4
+  echo "Dashboard: $URL"
+  if [[ -f "$ROOT/.pmxt-dashboard.token" ]]; then
+    echo "API token: $ROOT/.pmxt-dashboard.token"
+  fi
+  open "$URL" 2>/dev/null || echo "Open in browser: $URL"
+  if [[ "$detach" -eq 0 ]]; then
+    wait "$(cat "$PIDFILE")"
+  fi
+}
+
 case "${1:-start}" in
   stop)
     stop_server
@@ -31,25 +54,18 @@ case "${1:-start}" in
     shift
     exec "$0" start "$@"
     ;;
+  start-bg)
+    shift || true
+    start_server 1
+    ;;
   start)
     shift || true
-    if [[ -f "$PIDFILE" ]]; then
-      pid="$(cat "$PIDFILE")"
-      if kill -0 "$pid" 2>/dev/null; then
-        echo "Dashboard already running (pid $pid) — $URL"
-        open "$URL" 2>/dev/null || true
-        exit 0
-      fi
-    fi
-    python3 "$SERVER" &
-    echo $! >"$PIDFILE"
-    sleep 0.4
-    echo "Dashboard: $URL"
-    open "$URL" 2>/dev/null || echo "Open in browser: $URL"
-    wait "$(cat "$PIDFILE")"
+    start_server 0
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart}" >&2
+    echo "Usage: $0 {start|start-bg|stop|restart}" >&2
+    echo "  start     — foreground (blocks terminal)" >&2
+    echo "  start-bg  — background daemon" >&2
     exit 1
     ;;
 esac

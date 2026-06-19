@@ -3,9 +3,10 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, Static
+from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge import pmx
-from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal
+from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal, PanicConfirmModal
 from apps.cockpit.widgets.output_log import OutputLog
 
 
@@ -31,18 +32,40 @@ class SafetyPane(Vertical):
         bid = event.button.id
         if bid == "btn-stop":
             reason = self.query_one("#stop-reason", Input).value.strip() or "manual"
-            self._run_safe(["stop", "on", reason])
+            self._run(["stop", "on", reason])
         elif bid == "btn-resume":
-            self._run_safe(["resume"])
-        elif bid == "btn-panic":
-            self.app.push_screen(
-                ConfirmCommandModal("./pmx panic", "PANIC — type confirms in subprocess. Real flatten."),
-                lambda ok: self._run_safe(["panic"]) if ok else None,
-            )
-        elif bid == "btn-status":
-            self._run_safe(["status"])
 
-    def _run_safe(self, args: list[str]) -> None:
-        r = pmx.run_pmx(*args)
+            def on_confirm(ok: bool) -> None:
+                if ok:
+                    self._run(["resume"])
+
+            self.app.push_screen(
+                ConfirmCommandModal("./pmx resume", "Resume trading — new orders allowed."),
+                on_confirm,
+            )
+        elif bid == "btn-panic":
+            self.app.push_screen(PanicConfirmModal(), self._on_panic_confirmed)
+        elif bid == "btn-status":
+            self._run(["status"])
+
+    def _on_panic_confirmed(self, ok: bool) -> None:
+        if ok:
+            self._run(["panic", "--yes"])
+
+    def _run(self, args: list[str]) -> None:
         log = self.query_one("#safety-log", OutputLog)
-        log.write_block(" ".join(args), r.get("stdout") or r.get("stderr") or "")
+        log.write("[dim]Running…[/dim]")
+        self.run_worker(lambda: pmx.run_pmx(*args), thread=True, exclusive=True, group="safety")
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.worker.group != "safety":
+            return
+        log = self.query_one("#safety-log", OutputLog)
+        if event.state == WorkerState.ERROR:
+            log.write("[red]Command failed[/red]")
+            return
+        if event.state != WorkerState.SUCCESS:
+            return
+        r = event.worker.result
+        log.clear()
+        log.write_block(r.get("command", "pmx").replace(str(pmx.ROOT / "pmx"), "./pmx"), r.get("stdout") or r.get("stderr") or "")

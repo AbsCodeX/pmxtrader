@@ -38,7 +38,7 @@ class ChatPane(Vertical):
     def compose(self) -> ComposeResult:
         yield Static(
             "[bold]AI assistant[/bold] — ask about markets, links, volume, commands. "
-            "Trade orders require your confirm.",
+            "Only safe read-only commands run automatically.",
             classes="hint",
             markup=True,
         )
@@ -82,25 +82,31 @@ class ChatPane(Vertical):
         self.run_worker(lambda: ai.chat_turn(msg, str(provider)), thread=True, exclusive=True, group="chat")
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "chat":
+        if event.worker.group == "chat":
+            if event.state == WorkerState.ERROR:
+                self.query_one("#chat-log", RichLog).write("[red]AI request failed[/red]\n")
+                return
+            if event.state != WorkerState.SUCCESS:
+                return
+            result = event.worker.result
+            log = self.query_one("#chat-log", RichLog)
+            text = result.get("text", "")
+            log.write(f"[bold green]AI:[/bold green] {text}\n")
+            cmds = pmx.extract_pmx_commands(text)
+            if cmds:
+                self.query_one("#suggested-cmd", Static).update(
+                    f"Suggested: [cyan]{cmds[0]}[/cyan] — press [bold]Ctrl+Enter[/bold] to run (safe only)"
+                )
+                self._pending_cmd = cmds[0]
+            else:
+                self._pending_cmd = None
             return
-        if event.state == WorkerState.ERROR:
-            self.query_one("#chat-log", RichLog).write("[red]AI request failed[/red]\n")
-            return
-        if event.state != WorkerState.SUCCESS:
-            return
-        result = event.worker.result
-        log = self.query_one("#chat-log", RichLog)
-        text = result.get("text", "")
-        log.write(f"[bold green]AI:[/bold green] {text}\n")
-        cmds = pmx.extract_pmx_commands(text)
-        if cmds:
-            self.query_one("#suggested-cmd", Static).update(
-                f"Suggested: [cyan]{cmds[0]}[/cyan] — press [bold]Ctrl+Enter[/bold] to run first safe command"
-            )
-            self._pending_cmd = cmds[0]
-        else:
-            self._pending_cmd = None
+
+        if event.worker.group == "chat-exec" and event.state == WorkerState.SUCCESS:
+            r = event.worker.result
+            out = r.get("stdout") or r.get("stderr") or r.get("error") or ""
+            cmd = r.get("command", "pmx")
+            self.query_one("#chat-log", RichLog).write(f"[dim]$ {cmd}[/dim]\n{out}\n")
 
     _pending_cmd: str | None = None
 
@@ -112,23 +118,25 @@ class ChatPane(Vertical):
 
     def _run_command(self, cmd: str) -> None:
         kind = pmx.classify_command(cmd)
-        if kind == "trade":
+        if kind == "safe":
+            self._exec(cmd)
+        elif kind in ("trade", "mutating"):
 
             def on_confirm(run: bool) -> None:
                 if run:
                     self._exec(cmd)
 
-            self.app.push_screen(ConfirmCommandModal(cmd), on_confirm)
-        elif kind in ("safe", "unknown"):
-            if kind == "unknown":
-                self.app.notify("Running command — verify if sensitive", severity="warning")
-            self._exec(cmd)
+            self.app.push_screen(
+                ConfirmCommandModal(cmd, "Dangerous command — confirm to run."),
+                on_confirm,
+            )
         else:
-            self.app.notify("No runnable command", severity="warning")
+            self.app.notify(
+                f"Blocked: {cmd}\nUse Safety tab or Terminal for this command.",
+                severity="warning",
+                timeout=8,
+            )
 
     def _exec(self, cmd: str) -> None:
-        log = self.query_one("#chat-log", RichLog)
         parts = cmd.replace("./pmx ", "").split()
-        r = pmx.run_pmx(*parts, timeout=120)
-        out = r.get("stdout") or r.get("stderr") or r.get("error") or ""
-        log.write(f"[dim]$ {cmd}[/dim]\n{out}\n")
+        self.run_worker(lambda: pmx.run_pmx(*parts, timeout=120), thread=True, group="chat-exec")

@@ -13,7 +13,7 @@ Prediction market trading platform with PMXT, multi-agent workflows, and termina
 ```bash
 ./scripts/setup-direnv.sh       # once: direnv hook + pmx / pmxt-* in ~/.zshrc
 # restart terminal, then from anywhere:
-pmx cockpit                     # GoAccess-style terminal dashboard (stats, watchlist, access log)
+pmx cockpit                     # GoAccess-style terminal dashboard — see docs/cockpit.md
 pmx dashboard                   # browser command center
 pmxt-terminal                   # opens macOS Terminal + session → cockpit
 pmx balance

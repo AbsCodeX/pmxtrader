@@ -5,7 +5,6 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, Static
 from textual.worker import Worker, WorkerState
 
-from apps.cockpit.bridge import pmx
 from apps.cockpit.bridge.live import fetch_poly_markets
 from apps.cockpit.widgets.output_log import OutputLog
 
@@ -51,8 +50,7 @@ class MarketsPane(Vertical):
                 )
             lines.append("\n[dim]Analyze: ./pmx poly quote SLUG long[/dim]")
             return "\n".join(lines)
-        r = pmx.run_pmx("poly", "markets", *([query] if query else []))
-        return r.get("stdout") or r.get("stderr") or "No markets returned"
+        return "No markets returned — check sidecar and Poly US keys."
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.worker.group != "markets" or event.state != WorkerState.SUCCESS:

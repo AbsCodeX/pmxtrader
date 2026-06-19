@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -12,23 +13,15 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from apps.bridge.commands import resolve_dashboard_command  # noqa: E402
+
 PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
 HOST = os.environ.get("PMXT_DASHBOARD_HOST", "127.0.0.1")
-
-# Read-only / safe commands only — no live trades from the web UI
-SAFE_COMMANDS: dict[str, list[str]] = {
-    "help": ["./pmx", "help"],
-    "status": ["./pmx", "status"],
-    "warm": ["./pmx", "warm"],
-    "balance": ["./pmx", "balance"],
-    "positions": ["./pmx", "positions"],
-    "poly-balance": ["./pmx", "poly", "balance"],
-    "poly-positions": ["./pmx", "poly", "positions"],
-    "poly-orders": ["./pmx", "poly", "orders"],
-    "providers": ["./scripts/check-providers.sh"],
-}
-
-BLOCKED_PREFIXES = ("trade", "sell", "close", "panic", "stop", "cancel")
+DASHBOARD_TOKEN = os.environ.get("PMXT_DASHBOARD_TOKEN") or secrets.token_urlsafe(24)
+TOKEN_FILE = ROOT / ".pmxt-dashboard.token"
 
 
 def detect_venue(url: str) -> str | None:
@@ -82,51 +75,6 @@ def analyze_link(
     return result
 
 
-def resolve_command(raw: str) -> list[str] | None:
-    text = raw.strip()
-    if not text:
-        return None
-    if text.startswith("./pmx "):
-        text = text[6:].strip()
-    elif text.startswith("pmx "):
-        text = text[4:].strip()
-    elif text.startswith("./"):
-        return None
-
-    parts = text.split()
-    if not parts:
-        return None
-
-    key = parts[0].lower()
-    for blocked in BLOCKED_PREFIXES:
-        if key == blocked or key.startswith("poly") and len(parts) > 1 and parts[1] in (
-            "trade", "sell", "close", "cancel", "cancel-all"
-        ):
-            return None
-
-    alias = "-".join(p.lower() for p in parts[:2]) if len(parts) >= 2 and parts[0].lower() == "poly" else key
-    if alias in SAFE_COMMANDS:
-        return SAFE_COMMANDS[alias]
-    if key in SAFE_COMMANDS:
-        return SAFE_COMMANDS[key]
-
-    # Allow: quote EVENT OUTCOME, poly quote SLUG long (read-only research)
-    if key == "quote" and len(parts) >= 3:
-        return ["./pmx", "quote", parts[1], parts[2], *parts[3:]]
-    if len(parts) >= 3 and parts[0].lower() == "poly" and parts[1].lower() == "quote":
-        return ["./pmx", "poly", "quote", parts[2], *parts[3:]]
-    if key == "link" and len(parts) >= 2:
-        return ["./pmx", "link", parts[1], *parts[2:]]
-    if len(parts) >= 2 and parts[0].lower() == "poly" and parts[1].lower() == "link":
-        return ["./pmx", "poly", "link", parts[2], *parts[3:]]
-    if len(parts) >= 2 and parts[0].lower() == "poly" and parts[1].lower() == "markets":
-        return ["./pmx", "poly", "markets", *parts[2:]]
-    if key == "event" and len(parts) >= 2:
-        return ["./pmx", "event", parts[1]]
-
-    return None
-
-
 def run_pmx(argv: list[str], timeout: int = 120) -> dict:
     env = os.environ.copy()
     env["PMXTRADER_ROOT"] = str(ROOT)
@@ -154,15 +102,20 @@ def run_pmx(argv: list[str], timeout: int = 120) -> dict:
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
+    server_version = "pmxtrader-dashboard/1.0"
+
     def log_message(self, fmt: str, *args) -> None:
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
+
+    def _check_token(self) -> bool:
+        token = self.headers.get("X-Pmxtrader-Token", "")
+        return token == DASHBOARD_TOKEN
 
     def _send_json(self, code: int, payload: dict) -> None:
         body = json.dumps(payload).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
 
@@ -178,10 +131,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_OPTIONS(self) -> None:
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_response(405)
         self.end_headers()
 
     def do_GET(self) -> None:
@@ -190,14 +140,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_file(ROOT / "index.html", "text/html; charset=utf-8")
             return
         if parsed.path == "/api/health":
-            self._send_json(200, {"ok": True, "root": str(ROOT)})
+            self._send_json(200, {"ok": True, "root": str(ROOT), "token": DASHBOARD_TOKEN})
             return
         if parsed.path == "/api/commands":
+            from apps.bridge.commands import SAFE_COMMANDS
+
             self._send_json(200, {"safe": list(SAFE_COMMANDS.keys())})
             return
         self.send_error(404)
 
     def do_POST(self) -> None:
+        if not self._check_token():
+            self._send_json(403, {"ok": False, "error": "Invalid or missing X-Pmxtrader-Token header"})
+            return
+
         parsed = urlparse(self.path)
         if parsed.path not in ("/api/run", "/api/analyze"):
             self.send_error(404)
@@ -227,7 +183,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         raw = body.get("command", "")
-        argv = resolve_command(str(raw))
+        argv = resolve_dashboard_command(str(raw))
         if not argv:
             self._send_json(400, {
                 "ok": False,
@@ -241,9 +197,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     os.chdir(ROOT)
+    TOKEN_FILE.write_text(DASHBOARD_TOKEN + "\n")
     server = HTTPServer((HOST, PORT), DashboardHandler)
     print(f"pmxtrader dashboard: http://{HOST}:{PORT}/")
     print(f"Root: {ROOT}")
+    print(f"API token written to: {TOKEN_FILE}")
     print("Ctrl+C to stop")
     try:
         server.serve_forever()

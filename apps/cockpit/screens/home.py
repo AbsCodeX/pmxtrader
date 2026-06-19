@@ -7,10 +7,8 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, DataTable, RichLog, Static
-from textual.worker import Worker, WorkerState
 
-from apps.cockpit.bridge.live import LiveSnapshot, fetch_dashboard
-from apps.cockpit.widgets.access_log import access_line
+from apps.cockpit.bridge.live import LiveSnapshot
 from apps.cockpit.widgets.sparkline import bar_gauge, fmt_price_color, sparkline
 from apps.cockpit.widgets.stats_bar import StatsBar
 
@@ -125,8 +123,6 @@ class HomePane(Vertical):
         table.add_columns("Market", "Slug", "Price", "Vol", "Hits")
         act = self.query_one("#mod-activity-log", RichLog)
         act.write("[dim]GoAccess-style live log — timestamp · status · command[/dim]")
-        self.load_live_data()
-        self.set_interval(12.0, self.load_live_data)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         mapping = {
@@ -135,7 +131,7 @@ class HomePane(Vertical):
             "go-diag": "diagnostics",
         }
         if event.button.id == "go-refresh":
-            self.load_live_data()
+            self.app.poll_live()
         elif event.button.id in mapping:
             self.app.action_tab(mapping[event.button.id])
 
@@ -149,26 +145,16 @@ class HomePane(Vertical):
                 self.app.log_activity("poly quote", msg, ok=True)
             self.app.notify(f"./pmx poly quote {slug} long")
 
-    def load_live_data(self) -> None:
-        self.run_worker(fetch_dashboard, thread=True, exclusive=True, group="home-live")
-
-    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "home-live":
-            return
-        if event.state == WorkerState.ERROR:
-            self.app.notify("Dashboard refresh failed", severity="error")
-            return
-        if event.state != WorkerState.SUCCESS:
-            return
-        self._render(event.worker.result)
-
-    def _render(self, snap: LiveSnapshot) -> None:
-        if hasattr(self.app, "update_live_bar"):
-            self.app.update_live_bar(snap)
+    def render_snap(self, snap: LiveSnapshot) -> None:
         self.query_one("#stats-bar", StatsBar).apply_snapshot(snap)
 
         ks = snap.kill_switch
-        ks_c = "#f85149" if ks == "ON" else "#3fb950"
+        if ks == "ON":
+            ks_c = "#f85149"
+        elif ks == "OFF":
+            ks_c = "#3fb950"
+        else:
+            ks_c = "#d29922"
         k_avail = _safe_float(snap.kalshi_available)
         p_avail = _safe_float(snap.poly_available)
 
@@ -207,13 +193,3 @@ class HomePane(Vertical):
         pos = self.query_one("#mod-positions-log", RichLog)
         pos.clear()
         pos.write(snap.positions_preview or "[dim]No positions[/dim]")
-
-        act = self.query_one("#mod-activity-log", RichLog)
-        act.write(
-            access_line(
-                "status",
-                f"Kalshi ${snap.kalshi_available} · Poly ${snap.poly_available} · "
-                f"{len(snap.markets)} markets · {snap.positions_count} positions",
-                ok=snap.sidecar_ok,
-            )
-        )

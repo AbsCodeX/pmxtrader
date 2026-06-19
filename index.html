@@ -418,6 +418,7 @@ Trades: use pmxt-terminal — blocked here on purpose.
     const statusBar = document.getElementById('status-bar');
     const themeToggle = document.getElementById('theme-toggle');
     let live = false;
+    let apiToken = '';
     let activeTab = SECTIONS[0].id;
     let lastAnalyzeCmd = '';
 
@@ -517,13 +518,23 @@ Trades: use pmxt-terminal — blocked here on purpose.
 
     function parseStatusSummary(stdout) {
       if (!stdout) return '';
-      const kill = stdout.match(/^(ON|OFF)/m)?.[1] || '?';
+      let kill = '?';
+      if (/^ENGAGED\b/m.test(stdout)) kill = 'ON';
+      else if (/^OFF\b/m.test(stdout)) kill = 'OFF';
+      else kill = stdout.match(/^(ON|OFF)\b/m)?.[1] || '?';
       const kalshi = stdout.match(/Kalshi:[\s\S]*?available:\s*([\d.]+)/)?.[1];
       const poly = stdout.match(/Polymarket US:[\s\S]*?available:\s*([\d.]+)/)?.[1];
-      let parts = [`Kill switch: <strong>${kill}</strong>`];
+      const killStyle = kill === 'ON' ? 'color:var(--danger)' : kill === 'OFF' ? '' : 'color:var(--warn)';
+      let parts = [`Kill switch: <strong style="${killStyle}">${kill}</strong>`];
       if (kalshi) parts.push(`Kalshi $${kalshi}`);
       if (poly) parts.push(`Poly $${poly}`);
       return parts.join(' · ');
+    }
+
+    function apiHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      if (apiToken) h['X-Pmxtrader-Token'] = apiToken;
+      return h;
     }
 
     async function refreshStatusBar() {
@@ -534,7 +545,7 @@ Trades: use pmxt-terminal — blocked here on purpose.
       try {
         const r = await fetch(`${API}/api/run`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: apiHeaders(),
           body: JSON.stringify({ command: 'status' }),
         });
         const data = await r.json();
@@ -567,6 +578,12 @@ Trades: use pmxt-terminal — blocked here on purpose.
         const r = await fetch(`${API}/api/health`, { signal: AbortSignal.timeout(800) });
         const wasLive = live;
         live = r.ok;
+        if (live) {
+          const data = await r.json();
+          apiToken = data.token || '';
+        } else {
+          apiToken = '';
+        }
         if (live && !wasLive) refreshStatusBar();
         if (!live) statusBar.classList.remove('visible');
       } catch { live = false; statusBar.classList.remove('visible'); }
@@ -588,7 +605,7 @@ Trades: use pmxt-terminal — blocked here on purpose.
       try {
         const r = await fetch(`${API}/api/run`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: apiHeaders(),
           body: JSON.stringify({ command: cmd }),
         });
         const data = await r.json();
@@ -725,7 +742,7 @@ Trades: use pmxt-terminal — blocked here on purpose.
         };
         const r = await fetch(`${API}/api/analyze`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: apiHeaders(),
           body: JSON.stringify(payload),
         });
         const data = await r.json();

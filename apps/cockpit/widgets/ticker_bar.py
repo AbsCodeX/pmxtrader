@@ -62,7 +62,12 @@ class TickerBar(Horizontal):
         self.updated = datetime.now().strftime("%H:%M:%S")
 
     def watch_kill(self, v: str) -> None:
-        cls = "tick tick-bad" if v == "ON" else "tick tick-ok"
+        if v == "ON":
+            cls = "tick tick-bad"
+        elif v == "OFF":
+            cls = "tick tick-ok"
+        else:
+            cls = "tick tick-warn"
         self.query_one("#t-kill", Static).set_classes(cls)
         self.query_one("#t-kill", Static).update(f" KILL:{v} ")
 

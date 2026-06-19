@@ -17,7 +17,7 @@ SECRET_PATTERNS = [
     r'-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----',
 ]
 
-IGNORE_DIRS = ['node_modules', '.git', 'dist', 'build', 'pmxt']
+IGNORE_DIRS = ['node_modules', '.git', 'dist', 'build']
 
 def get_staged_files():
     result = subprocess.run(['git', 'diff', '--cached', '--name-only'], capture_output=True, text=True)

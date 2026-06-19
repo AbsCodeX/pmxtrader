@@ -76,7 +76,8 @@ case "$role" in
         exit 1
       fi
       if ! grep -q '^approved:[[:space:]]*true' "$brief_path" 2>/dev/null; then
-        echo "WARN: Brief not approved. Set 'approved: true' in frontmatter before Trader executes."
+        echo "ERROR: Brief not approved. Set 'approved: true' in frontmatter before Trader executes." >&2
+        exit 1
       fi
       task="Execute from brief: $brief_path"
     fi

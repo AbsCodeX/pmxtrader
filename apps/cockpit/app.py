@@ -15,7 +15,7 @@ from textual.widgets import ContentSwitcher, Footer, Header, Input, ListItem, Li
 from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge import pmx
-from apps.cockpit.bridge.live import LiveSnapshot, fetch_snapshot
+from apps.cockpit.bridge.live import LiveSnapshot, fetch_dashboard
 from apps.cockpit.screens.analyze import AnalyzePane
 from apps.cockpit.screens.chat import ChatPane
 from apps.cockpit.screens.diagnostics import DiagnosticsPane
@@ -35,8 +35,6 @@ COMMANDS = [
     ("poly markets", "Search Poly US markets"),
     ("poly orders", "Open Poly orders"),
     ("warm", "Warm sidecar"),
-    ("scout grok", "Scout research agent"),
-    ("dashboard", "Open web dashboard"),
     ("help", "Full command list"),
 ]
 
@@ -61,7 +59,7 @@ class CommandPalette(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="palette-box"):
-            yield Static("[bold]Command search[/bold] — type to filter, Enter to run", markup=True)
+            yield Static("[bold]Command search[/bold] — safe commands only", markup=True)
             yield Input(placeholder="status · poly markets · balance…", id="palette-input")
             yield ListView(id="palette-list")
 
@@ -96,18 +94,13 @@ class CommandPalette(ModalScreen[None]):
     def _run(self, cmd: str) -> None:
         self.dismiss(None)
         if cmd == "dashboard":
-            pmx.run_script("pmxt-dashboard.sh", "start")
+            pmx.run_script("pmxt-dashboard.sh", "start-bg")
             return
-        kind = pmx.classify_command("./pmx " + cmd)
-        if kind == "trade":
-            self.app.notify("Use Safety tab for trades", severity="warning")
+        if not pmx.is_palette_allowed(cmd):
+            self.app.notify("Not allowed in palette — use Terminal or Safety tab", severity="warning")
             return
         parts = cmd.split()
-        r = pmx.run_pmx(*parts)
-        out = r.get("stdout") or r.get("stderr") or ""
-        if hasattr(self.app, "log_activity"):
-            self.app.log_activity("./pmx " + cmd, out)
-        self.app.notify(out[:80] or "done")
+        self.app.run_palette_command(parts)
 
 
 class CockpitApp(App):
@@ -131,6 +124,7 @@ class CockpitApp(App):
     ]
 
     _current = "home"
+    _last_snap: LiveSnapshot | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=False)
@@ -154,17 +148,47 @@ class CockpitApp(App):
         self.poll_live()
 
     def poll_live(self) -> None:
-        self.run_worker(lambda: fetch_snapshot(), thread=True, exclusive=True, group="live-bar")
+        self.run_worker(fetch_dashboard, thread=True, exclusive=True, group="live-poll")
+
+    def run_palette_command(self, parts: list[str]) -> None:
+        label = "./pmx " + " ".join(parts)
+
+        def work() -> dict:
+            result = pmx.run_pmx(*parts)
+            result["_label"] = label
+            return result
+
+        self.run_worker(work, thread=True, group="palette")
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group == "live-bar" and event.state == WorkerState.SUCCESS:
-            self.update_live_bar(event.worker.result)
+        if event.worker.group == "live-poll":
+            if event.state == WorkerState.ERROR:
+                self.notify("Live refresh failed", severity="error")
+                return
+            if event.state != WorkerState.SUCCESS:
+                return
+            snap: LiveSnapshot = event.worker.result
+            self._last_snap = snap
+            self.update_live_bar(snap)
+            if self._current == "home":
+                try:
+                    self.query_one(HomePane).render_snap(snap)
+                except Exception as exc:  # noqa: BLE001
+                    self.log(f"home render failed: {exc}")
+            return
+
+        if event.worker.group == "palette" and event.state == WorkerState.SUCCESS:
+            r = event.worker.result
+            cmd = r.get("_label", r.get("command", "./pmx"))
+            out = r.get("stdout") or r.get("stderr") or ""
+            self.log_activity(cmd, out, ok=r.get("ok"))
+            self.notify(out[:80] or "done")
 
     def update_live_bar(self, snap: LiveSnapshot) -> None:
         try:
             self.query_one("#ticker", TickerBar).apply_snapshot(snap)
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            self.log(f"ticker update failed: {exc}")
 
     def log_activity(self, cmd: str, output: str, ok: bool | None = None) -> None:
         from apps.cockpit.widgets.access_log import access_line
@@ -175,8 +199,8 @@ class CockpitApp(App):
             if self._current == "home":
                 act = self.query_one(HomePane).query_one("#mod-activity-log", RichLog)
                 act.write(access_line(cmd, output, ok=ok))
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            self.log(f"activity log failed: {exc}")
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         if event.list_view.id != "nav-list":
@@ -191,15 +215,18 @@ class CockpitApp(App):
         self._current = screen_id
         self.query_one("#switcher", ContentSwitcher).current = screen_id
         self.query_one("#nav", NavSidebar).highlight(screen_id)
+        if screen_id == "home" and self._last_snap is not None:
+            try:
+                self.query_one(HomePane).render_snap(self._last_snap)
+            except Exception as exc:  # noqa: BLE001
+                self.log(f"home render failed: {exc}")
 
     def action_palette(self) -> None:
         self.push_screen(CommandPalette())
 
     def action_refresh_all(self) -> None:
         self.poll_live()
-        if self._current == "home":
-            self.query_one(HomePane).load_live_data()
-        elif self._current == "positions":
+        if self._current == "positions":
             self.query_one(PositionsPane).reload_positions()
         elif self._current == "markets":
             self.query_one(MarketsPane).search_markets("")
@@ -209,8 +236,8 @@ class CockpitApp(App):
     def action_run_suggested(self) -> None:
         try:
             self.query_one(ChatPane).action_run_suggested()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            self.log(f"suggested command failed: {exc}")
 
 
 def main() -> None:

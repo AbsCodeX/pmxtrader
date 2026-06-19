@@ -3,20 +3,24 @@
 from __future__ import annotations
 
 import os
-import re
 import subprocess
 from pathlib import Path
 
+from apps.bridge.commands import classify_command, extract_pmx_commands, is_palette_allowed
+
 ROOT = Path(__file__).resolve().parents[3]
-BLOCKED_TRADE = re.compile(
-    r"^\s*(?:\./)?pmx\s+(?:trade|panic|stop|poly\s+(?:trade|sell|close|cancel))",
-    re.I,
-)
-SAFE_READ = re.compile(
-    r"^\s*(?:\./)?pmx\s+(?:status|balance|positions|link|quote|event|warm|help|"
-    r"poly\s+(?:balance|positions|quote|link|markets|orders|history|watch))",
-    re.I,
-)
+
+__all__ = [
+    "ROOT",
+    "analyze_link",
+    "classify_command",
+    "env",
+    "extract_pmx_commands",
+    "is_palette_allowed",
+    "run_argv",
+    "run_pmx",
+    "run_script",
+]
 
 
 def env() -> dict[str, str]:
@@ -70,27 +74,3 @@ def analyze_link(url: str, outcome: str = "USA", side: str = "long", size: float
     result = run_argv(argv, timeout=180)
     result["venue"] = venue
     return result
-
-
-def classify_command(line: str) -> str:
-    line = line.strip()
-    if not line:
-        return "empty"
-    if BLOCKED_TRADE.match(line):
-        return "trade"
-    if SAFE_READ.match(line) or line.startswith("./scripts/"):
-        return "safe"
-    if line.startswith("./pmx") or line.startswith("pmx "):
-        return "unknown"
-    return "other"
-
-
-def extract_pmx_commands(text: str) -> list[str]:
-    found: list[str] = []
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("./pmx") or s.startswith("pmx "):
-            cmd = s if s.startswith("./") else f"./{s}"
-            if cmd not in found:
-                found.append(cmd)
-    return found
