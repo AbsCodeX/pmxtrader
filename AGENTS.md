@@ -17,6 +17,8 @@ This repo (`pmxtrader`) has two layers:
 
 ### Key gotchas
 
+- **`pmxt-mcp` and `molt-pmxt` are git submodules.** After cloning, run
+  `git submodule update --init`. URLs are in `.gitmodules`.
 - **`pmxt/node_modules` is committed to git** (~34k files) even though `.gitignore`
   lists it, and the committed copy contains **macOS arm64** binaries. On the x86_64
   Linux VM these don't run (e.g. esbuild/tsx fail). The startup update script runs
