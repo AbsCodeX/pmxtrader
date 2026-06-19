@@ -62,3 +62,122 @@ PMXT engine (the app):
 Read‑only market‑data reads (events/markets/orderbooks) use public venue APIs and
 need **no** credentials. Trading/account methods need venue API keys — see
 `pmxt/.env.example`.
+
+### Terminal + CLI setup
+
+One-time (or after clone):
+
+```bash
+./scripts/setup-dev.sh
+```
+
+Each new shell (or use `direnv allow` — loads `.envrc` + `pmx` aliases):
+
+```bash
+source scripts/pmxt-env.sh
+# or: source scripts/pmx-aliases.sh
+```
+
+Plain-language shortcuts: `./pmx help` (same commands work as `money`, `halt`, `panic`, etc.)
+
+This exports `PMXTRADER_ROOT`, `PMXT_DIR`, and the `pmxt_cli` helper. Prefer the
+**global** `@pmxt/cli` (`pmxt` on PATH); setup installs it if missing. Vendored
+fallback: `node pmxt/sdks/cli/bin/pmxt.js`.
+
+Warm the sidecar before a trading session (~0.3s reads afterward):
+
+```bash
+./scripts/pmxt-warm.sh
+# or: pmxt kalshi balance --local --json
+```
+
+Live Kalshi shortcuts (real money — keys in `pmxt/.env`):
+
+```bash
+./scripts/kalshi-quickstart.sh event KXWCGAME-26JUN19USAAUS
+./scripts/kalshi-quickstart.sh eval KXWCGAME-26JUN19USAAUS USA 1
+./scripts/kalshi-quickstart.sh balance
+./scripts/kalshi-quickstart.sh trade MARKET_ID OUTCOME_ID 1
+```
+
+Free streaming + evaluation (no paid PH):
+
+```bash
+./scripts/pmxt-eval.sh --event-id EVENT --outcome-label USA --amount 1 --balance
+./scripts/pmxt-watch.sh orderbook OUTCOME_ID
+./scripts/pmxt-monitor.sh --event-id EVENT --once
+./scripts/pmxt-watch-fills.sh --alert-file briefs/alerts/fills.jsonl
+./scripts/kill-switch.sh status
+```
+
+Kalshi API mapping: `docs/kalshi-integration.md`
+
+MCP (research / cross-venue only — not for in-game order execution):
+
+```bash
+./scripts/start-pmxt-mcp.sh   # requires pmxt auth login
+```
+
+Prediction Hunt cross-platform odds (pre-trade research only — not execution):
+
+```bash
+# Add PREDICTION_HUNT_API_KEY to pmxt/.env first
+./scripts/ph-sports-compare.sh slate nba
+./scripts/ph-sports-compare.sh url https://kalshi.com/markets/kxwcgame/world-cup-game
+```
+
+### Agent skills and rules (project)
+
+| Path | Purpose |
+|------|---------|
+| `.cursor/skills/pmxt-kalshi-trading/` | Fast live Kalshi playbook |
+| `.cursor/skills/pmxt-cli/` | CLI, sidecar, `--local` vs `--hosted` |
+| `.cursor/skills/prediction-hunt/` | PH sports odds comparison (pre-trade) |
+| `.cursor/skills/scout-research/` | Scout research lane |
+| `.cursor/skills/trader-execute/` | Trader execution lane |
+| `.cursor/skills/multi-agent-handoff/` | Role switching, briefs, providers |
+| `.cursor/rules/multi-agent-core.mdc` | Always-on multi-agent protocol |
+| `.cursor/rules/scout-research.mdc` | Scout-only constraints |
+| `.cursor/rules/trader-execute.mdc` | Trader-only constraints |
+| `.cursor/rules/pmxt-trading.mdc` | PMXT safety reference |
+
+**Agent execution rules:** use `event --event-id` (from Kalshi page footer), not
+text search; max 2 preparatory CLI calls before presenting a trade; confirm with
+the user before `order:create`; no MCP/Router for single-venue live trades.
+Use PH scripts only **before** kickoff to pick venue/price — never during live execution.
+
+### Multi-agent system (Scout / Trader)
+
+Separate research from execution — see `docs/multi-agent.md` and `config/agents.json`.
+
+```bash
+./scripts/new-brief.sh my-market
+./pmx scout grok                             # fast Scout (xAI)
+./pmx scout claude                           # deep Scout (Anthropic)
+./pmx trader openai briefs/active/DATE-my-market.md
+./scripts/check-providers.sh                 # verify API keys
+./scripts/install-hermes-skills.sh           # once, for Hermes
+```
+
+LLM keys live in `pmxt/.env` → synced by `./scripts/setup-hermes.sh`. See `docs/providers.md` and `config/providers.json`.
+
+| Role | Cursor rule | Skills |
+|------|-------------|--------|
+| Scout | `scout-research` | scout-research, prediction-hunt, multi-agent-handoff |
+| Trader | `trader-execute` | trader-execute, pmxt-kalshi-trading, multi-agent-handoff |
+
+Other providers: `grok`, `claude`, `openai`, `codex`, `hermes`, `cursor` via `./scripts/agent-run.sh` or `./pmx scout|trader`.
+
+Briefs require `approved: true` before Trader prepares orders.
+
+### Hermes setup
+
+One-time:
+
+```bash
+./scripts/setup-hermes.sh
+```
+
+This syncs `PMXT_API_KEY` and LLM keys (`XAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) from `pmxt/.env` to `~/.hermes/.env`, **disables pmxt MCP by default** (Grok/xAI schema errors), links project skills, and creates `/pmxtrader-scout` and `/pmxtrader-trader` bundles. See `hermes/README.md` and `docs/providers.md`.
+
+To enable pmxt MCP for Claude/Codex only: `./scripts/setup-hermes.sh --with-mcp` (do not use with Grok).

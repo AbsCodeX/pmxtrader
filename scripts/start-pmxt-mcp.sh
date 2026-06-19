@@ -9,7 +9,7 @@ if [ ! -f "$AUTH_FILE" ]; then
     exit 1
 fi
 
-API_KEY=$(cat "$AUTH_FILE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('apiKey',''))")
+API_KEY=$(cat "$AUTH_FILE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('pmxtApiKey') or d.get('apiKey') or '')")
 
 if [ -z "$API_KEY" ]; then
     echo "Error: Could not read API key from $AUTH_FILE"

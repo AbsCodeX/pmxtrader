@@ -1,0 +1,34 @@
+---
+description: PMXT/Kalshi trading safety — use trader-execute rule for execution sessions
+alwaysApply: false
+---
+
+# PMXT trading (pmxtrader)
+
+## Terminal
+
+- Run `./scripts/setup-dev.sh` once; then `source scripts/pmxt-env.sh` (or `direnv allow`)
+- Use global `pmxt` CLI with `--local` for Kalshi live trading
+- Credentials: `pmxt/.env` only — never commit or log secrets
+
+## Agent execution (speed)
+
+- **Quotes:** `pmxt kalshi event --event-id <ID> --local --json` — not text search
+- **Event ID:** from Kalshi page footer, not guessed queries
+- **Warm:** `./scripts/pmxt-warm.sh` before a session
+- **Limit:** max 2 preparatory CLI calls before showing a trade command
+- **No MCP/Router** for single-venue live order execution
+- **Confirm** with user before any `order:create` (real money)
+
+## Skills
+
+- `.cursor/skills/pmxt-kalshi-trading/` — live Kalshi playbook
+- `.cursor/skills/pmxt-cli/` — CLI and sidecar reference
+
+## MCP
+
+`./scripts/start-pmxt-mcp.sh` is for research/cross-venue discovery only, not in-game execution.
+
+## Prediction Hunt
+
+`./scripts/ph-sports-compare.sh` for pre-trade cross-platform odds (research only). Requires `PREDICTION_HUNT_API_KEY` in `pmxt/.env`. Do not use during live execution.

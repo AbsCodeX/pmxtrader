@@ -25,6 +25,39 @@ Prediction market trading platform with PMXT, MCP, and agentic capabilities.
 | `scripts/`    | Project scripts (including security tools)   |
 | `docs/`       | Architecture decisions and documentation     |
 
+## Quick start (terminal)
+
+```bash
+./scripts/setup-dev.sh              # CLI, build, warm sidecar
+source scripts/pmxt-env.sh          # or: direnv allow
+./pmx help                          # plain-language shortcuts
+./pmx balance                       # Kalshi cash
+./pmx poly balance                  # Polymarket US cash (needs Poly US keys)
+./pmx quote EVENT_ID USA 1
+./pmx poly quote MARKET-SLUG long
+```
+
+Live Kalshi credentials go in `pmxt/.env` (see `pmxt/core/docs/SETUP_KALSHI.md`).
+Polymarket US (separate keys): `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` — see `pmxt/core/docs/SETUP_POLYMARKET_US.md`.
+Kill switch: `./scripts/kill-switch.sh on|off|stop` — see `docs/kalshi-integration.md`.
+Prediction Hunt API key (optional, pre-trade research): `PREDICTION_HUNT_API_KEY` in `pmxt/.env`.
+Agents: see `AGENTS.md`, `docs/multi-agent.md`, `docs/providers.md`, and `.cursor/skills/`.
+
+```bash
+./scripts/new-brief.sh my-market
+./pmx scout grok
+./pmx trader openai briefs/active/DATE-my-market.md   # after approved: true
+./scripts/setup-hermes.sh                             # sync LLM keys once
+./scripts/check-providers.sh
+./scripts/ph-sports-compare.sh slate nba
+./scripts/pmxt-eval.sh --event-id EVENT_ID --outcome-label USA --amount 1 --balance
+./scripts/pmxt-watch.sh orderbook OUTCOME_ID
+./scripts/pmxt-watch-fills.sh --alert-file briefs/alerts/fills.jsonl
+```
+
+Kalshi ↔ PMXT script map: [`docs/kalshi-integration.md`](docs/kalshi-integration.md)  
+Polymarket US balance + trading: [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md)
+
 ## Current Focus
 
 Early development. Priority is building a clean terminal-based analysis experience and establishing strong security safeguards.

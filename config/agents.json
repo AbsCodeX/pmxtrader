@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "humanGate": {
+    "requiredBefore": ["order:create", "kalshi-quickstart.sh trade"],
+    "description": "Human must approve every live order (real money)."
+  },
+  "roles": {
+    "scout": {
+      "purpose": "Research: find markets, compare venues, build thesis. No orders.",
+      "allowedScripts": [
+        "ph-sports-compare.sh",
+        "pmxt-warm.sh",
+        "new-brief.sh"
+      ],
+      "allowedPmxtReadOnly": [
+        "event",
+        "markets",
+        "balance",
+        "positions"
+      ],
+      "forbidden": ["order:create", "trade", "start-pmxt-mcp during live games"],
+      "outputArtifact": "briefs/active/{brief}.md",
+      "providers": {
+        "cursor": {
+          "rules": ["scout-research"],
+          "skills": ["scout-research", "prediction-hunt", "pmxt-cli", "multi-agent-handoff"],
+          "notes": "Best when using Cursor rules/skills in IDE"
+        },
+        "claude": {
+          "cli": "claude",
+          "flags": ["-p", "--add-dir", "."],
+          "notes": "Claude Code Max — deep research, long context"
+        },
+        "codex": {
+          "cli": "codex",
+          "subcommand": "exec",
+          "notes": "Codex — structured research, script generation"
+        },
+        "hermes": {
+          "cli": "hermes",
+          "subcommand": "chat",
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "notes": "Hermes OAuth default — terminal CLI, no MCP (Grok-safe)"
+        },
+        "grok": {
+          "via": "hermes",
+          "provider": "xai",
+          "recommended": true,
+          "modelHint": "grok-4.20-0309-non-reasoning (config/providers.json)",
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "notes": "Default Scout — fast scan via Hermes xai or xai-oauth"
+        },
+        "openai": {
+          "via": "hermes",
+          "provider": "openai-api",
+          "modelHint": "gpt-4o-mini (config/providers.json)",
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "notes": "Cheap Scout/Trader via OpenAI API key"
+        }
+      }
+    },
+    "trader": {
+      "purpose": "Execute from approved brief only. Max 2 pmxt CLI calls. No research.",
+      "requiresBrief": true,
+      "maxCliCalls": 2,
+      "allowedScripts": [
+        "kalshi-quickstart.sh",
+        "pmxt-warm.sh"
+      ],
+      "allowedPmxt": ["event", "balance", "positions", "order:create"],
+      "forbidden": ["ph-sports-compare.sh", "mcp", "router", "search during live"],
+      "providers": {
+        "cursor": {
+          "rules": ["trader-execute"],
+          "skills": ["trader-execute", "pmxt-kalshi-trading", "pmxt-cli", "multi-agent-handoff"],
+          "notes": "Best when using Cursor rules/skills in IDE"
+        },
+        "codex": {
+          "cli": "codex",
+          "subcommand": "exec",
+          "notes": "Codex — prepare exact shell commands from brief"
+        },
+        "claude": {
+          "cli": "claude",
+          "flags": ["-p", "--add-dir", "."],
+          "notes": "Use only with brief attached; no re-research"
+        },
+        "hermes": {
+          "cli": "hermes",
+          "subcommand": "chat",
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,multi-agent-handoff"],
+          "notes": "Hermes trader lane — terminal CLI, no MCP"
+        },
+        "openai": {
+          "via": "hermes",
+          "provider": "openai-api",
+          "recommended": true,
+          "modelHint": "gpt-4o-mini (config/providers.json)",
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,multi-agent-handoff"],
+          "notes": "Default Trader — formats ./pmx trade commands"
+        },
+        "grok": {
+          "via": "hermes",
+          "provider": "xai",
+          "notes": "Not recommended for trader — use OpenAI or Cursor"
+        }
+      }
+    },
+    "monitor": {
+      "purpose": "Future: PH WebSocket price/arb alerts. Background only.",
+      "optional": true,
+      "allowedScripts": [],
+      "forbidden": ["order:create", "agent loops"],
+      "providers": {
+        "cursor": { "recommended": false },
+        "notes": "Add scripts/ph-ws-monitor when on PH Dev/Pro tier"
+      }
+    }
+  },
+  "workflow": [
+    "Scout produces brief in briefs/active/",
+    "Human reviews and sets approved: true in brief frontmatter",
+    "Trader reads only approved briefs; outputs copy-paste pmxt commands",
+    "Human runs order or explicitly tells Trader to run kalshi-quickstart.sh trade"
+  ]
+}

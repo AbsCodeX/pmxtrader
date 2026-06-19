@@ -40,3 +40,12 @@ venv/
 
 # Misc
 *.tsbuildinfo
+
+# Session trade briefs (templates/examples stay tracked)
+briefs/active/*
+!briefs/active/.gitkeep
+briefs/alerts/*
+!briefs/alerts/.gitkeep
+
+# Operator kill switch (touch to halt trading)
+KILL_SWITCH

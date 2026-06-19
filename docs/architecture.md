@@ -15,11 +15,13 @@ pmxtrader/
 │   └── cli/              # Custom CLI commands
 ├── apps/                 # Applications
 │   ├── dashboard/        # Web interface (future)
-│   ├── agents/           # AI agents (future)
+│   ├── agents/           # Scout / Trader / Monitor prompts + README
 │   └── cli/              # Terminal tools
 ├── packages/             # Shared code
 ├── tools/                # Utilities and backtesting
 └── scripts/              # Project scripts (e.g. security tools)
+
+Multi-agent workflow: `docs/multi-agent.md` · `config/agents.json` · `briefs/`
 ```
 
 ## Key Principles

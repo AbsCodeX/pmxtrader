@@ -1,0 +1,40 @@
+---
+description: Multi-agent roles, handoffs, and provider routing for pmxtrader
+alwaysApply: true
+---
+
+# Multi-agent system (pmxtrader)
+
+One agent must **not** do research + cross-venue compare + live execution in one session.
+
+## Roles
+
+| Role | Job | Tools |
+|------|-----|-------|
+| **Scout** | Research, PH compare, write brief | `ph-sports-compare.sh`, pmxt read-only |
+| **Trader** | Execute from **approved** brief only | `pmxt` CLI, max 2 calls before order |
+| **Human** | Set `approved: true`, confirm orders | Terminal |
+
+## Handoff
+
+1. Scout → `briefs/active/*.md` (from `briefs/TEMPLATE.md`)
+2. Human → `approved: true` in frontmatter
+3. Trader → reads brief only; outputs pmxt commands
+4. Human → runs order
+
+## Providers (separate chats per role)
+
+```bash
+./pmx scout grok|claude|openai|cursor|hermes
+./pmx trader openai|cursor|codex|hermes BRIEF.md
+```
+
+Config: `config/agents.json` · `config/providers.json` · Docs: `docs/multi-agent.md`, `docs/providers.md`
+
+## Never in Trader session
+
+PH scripts, MCP, Router, text search, re-research
+
+## Credentials
+
+`pmxt/.env` only — never commit or log secrets.

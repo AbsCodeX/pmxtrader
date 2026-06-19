@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "description": "LLM provider routing for pmxtrader agents. Budget-friendly defaults (~$30-50/credit).",
+  "defaults": {
+    "scout": "grok",
+    "trader": "openai"
+  },
+  "envKeys": {
+    "xai": "XAI_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY"
+  },
+  "hermes": {
+    "grok": {
+      "provider": "xai",
+      "model": "grok-4.20-0309-non-reasoning",
+      "roles": ["scout"],
+      "notes": "Fast Scout scans. Uses XAI_API_KEY or existing xai-oauth in Hermes."
+    },
+    "claude": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "roles": ["scout"],
+      "notes": "Deep Scout briefs. Needs ANTHROPIC_API_KEY."
+    },
+    "openai": {
+      "provider": "openai-api",
+      "model": "gpt-4o-mini",
+      "roles": ["trader", "scout"],
+      "notes": "Cheap Trader command prep. Needs OPENAI_API_KEY."
+    },
+    "default": {
+      "provider": "auto",
+      "model": null,
+      "roles": ["scout", "trader"],
+      "notes": "Hermes default from ~/.hermes/config.yaml (your Grok OAuth today)."
+    }
+  },
+  "cliFallback": {
+    "claude": "claude -p (Claude Code CLI if no ANTHROPIC_API_KEY)",
+    "codex": "codex exec (OpenAI Codex CLI)"
+  }
+}
