@@ -8,7 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-SECRET_PATTERNS=***    r'AKIA[0-9A-Z]{16}',
+SECRET_PATTERNS = [
+    r'AKIA[0-9A-Z]{16}',
     r'AIza[0-9A-Za-z\-_]{35}',
     r'sk-[a-zA-Z0-9]{48}',
     r'xox[baprs]-[0-9a-zA-Z]{10,48}',

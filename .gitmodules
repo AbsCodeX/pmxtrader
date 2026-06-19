@@ -1,0 +1,6 @@
+[submodule "pmxt-mcp"]
+	path = pmxt-mcp
+	url = https://github.com/pmxt-dev/pmxt-mcp.git
+[submodule "molt-pmxt"]
+	path = molt-pmxt
+	url = https://github.com/pmxt-dev/molt-pmxt.git
