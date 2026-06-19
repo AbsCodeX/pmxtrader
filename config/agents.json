@@ -1,7 +1,7 @@
 {
   "version": 1,
   "humanGate": {
-    "requiredBefore": ["order:create", "kalshi-quickstart.sh trade"],
+    "requiredBefore": ["order:create", "kalshi-quickstart.sh trade", "pmx trade", "pmx poly trade", "pmx poly sell", "pmx poly close"],
     "description": "Human must approve every live order (real money)."
   },
   "roles": {
@@ -10,15 +10,30 @@
       "allowedScripts": [
         "ph-sports-compare.sh",
         "pmxt-warm.sh",
-        "new-brief.sh"
+        "pmxt-server.sh",
+        "new-brief.sh",
+        "polymarket-us-quickstart.sh"
       ],
       "allowedPmxtReadOnly": [
         "event",
         "markets",
         "balance",
-        "positions"
+        "positions",
+        "orderbook"
       ],
-      "forbidden": ["order:create", "trade", "start-pmxt-mcp during live games"],
+      "allowedPmxReadOnly": [
+        "link",
+        "quote",
+        "compare",
+        "poly quote",
+        "poly link",
+        "poly markets",
+        "poly balance",
+        "poly positions",
+        "status",
+        "brief"
+      ],
+      "forbidden": ["order:create", "trade", "poly trade", "poly sell", "poly close", "start-pmxt-mcp during live games"],
       "outputArtifact": "briefs/active/{brief}.md",
       "providers": {
         "cursor": {
@@ -39,7 +54,7 @@
         "hermes": {
           "cli": "hermes",
           "subcommand": "chat",
-          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,pmxtrader-commands,multi-agent-handoff"],
           "notes": "Hermes OAuth default — terminal CLI, no MCP (Grok-safe)"
         },
         "grok": {
@@ -47,14 +62,14 @@
           "provider": "xai",
           "recommended": true,
           "modelHint": "grok-4.20-0309-non-reasoning (config/providers.json)",
-          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,pmxtrader-commands,multi-agent-handoff"],
           "notes": "Default Scout — fast scan via Hermes xai or xai-oauth"
         },
         "openai": {
           "via": "hermes",
           "provider": "openai-api",
           "modelHint": "gpt-4o-mini (config/providers.json)",
-          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,multi-agent-handoff"],
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-scout,pmxtrader-commands,multi-agent-handoff"],
           "notes": "Cheap Scout/Trader via OpenAI API key"
         }
       }
@@ -65,9 +80,22 @@
       "maxCliCalls": 2,
       "allowedScripts": [
         "kalshi-quickstart.sh",
-        "pmxt-warm.sh"
+        "polymarket-us-quickstart.sh",
+        "pmxt-warm.sh",
+        "pmxt-server.sh"
       ],
       "allowedPmxt": ["event", "balance", "positions", "order:create"],
+      "allowedPmx": [
+        "status",
+        "quote",
+        "trade",
+        "poly quote",
+        "poly trade",
+        "poly sell",
+        "poly close",
+        "poly orders",
+        "poly cancel"
+      ],
       "forbidden": ["ph-sports-compare.sh", "mcp", "router", "search during live"],
       "providers": {
         "cursor": {
@@ -88,7 +116,7 @@
         "hermes": {
           "cli": "hermes",
           "subcommand": "chat",
-          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,multi-agent-handoff"],
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,pmxtrader-commands,multi-agent-handoff"],
           "notes": "Hermes trader lane — terminal CLI, no MCP"
         },
         "openai": {
@@ -96,7 +124,7 @@
           "provider": "openai-api",
           "recommended": true,
           "modelHint": "gpt-4o-mini (config/providers.json)",
-          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,multi-agent-handoff"],
+          "flags": ["--cli", "-t", "no_mcp", "--skills", "pmxtrader-trader,pmxtrader-commands,multi-agent-handoff"],
           "notes": "Default Trader — formats ./pmx trade commands"
         },
         "grok": {

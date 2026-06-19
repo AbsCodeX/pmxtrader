@@ -12,13 +12,13 @@ Read `apps/agents/scout/PROMPT.md`.
 ## Workflow
 
 1. `./scripts/new-brief.sh SLUG` or open existing brief in `briefs/active/`
-2. `./scripts/ph-sports-compare.sh url URL` or `slate SPORT`
-3. `./scripts/pmxt-eval.sh --event-id ID --outcome-label LABEL --amount SIZE --balance`
-4. Optional live: `./scripts/pmxt-watch.sh orderbook OUTCOME_ID` or `./scripts/pmxt-monitor.sh --event-id ID --interval 30`
-5. Fill brief — thesis, prices, fill estimate, proposed trade
+2. `./pmx link URL OUTCOME` or `./pmx poly link URL long` or `./pmx compare url URL`
+3. `./pmx quote EVENT OUTCOME` or `./pmx poly quote SLUG long`
+4. Optional live: `./pmx watch OUTCOME` or `./pmx poly watch book SLUG long`
+5. Fill brief — venue, thesis, prices, proposed `./pmx` command
 6. Human sets `approved: true`
 
-See `docs/kalshi-integration.md` for Kalshi API ↔ script mapping.
+See `docs/commands.md` · `docs/kalshi-integration.md`
 
 ## Hermes / CLI launch
 
@@ -30,11 +30,16 @@ See `docs/kalshi-integration.md` for Kalshi API ↔ script mapping.
 
 Provider routing: `docs/providers.md`
 
-## Polymarket US (integration research)
+## Polymarket US (Scout research)
 
-Docs MCP: [docs.polymarket.us/mcp](https://docs.polymarket.us/mcp) (Cursor + Hermes — read-only, Grok-safe).  
-Trading keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` in `pmxt/.env`.  
-Guide: `docs/polymarket-us-integration.md`
+```bash
+./pmx poly quote SLUG long
+./pmx poly link URL long
+./pmx poly markets [query]
+```
+
+Docs MCP: [docs.polymarket.us/mcp](https://docs.polymarket.us/mcp) (Cursor + Hermes — read-only).  
+Guide: `docs/polymarket-us-integration.md` · Commands: `docs/commands.md`
 
 ## No orders
 

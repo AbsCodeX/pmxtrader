@@ -37,6 +37,29 @@ pmx() {
   "$(_pmx_bin)" "$@"
 }
 
+# One-command trading session bootstrap (sidecar + status)
+pmxt-start() {
+  local root
+  root="$(_pmx_root)" || return 1
+  "$root/scripts/pmxt-start.sh" "$@"
+}
+
+# Open macOS Terminal (or iTerm) and run pmxt-start
+pmxt-terminal() {
+  local root
+  root="$(_pmx_root)" || {
+    # From outside repo — use fixed install path if pmx not found via walk
+    if [[ -x "${PMXTRADER_ROOT:-}/pmxt-terminal" ]]; then
+      "$PMXTRADER_ROOT/pmxt-terminal" "$@"
+      return
+    fi
+    echo "pmxt-terminal: not inside pmxtrader — add to ~/.zshrc:" >&2
+    echo "  pmxt-terminal() { ~/pmxtrader/pmxt-terminal \"\$@\"; }" >&2
+    return 1
+  }
+  "$root/pmxt-terminal" "$@"
+}
+
 # Plain-language one-word aliases
 alias money='pmx balance'
 alias cash='pmx balance'

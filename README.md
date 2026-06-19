@@ -1,79 +1,132 @@
 # pmxtrader
 
-Prediction market trading platform with PMXT, MCP, and agentic capabilities.
+Prediction market trading platform with PMXT, multi-agent workflows, and terminal-first tooling.
 
 ## Overview
 
-`pmxtrader` is a custom-built prediction market trading system centered around [PMXT](https://www.pmxt.dev/). The project focuses on clean market analysis, CLI tooling, and future expansion into web interfaces and autonomous agents, with strong emphasis on MCP integration and security best practices.
+`pmxtrader` wraps [PMXT](https://www.pmxt.dev/) with plain-language `./pmx` commands for **Kalshi** and **Polymarket US (retail)**, Scout/Trader agents, and Hermes integration. Real-money trading uses venue API keys in `pmxt/.env` — never committed.
 
-## Goals
+## Quick start
 
-- Deliver high-quality, structured market analysis in the terminal
-- Build a clean, maintainable integration layer around PMXT
-- Enable agentic workflows through MCP
-- Maintain strong security standards (pre-commit secret scanning, etc.)
-- Serve as a public portfolio project demonstrating professional engineering practices
-
-## Project Structure
-
-| Directory     | Purpose                                      |
-|---------------|----------------------------------------------|
-| `pmxt/`       | PMXT integration layer (source copy)         |
-| `apps/`       | Applications (CLI, dashboard, agents)        |
-| `packages/`   | Shared components and utilities              |
-| `tools/`      | Paper trading, backtesting, and utilities    |
-| `scripts/`    | Project scripts (including security tools)   |
-| `docs/`       | Architecture decisions and documentation     |
-
-## Quick start (terminal)
+### Option A — direnv + global commands (recommended)
 
 ```bash
-./scripts/setup-dev.sh              # CLI, build, warm sidecar
-source scripts/pmxt-env.sh          # or: direnv allow
-./pmx help                          # plain-language shortcuts
-./pmx balance                       # Kalshi cash
-./pmx poly balance                  # Polymarket US cash (needs Poly US keys)
-./pmx quote EVENT_ID USA 1
+./scripts/setup-direnv.sh       # once: direnv hook + pmx / pmxt-* in ~/.zshrc
+# restart terminal, then from anywhere:
+pmx cockpit                     # visual trading terminal (tabs, AI, diagnostics)
+pmx dashboard                   # browser command center
+pmxt-terminal                   # opens macOS Terminal + session → cockpit
+pmx balance
+```
+
+Inside the repo (direnv also loads aliases like `money`, `halt`):
+
+```bash
+pmxt-start                      # bootstrap sidecar + status in this shell
+pmx dashboard                   # same as from anywhere
+open index.html                 # shortcuts only (offline copy mode)
+pmx help
+```
+
+Manual setup (if you skip the installer):
+
+```bash
+brew install direnv
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+echo 'export PMXTRADER_ROOT=~/pmxtrader' >> ~/.zshrc
+echo 'source ~/pmxtrader/scripts/pmx-global.zsh' >> ~/.zshrc
+cd ~/pmxtrader && direnv allow
+```
+
+### First-time build
+
+```bash
+./scripts/setup-dev.sh          # CLI, build PMXT
+```
+
+### Credentials (`pmxt/.env`)
+
+| Venue | Vars | Setup guide |
+|-------|------|-------------|
+| Kalshi | `KALSHI_API_KEY`, `KALSHI_PRIVATE_KEY` | `pmxt/core/docs/SETUP_KALSHI.md` |
+| Polymarket US | `POLYMARKET_US_KEY_ID`, `POLYMARKET_US_SECRET_KEY` | `pmxt/core/docs/SETUP_POLYMARKET_US.md` |
+| LLM agents | `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | `docs/providers.md` |
+| Prediction Hunt (optional) | `PREDICTION_HUNT_API_KEY` | `docs/kalshi-integration.md` |
+
+After editing `.env`, restart sidecar: `./pmx warm` or `./scripts/pmxt-server.sh restart`.
+
+### Daily trading commands
+
+```bash
+# Kalshi
+./pmx balance
+./pmx link 'https://kalshi.com/markets/...' USA 1
+./pmx trade MARKET OUTCOME 1
+
+# Polymarket US
+./pmx poly balance
 ./pmx poly quote MARKET-SLUG long
+./pmx poly trade MARKET-SLUG long 1
+./pmx poly sell MARKET-SLUG long 100
+./pmx poly close MARKET-SLUG long
+./pmx poly watch book MARKET-SLUG long --max-messages 10
 ```
 
-Live Kalshi credentials go in `pmxt/.env` (see `pmxt/core/docs/SETUP_KALSHI.md`).
-Polymarket US (separate keys): `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` — see `pmxt/core/docs/SETUP_POLYMARKET_US.md`.
-Kill switch: `./scripts/kill-switch.sh on|off|stop` — see `docs/kalshi-integration.md`.
-Prediction Hunt API key (optional, pre-trade research): `PREDICTION_HUNT_API_KEY` in `pmxt/.env`.
-Agents: see `AGENTS.md`, `docs/multi-agent.md`, `docs/providers.md`, and `.cursor/skills/`.
+Full reference: **[`docs/commands.md`](docs/commands.md)**
+
+## Multi-agent workflow
+
+Separate **research** (Scout) from **execution** (Trader). Human approves every live order.
 
 ```bash
-./scripts/new-brief.sh my-market
-./pmx scout grok
-./pmx trader openai briefs/active/DATE-my-market.md   # after approved: true
-./scripts/setup-hermes.sh                             # sync LLM keys once
+./scripts/setup-hermes.sh           # once — sync keys, Hermes skills, bundles
 ./scripts/check-providers.sh
-./scripts/ph-sports-compare.sh slate nba
-./scripts/pmxt-eval.sh --event-id EVENT_ID --outcome-label USA --amount 1 --balance
-./scripts/pmxt-watch.sh orderbook OUTCOME_ID
-./scripts/pmxt-watch-fills.sh --alert-file briefs/alerts/fills.jsonl
+./scripts/new-brief.sh my-market
+./pmx scout grok                    # research → briefs/active/*.md
+# Set approved: true in brief frontmatter
+./pmx trader openai briefs/active/DATE-my-market.md
+# Human confirms, then runs ./pmx trade or ./pmx poly trade
 ```
 
-Kalshi ↔ PMXT script map: [`docs/kalshi-integration.md`](docs/kalshi-integration.md)  
-Polymarket US balance + trading: [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md)
+| Doc | Contents |
+|-----|----------|
+| [`docs/commands.md`](docs/commands.md) | Complete `./pmx` reference + agent tool routing |
+| [`docs/multi-agent.md`](docs/multi-agent.md) | Scout / Trader roles |
+| [`docs/providers.md`](docs/providers.md) | LLM routing (grok, claude, openai) |
+| [`docs/kalshi-integration.md`](docs/kalshi-integration.md) | Kalshi ↔ scripts |
+| [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md) | Poly US keys, MCP, `./pmx poly` |
+| [`hermes/README.md`](hermes/README.md) | Hermes setup, MCP policy, bundles |
+| [`AGENTS.md`](AGENTS.md) | Cursor Cloud + dev environment notes |
 
-## Current Focus
+## Hermes (Grok / Claude / OpenAI agents)
 
-Early development. Priority is building a clean terminal-based analysis experience and establishing strong security safeguards.
+```bash
+./scripts/setup-hermes.sh           # Grok-safe: terminal CLI, Poly US docs MCP
+./pmx scout grok                    # or: hermes chat --cli -t no_mcp → /pmxtrader-scout
+./pmx trader openai briefs/active/BRIEF.md
+```
 
-## Security
+- **PMXT trading MCP:** off by default (Grok schema errors). Scout/Trader use **terminal** `./pmx`.
+- **Polymarket US docs MCP:** on by default (read-only API research).
+- Skills installed to `~/.hermes/skills/prediction-markets/` via `./scripts/install-hermes-skills.sh`.
 
-This project treats security as a top priority:
+## Project structure
 
-- Pre-commit hook with Python secret scanner
-- Strict `.gitignore` for environment and key files
-- No secrets committed to the repository
+| Directory | Purpose |
+|-----------|---------|
+| `pmxt/` | PMXT engine (sidecar, exchanges) |
+| `scripts/` | `./pmx`, agents, kill switch, venue quickstarts |
+| `briefs/` | Trade brief templates + active briefs |
+| `config/` | `agents.json`, `providers.json` |
+| `hermes/skills/` | Hermes agent skills |
+| `apps/agents/` | Scout/Trader prompts |
+| `docs/` | Guides and command reference |
 
-## Status
+## Safety
 
-**Phase:** Early Development  
-**Focus:** Terminal analysis tooling + security foundation
+- Kill switch: `./pmx stop on "reason"` · `./pmx resume` · `./pmx panic`
+- Pre-commit secret scanner · strict `.gitignore` for `.env`
+- Trader requires `approved: true` in brief before preparing orders
 
 ## License
 

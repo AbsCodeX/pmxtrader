@@ -1,0 +1,110 @@
+/* pmxtrader cockpit — light-first theme */
+
+Screen {
+    background: #f3f5f8;
+    color: #152033;
+}
+
+Header {
+    background: #ffffff;
+    color: #152033;
+    border-bottom: solid #d5dde8;
+}
+
+Footer {
+    background: #ffffff;
+    border-top: solid #d5dde8;
+}
+
+TabbedContent {
+    height: 1fr;
+}
+
+TabPane {
+    padding: 0 1;
+}
+
+Tabs {
+    background: #ffffff;
+    border-bottom: solid #d5dde8;
+}
+
+Tab {
+    background: #f7f9fc;
+    color: #5a6a7e;
+    padding: 0 2;
+}
+
+Tab.-active {
+    background: #ffffff;
+    color: #0a8f55;
+    text-style: bold;
+}
+
+Button {
+    margin: 0 1 0 0;
+}
+
+Button.-primary {
+    background: #e8f0fc;
+    color: #1d5fbf;
+    border: solid #1d5fbf;
+}
+
+Button.-success {
+    background: #e6f7ef;
+    color: #0a8f55;
+    border: solid #0a8f55;
+}
+
+Button.-warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+Button.-error {
+    background: #fdecea;
+    color: #c62828;
+}
+
+Input {
+    background: #ffffff;
+    border: solid #d5dde8;
+}
+
+Input:focus {
+    border: solid #1d5fbf;
+}
+
+Select {
+    background: #ffffff;
+    border: solid #d5dde8;
+    width: 20;
+}
+
+DataTable {
+    background: #ffffff;
+    border: solid #d5dde8;
+}
+
+.section-label {
+    margin-top: 1;
+    color: #5a6a7e;
+    text-style: bold;
+}
+
+#palette-box {
+    width: 70;
+    height: auto;
+    max-height: 70%;
+    border: solid #1d5fbf;
+    background: #ffffff;
+    padding: 1;
+}
+
+#palette-list {
+    height: auto;
+    max-height: 20;
+    margin-top: 1;
+    margin-bottom: 1;
+}

@@ -5,43 +5,42 @@ Specialized roles instead of one agent doing research + execution + MCP soup.
 ## Roles
 
 | Role | Job | Providers (pick one per session) |
-|------|-----|----------------------------------|
-| **Scout** | Research, PH compare, thesis, write brief | Grok, Claude, OpenAI, Cursor, Codex, Hermes |
-| **Trader** | Read **approved** brief → max 2 `pmxt` calls → order command | OpenAI, Cursor, Codex, Hermes |
+|------|-----|-----------------------------------|
+| **Scout** | Research, compare, thesis, write brief | Grok, Claude, OpenAI, Cursor, Codex, Hermes |
+| **Trader** | Read **approved** brief → max 2 prep calls → order command | OpenAI, Cursor, Codex, Hermes |
 | **Monitor** | (Future) PH WebSocket alerts | Background script |
 | **You** | Approve brief, run or confirm orders | Terminal |
 
-Config: `config/agents.json`
+Config: `config/agents.json` · Commands: **`docs/commands.md`**
+
+## Venues
+
+| Venue | Scout | Trader |
+|-------|-------|--------|
+| **Kalshi** | `./pmx link`, `./pmx quote`, `./pmx compare` | `./pmx trade` |
+| **Polymarket US** | `./pmx poly quote`, `./pmx poly link`, Poly US docs MCP | `./pmx poly trade/sell/close` |
 
 ## Quick start
 
 ```bash
-# 1. Scout session (research chat)
-./pmx scout grok
+./scripts/setup-hermes.sh
 ./scripts/new-brief.sh fed-rate-june
-
-# 2. Scout fills briefs/active/... — you set approved: true
-
-# 3. Trader session (separate chat — no PH, no MCP)
+./pmx scout grok
+# Scout fills briefs/active/... — set approved: true and venue
 ./pmx trader openai briefs/active/2026-06-19-fed-rate-june.md
-
-# 4. You paste/run the pmxt command
+# Human confirms and runs ./pmx trade or ./pmx poly trade
 ```
 
-Add API keys to `pmxt/.env`, run `./scripts/setup-hermes.sh`. See `docs/providers.md`.
+## Hermes skills (auto-installed by setup)
 
-## Provider routing
+| Skill | Role |
+|-------|------|
+| `pmxtrader-commands` | Full `./pmx` reference + tool routing |
+| `pmxtrader-scout` | Research lane |
+| `pmxtrader-trader` | Execution lane |
+| `multi-agent-handoff` | Brief approval workflow |
 
-| Provider | Best for | Command |
-|----------|----------|---------|
-| **Grok/xAI** | Fast Scout scans | `./pmx scout grok` |
-| **Claude API** | Deep Scout briefs | `./pmx scout claude` |
-| **OpenAI API** | Cheap Trader prep | `./pmx trader openai BRIEF.md` |
-| **Cursor** | Rules + skills in `.cursor/` | `./pmx scout cursor` |
-| **Codex** | Structured output, scripts | `./scripts/agent-run.sh scout codex` |
-| **Hermes** | OAuth default / tool-calling | `./scripts/agent-run.sh scout hermes` |
-
-Install Hermes project skills once: `./scripts/install-hermes-skills.sh`
+Bundles: `/pmxtrader-scout` · `/pmxtrader-trader`
 
 ## Handoff rule
 
@@ -51,3 +50,5 @@ Scout **writes** `briefs/active/*.md`. Trader **reads only** briefs with `approv
 
 - `scout/PROMPT.md` — injected into provider CLIs
 - `trader/PROMPT.md` — strict execution lane
+
+See also: `hermes/README.md` · `docs/multi-agent.md`

@@ -20,6 +20,12 @@ usage() {
   cat <<'EOF'
 pmx — plain-language shortcuts (Kalshi + Polymarket US + agents)
 
+Start a session (sidecar + status + cheat sheet)
+  session | launch | pmxt-start            Bootstrap in this shell
+  terminal | pmxt-terminal                 Open new macOS Terminal + session
+  dashboard | hub                          Open browser command center
+  cockpit | tui | ui                       Visual trading terminal (Textual)
+
 Kalshi (default balance/trade)
   balance | money | cash | bal          Kalshi available cash
   positions | pos | holdings            Kalshi open positions
@@ -34,8 +40,14 @@ Polymarket US (poly)
   poly link URL [long|short]            Quote from polymarket.us URL
   poly markets [query]                  Search US markets
   poly trade SLUG [long|short] [qty] [price]  Market/limit buy (real money)
+  poly sell SLUG [long|short] [qty] [price]   Market/limit sell
+  poly close SLUG [long|short] [qty]    Market sell full position (or qty)
+  poly watch book SLUG [long|short]       Stream live orderbook (active markets)
+  poly watch trades SLUG [long|short]    Stream public trade tape
+  poly history [SLUG] [--limit N]       Your fill history
   poly orders                           Open orders
   poly cancel ORDER_ID                  Cancel resting order
+  poly cancel-all [SLUG]                Cancel all open orders (optional filter)
 
 Shared
   status                                Kill switch + Kalshi/Poly US health
@@ -60,11 +72,14 @@ Stop / safety
   resume | go                           Allow trading again
 
 Examples
+  ./pmx session                       # start sidecar + show status (or: pmxt-start)
   ./pmx balance
   ./pmx link 'https://kalshi.com/markets/kxwcgame/world-cup-game' USA 1
   ./pmx poly balance
   ./pmx poly quote chiefs-super-bowl-lx long
   ./pmx poly trade chiefs-super-bowl-lx long 1
+  ./pmx poly sell tec-f-wc-2026-07-19-winner-usa long 100
+  ./pmx poly watch book tec-f-wc-2026-07-19-winner-usa long --max-messages 5
   ./pmx stop on "halftime"
   ./pmx panic
   ./pmx scout grok
@@ -90,6 +105,10 @@ normalize_verb() {
     fills|fill|my-fills|myfills|my-fills) printf '%s\n' fills ;;
     monitor|poll|alert) printf '%s\n' monitor ;;
     warm|ready|prime) printf '%s\n' warm ;;
+    session|launch|boot|pmxt-start|pmxtstart) printf '%s\n' session ;;
+    terminal|pmxt-terminal|pmxtterminal) printf '%s\n' terminal ;;
+    dashboard|hub|home) printf '%s\n' dashboard ;;
+    cockpit|tui|ui|terminal-ui) printf '%s\n' cockpit ;;
     compare|ph|odds|hunt) printf '%s\n' compare ;;
     brief|plan|idea) printf '%s\n' brief ;;
     scout|research|look) printf '%s\n' scout ;;
@@ -210,6 +229,18 @@ except Exception as e:
     ;;
   warm)
     exec "$ROOT/scripts/pmxt-warm.sh"
+    ;;
+  session)
+    exec "$ROOT/scripts/pmxt-start.sh" "$@"
+    ;;
+  terminal)
+    exec "$ROOT/scripts/pmxt-terminal.sh" "$@"
+    ;;
+  dashboard)
+    exec "$ROOT/scripts/pmxt-dashboard.sh" start "$@"
+    ;;
+  cockpit)
+    exec "$ROOT/scripts/pmxt-cockpit.sh" "$@"
     ;;
   compare)
     sub="${1:-slate}"

@@ -26,5 +26,7 @@ link_skill pmxtrader-commands
 link_skill multi-agent-handoff
 
 echo
+echo "Skills: pmxtrader-scout, pmxtrader-trader, pmxtrader-commands, multi-agent-handoff"
 echo "Run: hermes skills list | rg pmxtrader"
+echo "Commands: docs/commands.md"
 echo "Scout: ./pmx scout grok   Trader: ./pmx trader openai briefs/active/BRIEF.md"

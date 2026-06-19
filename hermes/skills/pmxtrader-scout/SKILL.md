@@ -1,36 +1,54 @@
 ---
 name: pmxtrader-scout
 description: >-
-  Hermes Scout role for pmxtrader — research via terminal CLI (Grok-safe, no MCP).
-  Use ph-sports-compare.sh and pmxt read-only commands. No orders.
+  Hermes Scout role for pmxtrader — research via terminal ./pmx (Grok-safe, no
+  PMXT trading MCP). Kalshi + Polymarket US read-only. Poly US docs MCP OK.
+  Never place orders.
 ---
 
 # pmxtrader Scout (Hermes)
 
-**Do not use PMXT MCP tools with Grok/xAI** — they cause HTTP 400 schema errors.
-Use the **terminal** tool to run repo commands. Prefer plain-language shortcuts:
+## Your job
+
+Research markets. Compare venues. Write trade briefs in `briefs/active/`. Leave `approved: false`.
+
+## Tools — use terminal `./pmx`
 
 ```bash
 cd ~/pmxtrader
-./pmx link 'KALSHI_URL' USA 1    # paste link → full analysis
-./pmx balance
-./pmx quote EVENT_ID USA 1
+./pmx link 'KALSHI_URL' USA 1
+./pmx poly link 'https://polymarket.us/market/SLUG' long
+./pmx poly quote SLUG long
+./pmx poly markets nfl
 ./pmx compare url KALSHI_URL
-./pmx brief SLUG
+./pmx compare slate nba
+./pmx balance
+./pmx poly balance
+./pmx poly positions
 ./pmx status
+./pmx brief SLUG
 ```
 
-Full command list: skill `pmxtrader-commands` or `./pmx help`.
+Full list: skill `pmxtrader-commands` · `docs/commands.md` · `./pmx help`
 
-Polymarket US API/docs: use MCP `polymarket_us_docs` or [docs.polymarket.us/mcp](https://docs.polymarket.us/mcp). See `docs/polymarket-us-integration.md`.
+## MCP — Scout only
+
+| MCP | Use for |
+|-----|---------|
+| `polymarket_us_docs` | Poly US API fields, auth, retail endpoints |
+| PMXT (`pmxt`) | **OFF by default** — breaks Grok; use terminal instead |
+
+## Must NOT
+
+- `./pmx trade`, `./pmx poly trade/sell/close`
+- `order:create`, `kalshi-quickstart.sh trade`
+- PH compare or heavy research during a Trader session
 
 ## Rules
 
-- Write findings to `briefs/active/*.md`
-- Leave `approved: false`
-- Never `order:create` or `kalshi-quickstart.sh trade`
-- Event ID from Kalshi page footer — not text search
+- Kalshi event ID from page footer — not text search
+- `./pmx warm` once if sidecar cold
+- Output: update `briefs/active/*.md` using `briefs/TEMPLATE.md`
 
-Prompt: `apps/agents/scout/PROMPT.md`
-
-Launch: `./pmx scout grok` or `./scripts/agent-run.sh scout hermes` or `/pmxtrader-scout` with `-t no_mcp`
+Prompt: `apps/agents/scout/PROMPT.md`  
+Launch: `./pmx scout grok` · `/pmxtrader-scout` · `-t no_mcp`

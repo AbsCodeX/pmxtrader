@@ -2,10 +2,12 @@
 id: YYYY-MM-DD-slug
 created: YYYY-MM-DDTHH:MM:SSZ
 approved: false
+venue: kalshi
 event_id:
 market_id:
+market_slug:
 outcome_id:
-venue: kalshi
+outcome_side: long
 scout_provider: grok
 ---
 
@@ -13,22 +15,30 @@ scout_provider: grok
 
 ## Market
 
-- **Event ID:**
-- **Kalshi URL:**
+- **Venue:** `kalshi` or `polymarket_us`
+- **Event ID / Slug:**
+- **URL:**
 - **Resolution / rules note:**
 
 ## Evaluation snapshot (required before approval)
 
-Run:
+**Kalshi:**
 
 ```bash
-./scripts/pmxt-eval.sh --event-id EVENT_ID --outcome-label OUTCOME --amount SIZE --balance --json
-# optional cross-venue (PMXT Router, free): --router-url KALSHI_URL
+./pmx link 'KALSHI_URL' OUTCOME 1
+# or: ./pmx quote EVENT_ID OUTCOME 1
+```
+
+**Polymarket US:**
+
+```bash
+./pmx poly link 'https://polymarket.us/market/SLUG' long
+# or: ./pmx poly quote SLUG long
 ```
 
 | Field | Value |
 |-------|-------|
-| Outcome ID | |
+| Outcome ID / side | |
 | Last / mid | |
 | Best bid | |
 | Best ask | |
@@ -39,26 +49,29 @@ Run:
 
 **Edge (manual +EV):** your probability ___ vs ask ___ → edge per contract ___
 
-**Kalshi orderbook note:** Kalshi shows yes/no bids; see [orderbook docs](https://docs.kalshi.com/getting_started/orderbook_responses).
+## Cross-venue prices (optional — Scout only)
 
-## Cross-venue prices (optional — PH sports slate or PMXT Router)
+```bash
+./pmx compare url URL
+./pmx compare slate SPORT
+```
 
 | Platform | Outcome | Bid | Ask | Last |
 |----------|---------|-----|-----|------|
 | Kalshi   |         |     |     |      |
+| Poly US  |         |     |     |      |
 | Other    |         |     |     |      |
 
 **Best venue for this trade:**
-
-PH free: `ph-sports-compare.sh slate` (sports). Cross-venue URL: use PMXT Router in eval, not PH url (10/mo limit).
 
 ## Thesis (1–3 sentences)
 
 
 ## Trade proposal
 
+- **Venue:** kalshi / polymarket_us
 - **Side:** buy / sell
-- **Outcome:**
+- **Outcome / side:** long / short
 - **Type:** limit / market
 - **Price:**
 - **Size (contracts):**
@@ -66,22 +79,41 @@ PH free: `ph-sports-compare.sh slate` (sports). Cross-venue URL: use PMXT Router
 
 ## Live monitor (optional during session)
 
+**Kalshi:**
+
 ```bash
-./scripts/pmxt-eval.sh --event-id EVENT_ID --outcome-label OUTCOME --amount SIZE --balance --json
-./scripts/pmxt-watch.sh orderbook OUTCOME_ID
-./scripts/pmxt-watch-fills.sh --market-ticker OUTCOME_ID --alert-file briefs/alerts/fills.jsonl
-# or poll: ./scripts/pmxt-monitor.sh --event-id EVENT --outcome-id OUTCOME_ID --interval 30
+./pmx watch OUTCOME_ID
+./pmx fills OUTCOME_ID
 ```
 
-Alerts: `briefs/alerts/latest.json` (price snapshots), `briefs/alerts/fills.jsonl` (your fills after trade)
+**Polymarket US:**
+
+```bash
+./pmx poly watch book SLUG long --max-messages 10
+./pmx poly history SLUG --limit 20
+```
 
 ## Commands for Trader (Scout drafts; Trader validates)
 
+**Kalshi:**
+
 ```bash
-pmxt kalshi event --event-id EVENT_ID --local --json
-pmxt kalshi balance --local --json
-# pmxt kalshi order:create --local --market-id ... --outcome-id ... --side buy --type limit --price 0.04 --amount 1 --json
+./pmx status
+./pmx quote EVENT OUTCOME SIZE
+./pmx trade MARKET OUTCOME SIZE
 ```
+
+**Polymarket US:**
+
+```bash
+./pmx status
+./pmx poly quote SLUG long
+./pmx poly trade SLUG long 1
+./pmx poly sell SLUG long 100
+./pmx poly close SLUG long
+```
+
+Full reference: `docs/commands.md`
 
 ## Scout notes
 

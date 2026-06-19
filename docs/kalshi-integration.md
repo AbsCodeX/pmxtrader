@@ -2,6 +2,8 @@
 
 Maps [Kalshi official API](https://docs.kalshi.com/welcome) capabilities to pmxtrader scripts. No paid Prediction Hunt required.
 
+**Plain-language shortcuts:** [`docs/commands.md`](commands.md) (`./pmx link`, `./pmx quote`, `./pmx trade`, …)
+
 Full doc index: [docs.kalshi.com/llms.txt](https://docs.kalshi.com/llms.txt)
 
 ## Kalshi API surface (official)

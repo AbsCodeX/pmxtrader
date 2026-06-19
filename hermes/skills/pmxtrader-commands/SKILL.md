@@ -2,118 +2,104 @@
 name: pmxtrader-commands
 description: >-
   Complete pmxtrader command reference for Hermes terminal use. Use when the user
-  pastes a Kalshi link, asks what to run, or needs navigation across Scout/Trader
-  workflows. Always run from ~/pmxtrader with ./pmx shortcuts.
+  asks what to run, pastes a Kalshi or Polymarket US link, or needs Scout/Trader
+  navigation. Always cd to project root and use ./pmx shortcuts. Canonical doc:
+  docs/commands.md
 ---
 
 # pmxtrader command reference (Hermes)
 
-**Always:** `cd ~/pmxtrader` before any command. Use **terminal** only — PMXT MCP is disabled (Grok-safe).
+**Always:** `cd ~/pmxtrader` (or `$PMXTRADER_ROOT`). Use Hermes **terminal** tool — PMXT trading MCP is disabled (Grok-safe).
 
-**Real money:** Kalshi live keys. Check `./pmx status` before trades. Never `./pmx trade` without explicit human confirmation.
+**Sidecar:** `./pmx warm` or `./scripts/pmxt-server.sh restart` after env changes.
 
-## Fast path: paste a Kalshi link
+**Real money:** Check `./pmx status` (kill switch OFF). Never run trade/sell/close without explicit human confirmation.
+
+## Start a session
 
 ```bash
-cd ~/pmxtrader
-./pmx link 'https://kalshi.com/markets/kxwcgame/world-cup-game' USA 1
-# or direct event URL:
-./pmx link 'https://kalshi.com/events/KXWCGAME-26JUN19USAAUS' USA 1
+pmxt-terminal              # new macOS Terminal window (from anywhere, after setup-direnv)
+pmxt-start                 # current shell (inside repo / direnv)
+./pmx session              # same as pmxt-start
+./pmx terminal             # same as pmxt-terminal
 ```
 
-Series pages with many games need an **outcome label** (team name). Output shows price, book, fill est, balance, and suggested `./pmx trade` line.
+| `./pmx dashboard` | Browser command center + safe mini-terminal |
+
+Setup once: `./scripts/setup-direnv.sh` · Offline shortcuts: open `index.html` in browser
+
+Bootstraps sidecar, warms venues, prints status + cheat sheet.
+
+## Tool routing (pick the right one)
+
+| User wants | Run |
+|------------|-----|
+| Kalshi link analysis | `./pmx link URL OUTCOME 1` |
+| Kalshi quote | `./pmx quote EVENT OUTCOME 1` |
+| Poly US link/quote | `./pmx poly link URL long` or `./pmx poly quote SLUG long` |
+| Cross-venue odds | `./pmx compare url URL` (Scout only) |
+| Poly US API docs | MCP `polymarket_us_docs` (Scout only) |
+| Kalshi buy | `./pmx trade MARKET OUTCOME size` |
+| Poly US buy/sell/exit | `./pmx poly trade/sell/close SLUG long ...` |
+| Live Poly book | `./pmx poly watch book SLUG long --max-messages 10` |
+| Balances both venues | `./pmx status` |
+
+## Kalshi
+
+```bash
+./pmx link 'https://kalshi.com/markets/kxwcgame/world-cup-game' USA 1
+./pmx quote KXEVENT-... USA 1
+./pmx balance
+./pmx positions
+./pmx trade MARKET OUTCOME 1
+./pmx watch OUTCOME_ID
+./pmx compare url KALSHI_URL
+```
 
 ## Polymarket US (`./pmx poly`)
 
-| Command | Purpose |
-|---------|---------|
-| `./pmx poly balance` | US account cash |
-| `./pmx poly positions` | Open holdings |
-| `./pmx poly quote SLUG long` | Market + orderbook |
-| `./pmx poly link URL long` | Quote from polymarket.us link |
-| `./pmx poly trade SLUG long 1` | Market buy (kill switch must be OFF) |
-| `./pmx poly trade SLUG long 10 0.55` | Limit buy @ price |
-| `./pmx poly orders` | Open orders |
-| `./pmx poly cancel ORDER_ID` | Cancel order |
-
-Keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` in `pmxt/.env`.  
-Guide: `docs/polymarket-us-integration.md`
-
-## Account & safety (Kalshi default)
-
-| Command | Purpose |
-|---------|---------|
-| `./pmx balance` | Available cash |
-| `./pmx positions` | Open holdings |
-| `./pmx status` | Kill switch + Kalshi + Poly US balance (if keys set) |
-| `./pmx warm` | Start/warm PMXT sidecar |
-| `./pmx stop on "reason"` | Block new trades |
-| `./pmx resume` | Allow trading again |
-| `./pmx stop orders` | Halt + cancel resting orders |
-| `./pmx panic` | Halt + cancel + close all (needs human typing PANIC) |
-
-## Research (Scout)
-
-| Command | Purpose |
-|---------|---------|
-| `./pmx link URL [OUTCOME] [size]` | **URL → full eval snapshot** |
-| `./pmx quote EVENT [OUTCOME] [size]` | Eval when you have event ticker |
-| `./pmx event EVENT` | Raw event JSON |
-| `./pmx compare url URL` | Cross-venue odds (Prediction Hunt) |
-| `./pmx compare slate nba` | Sports slate compare |
-| `./pmx brief SLUG` | Create trade brief |
-| `./pmx scout grok` | Fast Scout agent (default) |
-| `./pmx scout claude` | Deep Scout agent |
-| `./pmx monitor EVENT --label USA` | Poll prices → alerts |
-
-## Live streaming
-
-| Command | Purpose |
-|---------|---------|
-| `./pmx watch OUTCOME_ID` | Stream orderbook |
-| `./pmx trades OUTCOME_ID` | Public trade tape |
-| `./pmx fills [OUTCOME_ID]` | Your fill stream |
-
-## Trade (Trader — human gate)
-
-| Command | Purpose |
-|---------|---------|
-| `./pmx trader openai briefs/active/BRIEF.md` | Trader from approved brief |
-| `./pmx trade MARKET OUTCOME [size]` | **Kalshi** market buy — only after human confirms |
-| `./pmx poly trade SLUG long 1` | **Polymarket US** market buy — kill switch OFF + human confirms |
-| `./pmx poly trade SLUG long 10 0.55` | Poly US limit buy |
-
-Trader rules: brief must have `approved: true`. Max 2 prep CLI calls. No PH/MCP during live.
-
-## Multi-agent workflow
-
 ```bash
-./pmx brief my-game
-./pmx scout grok          # or: paste link + ask Scout to run ./pmx link
-# Scout fills briefs/active/*.md — human sets approved: true
-./pmx trader openai briefs/active/DATE-my-game.md
-# Human confirms, then: ./pmx trade ...
+./pmx poly balance
+./pmx poly positions
+./pmx poly quote SLUG long
+./pmx poly link 'https://polymarket.us/market/SLUG' long
+./pmx poly trade SLUG long 1
+./pmx poly trade SLUG long 10 0.55
+./pmx poly sell SLUG long 100
+./pmx poly close SLUG long
+./pmx poly watch book SLUG long --max-messages 10
+./pmx poly watch trades SLUG long --max-messages 10
+./pmx poly history --limit 20
+./pmx poly orders
+./pmx poly cancel ORDER_ID
+./pmx poly cancel-all
 ```
 
-## Event ID fallback
+Keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` · `long`=YES, `short`=NO
 
-If `./pmx link` fails on a series page, read the **event ticker from the Kalshi page footer** and run:
+## Safety
 
 ```bash
-./pmx quote KXEVENT-... USA 1
+./pmx status
+./pmx warm
+./pmx stop on "reason"
+./pmx resume
+./pmx panic
 ```
 
-## Docs in repo
+## Agents
 
-- `docs/providers.md` — LLM routing (grok/claude/openai)
-- `docs/multi-agent.md` — Scout/Trader roles
-- `docs/kalshi-integration.md` — API ↔ script map
-- `docs/polymarket-us-integration.md` — Poly US keys + [docs MCP](https://docs.polymarket.us/mcp)
-- `./pmx help` — full shortcut list
+```bash
+./pmx brief SLUG
+./pmx scout grok
+./pmx trader openai briefs/active/BRIEF.md
+```
 
-## Hermes bundles
+Bundles: `/pmxtrader-scout` · `/pmxtrader-trader` · `-t no_mcp`
 
-- `/pmxtrader-scout` — research lane
-- `/pmxtrader-trader` — execution lane (approved brief only)
+## Docs
 
-Launch: `./pmx scout grok` or `hermes chat --cli -t no_mcp` then `/pmxtrader-scout`
+- `docs/commands.md` — master reference
+- `docs/multi-agent.md` — Scout vs Trader
+- `docs/polymarket-us-integration.md` — Poly US
+- `docs/kalshi-integration.md` — Kalshi

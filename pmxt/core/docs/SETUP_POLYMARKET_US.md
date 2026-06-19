@@ -43,15 +43,20 @@ pmxt polymarket_us balance --local --json
 
 ## 4. Trade via `./pmx poly` (real money)
 
-Kill switch applies: `./pmx status` must show OFF.
+Kill switch applies to new orders: `./pmx status` must show OFF for `trade`, `sell`, and `close`.
 
 ```bash
 ./pmx poly quote chiefs-super-bowl-lx long
 ./pmx poly trade chiefs-super-bowl-lx long 1              # market buy
 ./pmx poly trade chiefs-super-bowl-lx long 10 0.55         # limit @ $0.55
+./pmx poly sell MARKET-SLUG long 100                       # market sell
+./pmx poly close MARKET-SLUG long                          # flatten position
+./pmx poly watch book MARKET-SLUG long --max-messages 10   # live book (active markets)
+./pmx poly history --limit 20                              # your fills
 ./pmx poly link 'https://polymarket.us/market/SLUG' long
 ./pmx poly orders
 ./pmx poly cancel ORDER_ID
+./pmx poly cancel-all
 ```
 
 Side convention: `long` = buy YES side, `short` = buy NO side (PMXT outcome ids: `SLUG:long`, `SLUG:short`).

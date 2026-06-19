@@ -73,16 +73,16 @@ echo
 echo "Creating Hermes skill bundles..."
 hermes bundles create pmxtrader-scout \
   --force \
-  --description "pmxtrader Scout — research via terminal CLI, no MCP (Grok-safe)" \
-  --instruction "You are Scout. Use terminal: pmxt and ph-sports-compare.sh. Never place orders. Do not use MCP tools." \
+  --description "pmxtrader Scout — Kalshi + Poly US research via ./pmx terminal (Grok-safe)" \
+  --instruction "You are Scout. Use terminal ./pmx and ./pmx poly for research. Poly US docs MCP OK. Never place orders. See docs/commands.md and skill pmxtrader-commands." \
   --skill pmxtrader-scout \
   --skill pmxtrader-commands \
   --skill multi-agent-handoff 2>/dev/null || true
 
 hermes bundles create pmxtrader-trader \
   --force \
-  --description "pmxtrader Trader — approved brief only, max 2 pmxt CLI calls" \
-  --instruction "You are Trader. Require approved: true in brief. No PH, no re-research." \
+  --description "pmxtrader Trader — Kalshi + Poly US execution from approved brief" \
+  --instruction "You are Trader. Require approved: true. Use ./pmx trade or ./pmx poly trade/sell/close. Human confirms every order. Max 2 prep CLI calls. See docs/commands.md." \
   --skill pmxtrader-trader \
   --skill pmxtrader-commands \
   --skill multi-agent-handoff 2>/dev/null || true
@@ -119,6 +119,9 @@ echo "Provider guide: docs/providers.md"
 echo
 echo "Interactive:"
 echo "  cd $PMXTRADER_ROOT && hermes chat --cli -t no_mcp"
+echo "  /pmxtrader-scout   or   /pmxtrader-trader"
+echo
+echo "Command reference: docs/commands.md"
 echo
 echo "PMXT MCP: disabled by default (Grok/xAI schema error). Claude/Codex only:"
 echo "  ./scripts/setup-hermes.sh --with-mcp"

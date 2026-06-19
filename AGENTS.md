@@ -76,9 +76,19 @@ Each new shell (or use `direnv allow` — loads `.envrc` + `pmx` aliases):
 ```bash
 source scripts/pmxt-env.sh
 # or: source scripts/pmx-aliases.sh
+pmxt-start          # bootstrap sidecar + status (same: ./pmx session)
 ```
 
 Plain-language shortcuts: `./pmx help` (same commands work as `money`, `halt`, `panic`, etc.)
+
+**Full command reference:** `docs/commands.md`
+
+Sidecar loads credentials from `pmxt/.env` (not `pmxt/core/.env`). After restart:
+
+```bash
+./scripts/pmxt-server.sh restart
+# or: ./pmx warm
+```
 
 This exports `PMXTRADER_ROOT`, `PMXT_DIR`, and the `pmxt_cli` helper. Prefer the
 **global** `@pmxt/cli` (`pmxt` on PATH); setup installs it if missing. Vendored
@@ -94,10 +104,31 @@ Warm the sidecar before a trading session (~0.3s reads afterward):
 Live Kalshi shortcuts (real money — keys in `pmxt/.env`):
 
 ```bash
+./pmx link 'https://kalshi.com/markets/...' USA 1
+./pmx quote EVENT OUTCOME 1
+./pmx balance
+./pmx trade MARKET OUTCOME 1
+```
+
+Polymarket US retail shortcuts (separate keys — `POLYMARKET_US_*`):
+
+```bash
+./pmx poly balance
+./pmx poly quote SLUG long
+./pmx poly link 'https://polymarket.us/market/SLUG' long
+./pmx poly trade SLUG long 1
+./pmx poly sell SLUG long 100
+./pmx poly close SLUG long
+./pmx poly watch book SLUG long --max-messages 10
+./pmx poly history --limit 20
+```
+
+Legacy script paths (same behavior):
+
+```bash
 ./scripts/kalshi-quickstart.sh event KXWCGAME-26JUN19USAAUS
 ./scripts/kalshi-quickstart.sh eval KXWCGAME-26JUN19USAAUS USA 1
-./scripts/kalshi-quickstart.sh balance
-./scripts/kalshi-quickstart.sh trade MARKET_ID OUTCOME_ID 1
+./scripts/polymarket-us-quickstart.sh balance
 ```
 
 Free streaming + evaluation (no paid PH):
@@ -110,7 +141,9 @@ Free streaming + evaluation (no paid PH):
 ./scripts/kill-switch.sh status
 ```
 
-Kalshi API mapping: `docs/kalshi-integration.md`
+Kalshi API mapping: `docs/kalshi-integration.md`  
+Polymarket US: `docs/polymarket-us-integration.md`  
+All `./pmx` commands: `docs/commands.md`
 
 MCP (research / cross-venue only — not for in-game order execution):
 
@@ -178,6 +211,6 @@ One-time:
 ./scripts/setup-hermes.sh
 ```
 
-This syncs `PMXT_API_KEY` and LLM keys (`XAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) from `pmxt/.env` to `~/.hermes/.env`, **disables pmxt MCP by default** (Grok/xAI schema errors), links project skills, and creates `/pmxtrader-scout` and `/pmxtrader-trader` bundles. See `hermes/README.md` and `docs/providers.md`.
+This syncs `PMXT_API_KEY` and LLM keys from `pmxt/.env` to `~/.hermes/.env`, **disables pmxt MCP by default** (Grok/xAI schema errors), **enables Polymarket US docs MCP**, links project skills, and creates `/pmxtrader-scout` and `/pmxtrader-trader` bundles (both include `pmxtrader-commands`). See `hermes/README.md` and `docs/providers.md`.
 
 To enable pmxt MCP for Claude/Codex only: `./scripts/setup-hermes.sh --with-mcp` (do not use with Grok).
