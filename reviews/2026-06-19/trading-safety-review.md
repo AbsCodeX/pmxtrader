@@ -63,12 +63,12 @@ Layer 4 — Emergency
 
 | Linear | Fix |
 |--------|-----|
-| [ABI-73](https://linear.app/pmxt/issue/ABI-73) | `apps/bridge/trade_safety.py` + `trade-safety-lib.sh` |
-| [ABI-74](https://linear.app/pmxt/issue/ABI-74) | `PMX_READ_ONLY=1` blocks live trades |
-| [ABI-75](https://linear.app/pmxt/issue/ABI-75) | `--dry-run` / `PMX_DRY_RUN` on Kalshi + Poly trade scripts |
-| [ABI-76](https://linear.app/pmxt/issue/ABI-76) | `PMX_MAX_TRADE_CONTRACTS` enforced before order:create |
-| [ABI-77](https://linear.app/pmxt/issue/ABI-77) | `tests/test_trade_safety.py` — guards + no-retry verification |
-| [ABI-78](https://linear.app/pmxt/issue/ABI-78) | Review mirror (this file + `linear-task-safety.md`) |
+| [ABI-77](https://linear.app/pmxt/issue/ABI-77) | `apps/bridge/trade_safety.py` + `trade-safety-lib.sh` |
+| [ABI-78](https://linear.app/pmxt/issue/ABI-78) | `PMX_READ_ONLY=1` blocks live trades |
+| [ABI-73](https://linear.app/pmxt/issue/ABI-73) | `--dry-run` / `PMX_DRY_RUN` on Kalshi + Poly trade scripts |
+| [ABI-74](https://linear.app/pmxt/issue/ABI-74) | `PMX_MAX_TRADE_CONTRACTS` enforced before order:create |
+| [ABI-75](https://linear.app/pmxt/issue/ABI-75) | `tests/test_trade_safety.py` — guards + no-retry verification |
+| [ABI-76](https://linear.app/pmxt/issue/ABI-76) | Review mirror (this file + `linear-task-safety.md`) |
 
 ---
 
