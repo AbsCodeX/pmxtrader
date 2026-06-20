@@ -59,6 +59,7 @@ Shared
   scan poly-global QUERY [--book]           Global Poly Gamma/CLOB search (research)
   scan poly-us QUERY                        Paginated Polymarket US search
   scan verify-us SLUG                       Check US retail slug exists
+  scan kalshi-btc [--horizon 15m|1h|all]    Short-term BTC markets on Kalshi
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
@@ -343,8 +344,11 @@ except Exception as e:
         slug="${1:?Usage: pmx scan verify-us SLUG}"
         exec python3 -m apps.bridge.poly_scanner verify-us "$slug"
         ;;
+      kalshi-btc|kalshi|btc)
+        exec python3 -m apps.bridge.kalshi_scanner kalshi-btc "$@"
+        ;;
       *)
-        echo "Usage: pmx scan poly-global QUERY | poly-us QUERY | verify-us SLUG" >&2
+        echo "Usage: pmx scan poly-global QUERY | poly-us QUERY | verify-us SLUG | kalshi-btc [--horizon 15m|1h|all]" >&2
         exit 1
         ;;
     esac

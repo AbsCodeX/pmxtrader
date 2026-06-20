@@ -28,6 +28,7 @@ Hermes agents **cannot** rely on PMXT MCP (Grok schema errors) or `./pmx poly ma
 ./pmx scan poly-global "fed" --limit 10 --book   # Gamma/CLOB research (global)
 ./pmx scan poly-us "nfl" --limit 10             # US retail search (tradable)
 ./pmx scan verify-us MARKET-SLUG                # confirm US slug before trade
+./pmx scan kalshi-btc --horizon all --limit 10  # BTC 15m + hourly on Kalshi
 ```
 
 Python module: `apps/bridge/trading_agent.py`
@@ -38,6 +39,7 @@ Python module: `apps/bridge/trading_agent.py`
 |------------|------------|
 | PMXT MCP breaks Grok | Terminal `./pmx` only; MCP off in `setup-hermes.sh` |
 | `./pmx poly markets` → `[]` | `./pmx scan poly-global QUERY` (Gamma) · paginated `./pmx scan poly-us` · slug verify |
+| Short-term BTC discovery | `./pmx scan kalshi-btc --horizon 15m\|1h\|all` (public Kalshi API) |
 | No live order execution in Hermes | Trader outputs command; human runs or confirms |
 | No news API in repo | Scout cites BLS/Fed/venue pages in brief |
 | No portfolio exposure cap in code | Brief `max risk ($)` + human discipline |
