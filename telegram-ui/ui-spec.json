@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "callbackPrefix": "pmx:",
+  "legacyPrefixes": ["act:", "trade:", "brief:", "link:", "queue:", "mode:"],
+  "mainMenu": {
+    "id": "main",
+    "title": "pmxtrader",
+    "items": [
+      { "id": "ask", "label": "Ask Hermes", "callback": "pmx:menu:ask" },
+      { "id": "research", "label": "Market Research", "callback": "pmx:menu:research" },
+      { "id": "markets", "label": "Prediction Markets", "callback": "pmx:menu:markets" },
+      { "id": "portfolio", "label": "Portfolio", "callback": "pmx:menu:portfolio" },
+      { "id": "trading_mode", "label": "Trading Mode", "callback": "pmx:menu:trading_mode" },
+      { "id": "agents", "label": "Agent Tools", "callback": "pmx:menu:agents" },
+      { "id": "settings", "label": "Settings", "callback": "pmx:menu:settings" },
+      { "id": "help", "label": "Help", "callback": "pmx:menu:help" }
+    ]
+  },
+  "subMenus": {
+    "markets": {
+      "id": "markets",
+      "title": "Prediction Markets",
+      "items": [
+        { "id": "trending", "label": "Trending", "callback": "pmx:menu:markets:trending" },
+        { "id": "search", "label": "Search", "callback": "pmx:menu:markets:search" },
+        { "id": "watchlist", "label": "Watchlist", "callback": "pmx:menu:markets:watchlist" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:main" }
+      ]
+    },
+    "portfolio": {
+      "id": "portfolio",
+      "title": "Portfolio",
+      "items": [
+        { "id": "positions", "label": "Positions", "callback": "pmx:menu:portfolio:positions" },
+        { "id": "history", "label": "History", "callback": "pmx:menu:portfolio:history" },
+        { "id": "risk", "label": "Risk", "callback": "pmx:menu:portfolio:risk" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:main" }
+      ]
+    },
+    "agents": {
+      "id": "agents",
+      "title": "Agent Tools",
+      "items": [
+        { "id": "mode", "label": "AI / Manual", "callback": "pmx:toggle:mode" },
+        { "id": "logs", "label": "Logs", "callback": "pmx:menu:agents:logs" },
+        { "id": "alerts", "label": "Alerts", "callback": "pmx:menu:alerts" },
+        { "id": "agent_settings", "label": "Settings", "callback": "pmx:menu:agents:settings" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:main" }
+      ]
+    },
+    "alerts": {
+      "id": "alerts",
+      "title": "Alerts",
+      "items": [
+        { "id": "create", "label": "Create", "callback": "pmx:menu:alerts:create" },
+        { "id": "my", "label": "My Alerts", "callback": "pmx:menu:alerts:my" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:agents" }
+      ]
+    },
+    "settings": {
+      "id": "settings",
+      "title": "Settings",
+      "items": [
+        { "id": "wallet", "label": "Wallet", "callback": "pmx:menu:settings:wallet" },
+        { "id": "api", "label": "API Status", "callback": "pmx:menu:settings:api" },
+        { "id": "permissions", "label": "Permissions", "callback": "pmx:menu:settings:permissions" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:main" }
+      ]
+    },
+    "trading_mode": {
+      "id": "trading_mode",
+      "title": "Trading Mode",
+      "items": [
+        { "id": "ai", "label": "AI Mode", "callback": "pmx:toggle:mode:ai" },
+        { "id": "manual", "label": "Manual Mode", "callback": "pmx:toggle:mode:manual" },
+        { "id": "back", "label": "Back", "callback": "pmx:nav:back:main" }
+      ]
+    }
+  },
+  "quickActions": ["analyze", "watch", "trade", "alert"],
+  "miniApps": {
+    "envKeys": {
+      "dashboard": "PMX_TELEGRAM_MINIAPP_DASHBOARD",
+      "terminal": "PMX_TELEGRAM_MINIAPP_TERMINAL",
+      "portfolio": "PMX_TELEGRAM_MINIAPP_PORTFOLIO",
+      "research": "PMX_TELEGRAM_MINIAPP_RESEARCH",
+      "agents": "PMX_TELEGRAM_MINIAPP_AGENTS",
+      "settings": "PMX_TELEGRAM_MINIAPP_SETTINGS"
+    },
+    "labels": {
+      "dashboard": "Open Dashboard",
+      "terminal": "Trading Terminal",
+      "portfolio": "Portfolio",
+      "research": "Research Board",
+      "agents": "Agent Control Center",
+      "settings": "Settings"
+    },
+    "defaults": {
+      "dashboard": "https://example.com/pmx/dashboard",
+      "terminal": "https://example.com/pmx/terminal",
+      "portfolio": "https://example.com/pmx/portfolio",
+      "research": "https://example.com/pmx/research",
+      "agents": "https://example.com/pmx/agents",
+      "settings": "https://example.com/pmx/settings"
+    }
+  },
+  "permissions": {
+    "groupTradingEnv": "PMX_TELEGRAM_GROUP_TRADING",
+    "adminChatIdsEnv": "TELEGRAM_ADMIN_CHAT_IDS",
+    "allowedChatIdsEnv": "TELEGRAM_ALLOWED_CHAT_IDS"
+  },
+  "loadingMessages": {
+    "market": "Checking market…",
+    "portfolio": "Loading portfolio…",
+    "agents": "Loading agent status…",
+    "trade": "Preparing trade preview…",
+    "api": "Checking API status…"
+  }
+}

@@ -29,8 +29,11 @@ description: >-
 
 | Bundle | Skills |
 |--------|--------|
+| `/pmxtrader` | pmxtrader-auto, pmxtrader-scout, pmxtrader-trader, pmxtrader-commands, pmxtrader-telegram, multi-agent-handoff |
 | `/pmxtrader-scout` | pmxtrader-scout, pmxtrader-commands, multi-agent-handoff |
 | `/pmxtrader-trader` | pmxtrader-trader, pmxtrader-commands, multi-agent-handoff |
+
+Telegram default: `/pmxtrader` auto-routes Scout vs Trader (see skill `pmxtrader-auto`).
 
 Install: `./scripts/setup-hermes.sh` · `./scripts/install-hermes-skills.sh`
 

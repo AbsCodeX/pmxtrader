@@ -71,12 +71,24 @@ echo "Installing pmxtrader Hermes skills..."
 
 echo
 echo "Creating Hermes skill bundles..."
+hermes bundles create pmxtrader \
+  --force \
+  --description "pmxtrader — auto-route Scout/Trader (default for Telegram)" \
+  --instruction "Auto-select Scout or Trader per pmxtrader-auto skill. Default Scout. Terminal ./pmx only. Human confirms every live order. See docs/commands.md." \
+  --skill pmxtrader-auto \
+  --skill pmxtrader-scout \
+  --skill pmxtrader-trader \
+  --skill pmxtrader-commands \
+  --skill pmxtrader-telegram \
+  --skill multi-agent-handoff 2>/dev/null || true
+
 hermes bundles create pmxtrader-scout \
   --force \
   --description "pmxtrader Scout — Kalshi + Poly US research via ./pmx terminal (Grok-safe)" \
   --instruction "You are Scout. Use terminal ./pmx and ./pmx poly for research. Poly US docs MCP OK. Never place orders. See docs/commands.md and skill pmxtrader-commands." \
   --skill pmxtrader-scout \
   --skill pmxtrader-commands \
+  --skill pmxtrader-telegram \
   --skill multi-agent-handoff 2>/dev/null || true
 
 hermes bundles create pmxtrader-trader \
@@ -85,6 +97,7 @@ hermes bundles create pmxtrader-trader \
   --instruction "You are Trader. Require approved: true. Use ./pmx trade or ./pmx poly trade/sell/close. Human confirms every order. Max 2 prep CLI calls. See docs/commands.md." \
   --skill pmxtrader-trader \
   --skill pmxtrader-commands \
+  --skill pmxtrader-telegram \
   --skill multi-agent-handoff 2>/dev/null || true
 
 echo
@@ -119,7 +132,12 @@ echo "Provider guide: docs/providers.md"
 echo
 echo "Interactive:"
 echo "  cd $PMXTRADER_ROOT && hermes chat --cli -t no_mcp"
-echo "  /pmxtrader-scout   or   /pmxtrader-trader"
+echo "  /pmxtrader   (auto Scout/Trader)   or   /pmxtrader-scout / /pmxtrader-trader"
+echo
+echo "Telegram (existing Hermes gateway — recommended):"
+echo "  ./scripts/setup-hermes-telegram-profile.sh"
+echo "  Then in Telegram: /pmxtrader (auto-routes) — or force /pmxtrader-scout / /pmxtrader-trader"
+echo "  Do NOT also run ./pmx telegram unless you want a second bot."
 echo
 echo "Command reference: docs/commands.md"
 echo

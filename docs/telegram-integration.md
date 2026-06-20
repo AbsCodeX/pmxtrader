@@ -1,117 +1,151 @@
 # Telegram + Hermes live trading
 
-Mobile control for pmxtrader: plain-language chat with Hermes, inline buttons for brief approval and live orders, link parsing for Kalshi / Polymarket US URLs.
+Mobile control for pmxtrader via **Hermes gateway Telegram** (recommended) or an optional separate pmxtrader bot.
 
-## Architecture
+## Recommended: Hermes Telegram (you already have this)
+
+If Hermes is already running on Telegram, wire pmxtrader into that profile — **do not** start a second bot.
 
 ```text
-Telegram (you) → pmxtrader bot → Hermes (Scout/Trader skills) → ./pmx CLI → PMXT sidecar → venues
+Telegram → Hermes gateway → terminal ./pmx → PMXT sidecar → Kalshi / Polymarket US
 ```
 
-- **Scout mode** (default): research, quotes, briefs — no orders.
-- **Trader mode**: approved brief only — presents exact `./pmx` commands.
-- **Live orders**: Queue → Review preview → **Execute YES** (one-time token; still requires `./pmx go-live`).
-
-Telegram does **not** bypass kill switch, read-only mode, contract caps, or brief approval.
-
-## One-time setup
-
-### 1. Create a Telegram bot
-
-1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token.
-2. Message [@userinfobot](https://t.me/userinfobot) → copy your numeric **chat id**.
-
-### 2. Configure `pmxt/.env`
-
-```bash
-TELEGRAM_BOT_TOKEN=123456:ABC...
-TELEGRAM_ALLOWED_CHAT_IDS=YOUR_CHAT_ID
-TELEGRAM_HERMES_PROVIDER=grok
-```
-
-Only allowlisted chat IDs can use the bot.
-
-### 3. Hermes + skills
-
-```bash
-pip install hermes-agent python-telegram-bot
-./scripts/setup-hermes.sh
-./scripts/install-hermes-skills.sh   # includes pmxtrader-telegram skill
-pip install -r requirements-telegram.txt
-```
-
-### 4. Venue keys
-
-Add Kalshi and/or Polymarket US keys to `pmxt/.env` (see `docs/environment.md`).
-
-## Start a live session
+### One-time wiring
 
 ```bash
 source scripts/pmxt-env.sh
-./pmx activate-live          # warm + go-live + preflight
-./pmx telegram               # foreground bot (Ctrl+C to stop)
+./scripts/setup-hermes-telegram-profile.sh
+# or: ./pmx hermes-telegram
 ```
 
-Or combined:
+This script:
+
+1. Links pmxtrader skills into `~/.hermes/profiles/telegram/skills/prediction-markets/`
+2. Syncs venue + LLM keys from `pmxt/.env` → `~/.hermes/profiles/telegram/.env`
+3. Sets `terminal.cwd` to the pmxtrader repo and enables live terminal (`read_only: false`)
+4. Refreshes `/pmxtrader` (auto-route), `/pmxtrader-scout`, and `/pmxtrader-trader` bundles
+
+**Restart the Hermes Telegram gateway** after running the script so config and cwd take effect.
+
+### Start a live session
+
+On the machine where Hermes runs:
 
 ```bash
+source scripts/pmxt-env.sh
+./pmx activate-live          # warm + go-live + preflight (no --bot)
+```
+
+### In Telegram
+
+| Action | How |
+|--------|-----|
+| Default (auto Scout/Trader) | `/pmxtrader` once, then plain language or paste a URL |
+| Force research lane | `/pmxtrader-scout` |
+| Force execution lane | Set `approved: true` in brief, then `/pmxtrader-trader` (or ask in `/pmxtrader` after approval) |
+| Status / preflight | Ask in chat; agent runs `./pmx status` / `./pmx preflight` |
+| Live trade | Agent presents exact `./pmx trade …` — **you confirm in chat** before it runs |
+
+Plain-language examples:
+
+- Paste a Kalshi or polymarket.us link
+- `quote EVENT USA 1`
+- `balance` / `preflight` / `status`
+
+Bundles use `telegram-formatting` for short mobile-friendly replies.
+
+## Group chat menu (inline buttons)
+
+Hermes native Telegram does **not** attach a permanent bottom keyboard like some trading bots. You have three options:
+
+### 1. Forum topics (recommended for a fixed group)
+
+Enable **Topics** on your Hermes supergroup. Create topics matching your menu:
+
+| Topic | pmxtrader lane | Skill binding |
+|-------|----------------|---------------|
+| Ask Hermes | Auto Scout/Trader | `pmxtrader-auto` |
+| Markets | Quotes, links | `pmxtrader-scout` |
+| Portfolio | Balances, positions | `pmxtrader-commands` |
+| Research | Compare, briefs | `pmxtrader-scout` |
+| Agents | Scout/Trader handoff | `multi-agent-handoff` |
+| Settings | Status, preflight | `pmxtrader-commands` |
+
+Add bindings under `telegram.extra.group_topics` in `~/.hermes/profiles/telegram/config.yaml`. Full example: `config/hermes-telegram-group.example.yaml`.
+
+**Group setup checklist:**
+
+1. BotFather → **Group Privacy → Turn off** (or always @mention the bot)
+2. Add bot to group; promote if needed
+3. `TELEGRAM_GROUP_ALLOWED_CHATS=-100…` in `~/.hermes/profiles/telegram/.env`
+4. `telegram.require_mention: true` in config (mention or reply to bot)
+5. Run `/pmxtrader` once in the group, then use topics or plain language
+
+### 2. Inline picker on `/menu` (clarify buttons)
+
+Say **`/menu`** or **`@YourBot menu`**. With the `pmxtrader-telegram` skill loaded, Hermes uses the **`clarify`** tool to show inline buttons: Markets, Portfolio, Research, Agents, Settings, Ask Hermes. Tapping a button routes that turn (same as choosing a menu item).
+
+### 3. Quick slash commands (zero LLM)
+
+```yaml
+quick_commands:
+  portfolio:
+    type: exec
+    command: cd /path/to/pmxtrader && ./pmx balance && ./pmx poly balance
+```
+
+Type `/portfolio` in the group — instant output, no model call.
+
+**Note:** `telegram_module` in some configs is **not** stock Hermes; only built-in flows (`clarify`, `/model`, approvals) and the patterns above provide inline buttons unless you run the separate `./pmx telegram` bot (UI layer in `telegram-ui/` + `apps/telegram/ui/`).
+
+## UI layer (`telegram-ui/`)
+
+Repo folder `telegram-ui/` defines menus, cards, tables, Mini App URLs, and `pmx:` callback naming. Python adapter: `apps/telegram/ui/`. Tests: `pytest tests/test_telegram_ui.py`.
+
+| Path | Hermes gateway | `./pmx telegram` |
+|------|----------------|------------------|
+| Menus | `clarify` labels from skill + `ui-spec.json` | Inline keyboards via Python adapter |
+| Trades | Confirm in chat before `./pmx trade` | Queue → Review → Confirm execute |
+| Mini Apps | Optional WebApp URLs in env | `PMX_TELEGRAM_MINIAPP_*` buttons |
+
+Env: `PMX_TELEGRAM_GROUP_TRADING`, `TELEGRAM_ADMIN_CHAT_IDS`, `PMX_TELEGRAM_MINIAPP_*` — see `pmxt/.env.example` and `telegram-ui/README.md`.
+
+## Optional: separate pmxtrader bot (`./pmx telegram`)
+
+Only use this if you want a **dedicated** Telegram bot with inline **Queue → Execute YES** buttons (not Hermes gateway).
+
+```text
+Telegram → pmxtrader bot → Hermes subprocess → ./pmx CLI → venues
+```
+
+Setup requires `@BotFather` token + `TELEGRAM_BOT_TOKEN` / `TELEGRAM_ALLOWED_CHAT_IDS` in `pmxt/.env`:
+
+```bash
+pip install -r requirements-telegram.txt
+./scripts/setup-hermes.sh
 ./pmx activate-live --bot
 ```
 
-## Plain-language usage
+See `scripts/telegram-bot.sh` and `apps/telegram/` for implementation.
 
-| You send | Bot does |
-|----------|----------|
-| `/start` | Menu: Status, Scout/Trader mode, Briefs, Go live |
-| Paste a market URL | Scout summary + quote buttons |
-| `quote EVENT USA 1` | Runs `./pmx quote …` |
-| `/scout Fed rate market` | Hermes research (fast Grok) |
-| `/briefs` | List briefs → **Approve** button |
-| `/trader briefs/active/DATE-slug.md` | Trader prep from approved brief |
-| Hermes returns `./pmx trade …` | **Queue live trade** → **Execute YES** |
+## Safety (both paths)
 
-## Interactive buttons
+1. **Kill switch** — `./pmx stop on` blocks new trades
+2. **`./pmx go-live`** — read-only off for the session
+3. **Brief `approved: true`** — Trader gate (Scout never orders)
+4. **Human confirm** — Hermes Telegram: confirm in chat; separate bot: Queue + Execute YES token (5 min)
+5. **Audit log** — same as terminal (`trade_safety_audit_log`)
 
-| Button | Action |
-|--------|--------|
-| Status / Preflight | Session + GO/NO-GO checklist |
-| Go live | `./pmx go-live` |
-| Scout / Trader mode | Switches Hermes skill set |
-| Approve (brief) | Sets `approved: true` in frontmatter |
-| Queue live trade | Preview + pending token (5 min) |
-| Execute YES | Runs trade with Telegram one-time confirm |
-| Cancel | Discards pending trade |
-
-## Commands reference
-
-```bash
-./pmx telegram              # start bot
-./pmx activate-live         # enable live trading session
-./pmx activate-live --bot   # go-live + start bot
-./scripts/telegram-bot.sh
-```
-
-Telegram slash commands: `/start` `/status` `/preflight` `/golive` `/scout` `/trader` `/briefs` `/scenarios`
-
-## Safety
-
-1. `TELEGRAM_ALLOWED_CHAT_IDS` — required allowlist
-2. `./pmx go-live` — read-only off for session
-3. Brief `approved: true` — Trader gate
-4. Double confirm — Queue + Execute YES
-5. One-time trade tokens — expire in 5 minutes
-6. Audit log — same as terminal trades (`trade_safety_audit_log`)
-
-Emergency: use terminal `./pmx stop on "reason"` or `./pmx panic` (PANIC confirm still in terminal for panic).
+Emergency: `./pmx stop on "reason"` or `./pmx panic` (PANIC confirm stays in terminal for panic).
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
-| Unauthorized chat | Add your chat id to `TELEGRAM_ALLOWED_CHAT_IDS` |
-| READ-ONLY blocked | `/golive` or `./pmx activate-live` |
-| Hermes timeout | Shorter message; set `TELEGRAM_HERMES_TIMEOUT=180` |
-| Trade expired | Tap Queue again within 5 minutes |
-| Bot not installed | `pip install -r requirements-telegram.txt` |
+| `./pmx` not found in Hermes | Re-run `./scripts/setup-hermes-telegram-profile.sh`; restart gateway |
+| READ-ONLY blocked | `./pmx activate-live` on the Hermes host |
+| Scout places orders | Use `/pmxtrader` (defaults Scout) or `/pmxtrader-scout`; Trader needs approved brief |
+| Wrong working directory | Check `terminal.cwd` in `~/.hermes/profiles/telegram/config.yaml` |
+| Second bot conflicts | Stop `./pmx telegram`; use Hermes gateway only |
 
 See also: `docs/multi-agent.md` · `hermes/README.md` · `docs/commands.md`

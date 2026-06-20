@@ -179,9 +179,10 @@ After `./scripts/setup-hermes.sh`:
 
 | Bundle | Role | Skills |
 |--------|------|--------|
+| `/pmxtrader` | Auto Scout/Trader (Telegram default) | pmxtrader-auto, pmxtrader-scout, pmxtrader-trader, pmxtrader-commands, multi-agent-handoff |
 | `/pmxtrader-scout` | Research, no orders | pmxtrader-scout, pmxtrader-commands, multi-agent-handoff |
 | `/pmxtrader-trader` | Execute from approved brief | pmxtrader-trader, pmxtrader-commands, multi-agent-handoff |
 
-Launch: `./pmx scout grok` or `hermes chat --cli -t no_mcp` then `/pmxtrader-scout`
+Launch: `./pmx scout grok` or `hermes chat --cli -t no_mcp` then `/pmxtrader`
 
 See `hermes/README.md` · `docs/multi-agent.md` · `docs/providers.md`

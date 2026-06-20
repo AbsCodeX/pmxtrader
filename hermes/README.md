@@ -16,12 +16,13 @@ This will:
 2. **Disable** PMXT trading MCP (Grok schema errors)
 3. **Enable** Polymarket US docs MCP (read-only, Grok-safe)
 4. Link skills into `~/.hermes/skills/prediction-markets/`
-5. Create bundles `/pmxtrader-scout` and `/pmxtrader-trader`
+5. Create bundles `/pmxtrader` (auto-route), `/pmxtrader-scout`, and `/pmxtrader-trader`
 
 ## Installed Hermes skills
 
 | Skill | Role | Purpose |
 |-------|------|---------|
+| `pmxtrader-auto` | Both | Auto-route Scout vs Trader (Telegram default) |
 | `pmxtrader-commands` | Both | Full `./pmx` reference + tool routing |
 | `pmxtrader-scout` | Scout | Research lane — no orders |
 | `pmxtrader-trader` | Trader | Execution lane — approved brief only |
@@ -43,6 +44,19 @@ Source: `hermes/skills/` · Install: `./scripts/install-hermes-skills.sh`
 | Account health | Terminal `./pmx status`, `./pmx warm` | — |
 
 Canonical reference: **`docs/commands.md`**
+
+## Unified bundle (`/pmxtrader`) — recommended for Telegram
+
+Auto-selects Scout or Trader per turn via skill `pmxtrader-auto`. Default **Scout**.
+
+**Scout triggers:** research, quotes, links, compare, briefs, status  
+**Trader triggers:** brief `approved: true` + execute request, or explicit trade/sell/close
+
+```bash
+/pmxtrader
+```
+
+Override with `/pmxtrader-scout` or `/pmxtrader-trader` when you want a fixed lane.
 
 ## Scout bundle (`/pmxtrader-scout`)
 
@@ -69,16 +83,17 @@ hermes chat --cli -t no_mcp
 /pmxtrader-trader
 ```
 
-## Telegram bot (`./pmx telegram`)
+## Telegram (Hermes gateway — recommended)
 
-Mobile Hermes control with inline buttons (brief approve, queue trade, Execute YES).
+If Hermes is already on Telegram, wire pmxtrader into that profile:
 
 ```bash
-# pmxt/.env: TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_CHAT_IDS
-./scripts/setup-hermes.sh
-pip install -r requirements-telegram.txt
-./pmx activate-live --bot
+./scripts/setup-hermes-telegram-profile.sh
 ```
+
+Then in Telegram: `/pmxtrader` (auto-routes Scout/Trader). Restart the Hermes gateway after setup.
+
+Do **not** run `./pmx telegram` unless you want a separate bot with inline Execute YES buttons.
 
 Full guide: **`docs/telegram-integration.md`**
 

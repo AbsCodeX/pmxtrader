@@ -16,13 +16,23 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from apps.bridge.telegram_trade import chat_is_allowed, get_pending  # noqa: E402
-from apps.telegram.briefs import approve_brief, brief_summary, list_active_briefs  # noqa: E402
+from apps.telegram.briefs import approve_brief, brief_summary  # noqa: E402
 from apps.telegram.cache import pop_value, store_value  # noqa: E402
 from apps.telegram.config import TelegramConfig, load_config  # noqa: E402
 from apps.telegram.hermes_bridge import ask_hermes, clear_session  # noqa: E402
 from apps.telegram import keyboards  # noqa: E402
 from apps.telegram import pmx_runner  # noqa: E402
 from apps.telegram import templates  # noqa: E402
+from apps.telegram.ui import (  # noqa: E402
+    error_message,
+    help_card,
+    loading_message,
+    main_menu_message,
+    menu_keyboard,
+    route_callback,
+    trading_allowed_in_chat,
+)
+from apps.telegram.ui.router import loading_for_menu  # noqa: E402
 
 log = logging.getLogger("pmxtrader.telegram")
 
@@ -48,15 +58,20 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     context.user_data["mode"] = "scout"
     await update.message.reply_text(  # type: ignore[union-attr]
-        templates.welcome(),
+        main_menu_message(),
         reply_markup=keyboards.main_menu(),
+        parse_mode="Markdown",
     )
 
 
 async def cmd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await _guard(update):
         return
-    await update.message.reply_text("Menu", reply_markup=keyboards.main_menu())  # type: ignore[union-attr]
+    await update.message.reply_text(  # type: ignore[union-attr]
+        main_menu_message(),
+        reply_markup=keyboards.main_menu(),
+        parse_mode="Markdown",
+    )
 
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -159,6 +174,136 @@ async def _hermes_reply(
             )
 
 
+async def _handle_ui_route(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    route,
+) -> bool:
+    """Handle pmx: UI callbacks. Returns True if handled."""
+    query = update.callback_query
+    if query is None or query.message is None:
+        return True
+    cfg = _cfg(context)
+    chat = update.effective_chat
+    chat_type = chat.type if chat else "private"
+
+    if route.kind == "noop":
+        return True
+
+    if route.blocked_in_group and not trading_allowed_in_chat(query.message.chat_id, chat_type):
+        await query.message.reply_text(
+            error_message(
+                "Trading blocked",
+                "Live trading is private-chat only. Set PMX_TELEGRAM_GROUP_TRADING=1 to allow groups.",
+            )
+        )
+        return True
+
+    if route.kind == "show_menu":
+        title = "Menu" if route.menu_id == "main" else route.menu_id.replace("_", " ").title()
+        await query.message.reply_text(
+            f"*{title}*\n\nTap a button or type a command.",
+            reply_markup=menu_keyboard(route.menu_id),
+            parse_mode="Markdown",
+        )
+        return True
+
+    if route.kind == "help":
+        await query.message.reply_text(help_card(), parse_mode="Markdown")
+        return True
+
+    if route.kind == "set_mode":
+        if route.sub_action in ("ai", "scout"):
+            context.user_data["mode"] = "scout"
+            label = "AI (Scout)"
+        elif route.sub_action in ("manual", "trader"):
+            context.user_data["mode"] = "trader"
+            label = "Manual (Trader)"
+        else:
+            current = context.user_data.get("mode", "scout")
+            context.user_data["mode"] = "trader" if current == "scout" else "scout"
+            label = context.user_data["mode"]
+        await query.message.reply_text(f"Trading mode: {label}")
+        return True
+
+    if route.kind == "hermes_prompt":
+        await query.message.reply_text(route.prompt or "Ask Hermes anything.")
+        return True
+
+    if route.kind == "refresh":
+        await query.message.reply_text(loading_for_menu(route.menu_id))
+        if route.menu_id == "portfolio":
+            await query.message.reply_text(pmx_runner.status_text(cfg))
+        elif route.menu_id == "settings":
+            await query.message.reply_text(pmx_runner.preflight_text(cfg))
+        else:
+            await query.message.reply_text(
+                f"Refreshed {route.menu_id}.",
+                reply_markup=menu_keyboard(route.menu_id),
+            )
+        return True
+
+    if route.kind == "quick":
+        prompts = {
+            "analyze": "Paste a market URL or name to analyze.",
+            "watch": "Which market should I watch?",
+            "trade": "Approved brief required — use /briefs then /trader.",
+            "alert": "Describe the alert condition.",
+        }
+        text = prompts.get(route.sub_action, "How can I help?")
+        if route.sub_action in ("analyze", "watch", "alert"):
+            await _hermes_reply(update, context, text, mode=context.user_data.get("mode", "scout"))
+        else:
+            await query.message.reply_text(text)
+        return True
+
+    if route.kind == "action":
+        await query.message.reply_text(loading_message(route.sub_action or route.menu_id))
+        if route.menu_id == "portfolio" and route.sub_action == "positions":
+            await query.message.reply_text(pmx_runner.status_text(cfg))
+        elif route.menu_id == "settings" and route.sub_action == "api":
+            await query.message.reply_text(pmx_runner.preflight_text(cfg))
+        elif route.menu_id == "agents" and route.sub_action == "logs":
+            from apps.telegram.ui import agent_logs_table
+
+            await query.message.reply_text(
+                agent_logs_table(
+                    [{"time": "—", "agent": "—", "action": "—", "detail": "No logs yet"}]
+                ),
+                parse_mode="Markdown",
+            )
+        else:
+            await query.message.reply_text(
+                f"{route.menu_id}/{route.sub_action} — ask Hermes for details.",
+                reply_markup=menu_keyboard(route.menu_id),
+            )
+        return True
+
+    if route.kind == "trade_confirm":
+        pending = get_pending(route.token)
+        if not pending:
+            await query.message.reply_text("Trade expired — queue again.")
+            return True
+        await query.message.reply_text("Executing…")
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None, lambda: pmx_runner.execute_pending_trade(cfg, pending)
+        )
+        await query.message.reply_text(
+            templates.trade_result(result.ok, result.stdout, result.stderr)
+        )
+        return True
+
+    if route.kind == "trade_cancel":
+        from apps.bridge.telegram_trade import discard_pending
+
+        discard_pending(route.token)
+        await query.message.reply_text("Trade cancelled.")
+        return True
+
+    return False
+
+
 def _queue_keyboard(command: str):
     token = store_value("trade_cmd", command)
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -217,8 +362,21 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if data == "act:noop":
         return
+    if data == "pmx:noop":
+        return
+
+    ui_route = route_callback(data)
+    if ui_route is not None and ui_route.kind != "unknown":
+        handled = await _handle_ui_route(update, context, ui_route)
+        if handled:
+            return
+
     if data == "act:menu":
-        await query.message.reply_text("Menu", reply_markup=keyboards.main_menu())  # type: ignore[union-attr]
+        await query.message.reply_text(  # type: ignore[union-attr]
+            main_menu_message(),
+            reply_markup=keyboards.main_menu(),
+            parse_mode="Markdown",
+        )
         return
     if data == "act:status":
         await query.message.reply_text(pmx_runner.status_text(cfg))  # type: ignore[union-attr]

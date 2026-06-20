@@ -1,4 +1,4 @@
-"""Inline keyboards for Telegram."""
+"""Inline keyboards for Telegram — delegates to apps.telegram.ui."""
 
 from __future__ import annotations
 
@@ -6,40 +6,21 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from apps.telegram.briefs import list_active_briefs
 from apps.telegram.config import TelegramConfig
+from apps.telegram.ui import main_menu as ui_main_menu
+from apps.telegram.ui import menu_keyboard as ui_menu_keyboard
+from apps.telegram.ui import trade_confirm as ui_trade_confirm
 
 
 def main_menu() -> InlineKeyboardMarkup:
-    rows = [
-        [
-            InlineKeyboardButton("Status", callback_data="act:status"),
-            InlineKeyboardButton("Preflight", callback_data="act:preflight"),
-        ],
-        [
-            InlineKeyboardButton("Scout mode", callback_data="mode:scout"),
-            InlineKeyboardButton("Trader mode", callback_data="mode:trader"),
-        ],
-        [
-            InlineKeyboardButton("Briefs", callback_data="act:briefs"),
-            InlineKeyboardButton("Go live", callback_data="act:golive"),
-        ],
-        [
-            InlineKeyboardButton("Scenarios", callback_data="act:scenarios"),
-            InlineKeyboardButton("Clear chat", callback_data="act:clear"),
-        ],
-    ]
-    return InlineKeyboardMarkup(rows)
+    return ui_main_menu()
+
+
+def menu_for(menu_id: str) -> InlineKeyboardMarkup:
+    return ui_menu_keyboard(menu_id)
 
 
 def trade_confirm(token: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("Review preview", callback_data=f"trade:preview:{token}")],
-            [
-                InlineKeyboardButton("Execute YES", callback_data=f"trade:exec:{token}"),
-                InlineKeyboardButton("Cancel", callback_data=f"trade:cancel:{token}"),
-            ],
-        ]
-    )
+    return ui_trade_confirm(token)
 
 
 def briefs_keyboard(cfg: TelegramConfig) -> InlineKeyboardMarkup:
@@ -55,8 +36,8 @@ def briefs_keyboard(cfg: TelegramConfig) -> InlineKeyboardMarkup:
             ]
         )
     if not rows:
-        rows.append([InlineKeyboardButton("No briefs in briefs/active/", callback_data="act:noop")])
-    rows.append([InlineKeyboardButton("Back", callback_data="act:menu")])
+        rows.append([InlineKeyboardButton("No briefs in briefs/active/", callback_data="pmx:noop")])
+    rows.append([InlineKeyboardButton("Back", callback_data="pmx:nav:back:main")])
     return InlineKeyboardMarkup(rows)
 
 
@@ -71,4 +52,3 @@ def link_actions(url: str) -> InlineKeyboardMarkup:
             ],
         ]
     )
-

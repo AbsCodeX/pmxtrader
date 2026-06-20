@@ -12,32 +12,19 @@ if str(ROOT) not in sys.path:
 
 from apps.bridge.dotenv import load_dotenv  # noqa: E402
 
+DEFAULT_MARKER = "# pmxtrader integration (managed by scripts/setup-hermes.sh)"
 
-def main() -> int:
-    if len(sys.argv) < 4:
-        print("Usage: sync-hermes-env.py HERMES_ENV PMXT_DOTENV PMXT_API_KEY", file=sys.stderr)
-        return 1
+LLM_KEYS = (
+    "XAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
+    "PREDICTION_HUNT_API_KEY",
+    "PREDICTION_HUNT_API_URL",
+)
 
-    env_path = Path(sys.argv[1]).expanduser()
-    pmxt_env = Path(sys.argv[2]).expanduser()
-    pmxt_key = sys.argv[3]
 
-    pairs: dict[str, str] = {"PMXT_API_KEY": pmxt_key}
-
-    llm_keys = (
-        "XAI_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "OPENAI_API_KEY",
-        "PREDICTION_HUNT_API_KEY",
-        "PREDICTION_HUNT_API_URL",
-    )
-
-    for key, val in load_dotenv(pmxt_env).items():
-        if key in llm_keys and val:
-            pairs[key] = val
-
-    text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
-    marker = "# pmxtrader integration (managed by scripts/setup-hermes.sh)"
+def merge_env_pairs(env_path: Path, pairs: dict[str, str], *, marker: str = DEFAULT_MARKER) -> None:
+    text = env_path.read_text(encoding="utf-8") if env_path.is_file() else ""
     if marker not in text:
         text = text.rstrip() + f"\n\n{marker}\n"
 
@@ -51,6 +38,24 @@ def main() -> int:
 
     env_path.parent.mkdir(parents=True, exist_ok=True)
     env_path.write_text(text, encoding="utf-8")
+
+
+def main() -> int:
+    if len(sys.argv) < 4:
+        print("Usage: sync-hermes-env.py HERMES_ENV PMXT_DOTENV PMXT_API_KEY", file=sys.stderr)
+        return 1
+
+    env_path = Path(sys.argv[1]).expanduser()
+    pmxt_env = Path(sys.argv[2]).expanduser()
+    pmxt_key = sys.argv[3]
+
+    pairs: dict[str, str] = {"PMXT_API_KEY": pmxt_key}
+    if pmxt_env.is_file():
+        for key, val in load_dotenv(pmxt_env).items():
+            if key in LLM_KEYS and val:
+                pairs[key] = val
+
+    merge_env_pairs(env_path, pairs)
     print(f"Updated: {env_path}")
     for key in pairs:
         print(f"  {key}=***")

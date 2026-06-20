@@ -58,8 +58,9 @@ Shared
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
-  telegram | tg                         Hermes Telegram bot (mobile control)
-  activate-live [--bot]                 Go-live + preflight (+ start bot)
+  telegram | tg                         Optional separate Telegram bot (not Hermes gateway)
+  hermes-telegram | hermes-tg           Wire pmxtrader into existing Hermes Telegram profile
+  activate-live [--bot]                 Go-live + preflight (+ optional separate bot)
   monitor EVENT [--label USA]           Poll prices → briefs/alerts/
 
 Live session
@@ -333,6 +334,9 @@ except Exception as e:
     ;;
   telegram|tg)
     exec "$ROOT/scripts/telegram-bot.sh" "$@"
+    ;;
+  hermes-telegram|hermes-tg|setup-hermes-telegram)
+    exec "$ROOT/scripts/setup-hermes-telegram-profile.sh" "$@"
     ;;
   activate-live|activatelive)
     exec "$ROOT/scripts/activate-live-trading.sh" "$@"

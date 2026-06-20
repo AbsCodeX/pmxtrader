@@ -95,7 +95,7 @@ Keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` · `long`=YES, `short`
 ./pmx trader openai briefs/active/BRIEF.md
 ```
 
-Bundles: `/pmxtrader-scout` · `/pmxtrader-trader` · `-t no_mcp`
+Bundles: `/pmxtrader` · `/pmxtrader-scout` · `/pmxtrader-trader` · `-t no_mcp`
 
 ## Docs
 

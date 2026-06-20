@@ -1,0 +1,13 @@
+{
+  "name": "@pmxtrader/telegram-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "pmxtrader Telegram UI definitions (TypeScript spec + ui-spec.json for Python)",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

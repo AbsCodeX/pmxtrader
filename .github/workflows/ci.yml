@@ -30,6 +30,7 @@ jobs:
           pip install ruff mypy pytest pip-audit
           pip install -r requirements-cockpit.txt
           pip install -r requirements-docs.txt
+          pip install -r requirements-telegram.txt
 
       - name: Install markdownlint
         run: npm install --no-save markdownlint-cli2
