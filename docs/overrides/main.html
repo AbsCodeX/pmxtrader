@@ -6,17 +6,30 @@
   {% elif page.title and not page.is_homepage %}
     <title>{{ page.title | striptags }} · pmxtrader</title>
   {% else %}
-    <title>pmxtrader · Prediction market operations</title>
+    <title>pmxtrader · Documentation</title>
   {% endif %}
 {% endblock %}
 
 {% block extrahead %}
   {{ super() }}
   <meta name="author" content="Abigail">
-  <meta name="theme-color" content="#007aff">
+  <meta name="description" content="{{ config.site_description }}">
+  <meta name="theme-color" content="#111111">
   <meta name="color-scheme" content="light dark">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="pmxtrader">
   <meta name="format-detection" content="telephone=no">
+{% endblock %}
+
+{% block header %}
+  {% include "partials/pmx-topnav.html" %}
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+  {% if page.is_homepage %}
+    <article class="md-content__inner md-typeset pmx-doc-home" id="top">
+      {{ page.content }}
+    </article>
+  {% else %}
+    {{ super() }}
+  {% endif %}
 {% endblock %}

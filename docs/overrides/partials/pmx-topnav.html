@@ -1,0 +1,39 @@
+{# Site-wide top navigation — anchor links on home, deep links on inner pages #}
+{% set base = config.site_url | default('/') %}
+<header class="pmx-site-header" role="banner">
+  <div class="pmx-site-header__inner">
+    <a class="pmx-brand" href="{{ base }}" aria-label="pmxtrader home">
+      pmxtrader
+    </a>
+    <button
+      type="button"
+      class="pmx-site-header__toggle"
+      aria-expanded="false"
+      aria-controls="pmx-site-nav"
+      aria-label="Open navigation menu"
+    >
+      <span class="pmx-site-header__toggle-bar"></span>
+      <span class="pmx-site-header__toggle-bar"></span>
+    </button>
+    <nav id="pmx-site-nav" class="pmx-site-nav" aria-label="Primary">
+      <a class="pmx-site-nav__link" href="{{ base }}#overview">Overview</a>
+      <a class="pmx-site-nav__link" href="{{ base }}#features">Features</a>
+      <a class="pmx-site-nav__link" href="{{ base }}#setup">Setup</a>
+      <a class="pmx-site-nav__link" href="{{ base }}#usage">Usage</a>
+      <a class="pmx-site-nav__link" href="{{ base }}#testing">Testing</a>
+      <a class="pmx-site-nav__link" href="{{ base }}#qa-checklist">QA Checklist</a>
+      <a
+        class="pmx-site-nav__link pmx-site-nav__link--muted"
+        href="{{ config.repo_url | default('https://github.com/AbsCodeX/pmxtrader') }}"
+        target="_blank"
+        rel="noopener"
+      >GitHub</a>
+      <a
+        class="pmx-btn pmx-btn--dark"
+        href="{{ config.repo_url | default('https://github.com/AbsCodeX/pmxtrader') }}"
+        target="_blank"
+        rel="noopener"
+      >View on GitHub</a>
+    </nav>
+  </div>
+</header>

@@ -1,5 +1,5 @@
 site_name: pmxtrader
-site_description: Human-gated prediction market operations for Kalshi and Polymarket US.
+site_description: Documentation for pmxtrader — setup, usage, testing, and QA for human-gated prediction market operations.
 site_url: https://abscodex.github.io/pmxtrader/
 repo_url: https://github.com/AbsCodeX/pmxtrader
 repo_name: AbsCodeX/pmxtrader
@@ -29,6 +29,9 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Light mode
+  font:
+    text: Inter
+    code: Roboto Mono
   features:
     - navigation.sections
     - navigation.expand
@@ -44,6 +47,7 @@ theme:
     - content.tabs.link
     - toc.follow
     - header.autohide
+    - toc.integrate
 
 plugins:
   - search
