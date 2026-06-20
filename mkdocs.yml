@@ -17,15 +17,15 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: blue
-      accent: blue
+      primary: black
+      accent: black
       toggle:
         icon: material/brightness-7
         name: Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: blue
-      accent: blue
+      primary: black
+      accent: black
       toggle:
         icon: material/brightness-4
         name: Light mode

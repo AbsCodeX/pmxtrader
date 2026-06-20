@@ -17,9 +17,9 @@ hide:
       <a class="pmx-btn pmx-btn--ghost" href="#setup">Get Started</a>
     </div>
     <ul class="pmx-badges" aria-label="Project status">
-      <li><span class="pmx-badge pmx-badge--pass">Build passing</span></li>
+      <li><span class="pmx-badge">Build passing</span></li>
       <li><span class="pmx-badge">Tests ready</span></li>
-      <li><span class="pmx-badge">Documentation complete</span></li>
+      <li><span class="pmx-badge">Docs complete</span></li>
       <li><span class="pmx-badge">QA reviewed</span></li>
     </ul>
   </div>
