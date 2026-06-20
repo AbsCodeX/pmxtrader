@@ -3,7 +3,7 @@ max_concurrency = 8
 timeout = 25
 retry_wait_time = 5
 max_retries = 2
-accept = ["200", "403", "429"]
+accept = ["200", "403", "405", "429"]
 
 exclude_path = [
   "pmxt/",
