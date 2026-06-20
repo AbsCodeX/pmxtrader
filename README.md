@@ -5,7 +5,7 @@
 
 Prediction market trading with **PMXT**, plain-language **`./pmx`** commands, and human-gated Scout/Trader agents.
 
-> **Browse docs:** [abscodex.github.io/pmxtrader](https://abscodex.github.io/pmxtrader/) · **Repo map:** [`docs/README.md`](docs/README.md)
+> **Browse docs (full URL required):** [https://abscodex.github.io/pmxtrader/](https://abscodex.github.io/pmxtrader/) · **Repo map:** [`docs/README.md`](docs/README.md)
 
 ---
 

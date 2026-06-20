@@ -1,0 +1,34 @@
+{% extends "main.html" %}
+
+{% block content %}
+  <div class="pmx-hero">
+    <h1>Page not found</h1>
+    <p class="pmx-lead">
+      This docs site is published as a <strong>project page</strong>, not at the domain root.
+    </p>
+    <div class="pmx-pill-row">
+      <span class="pmx-pill pmx-pill--blue">Use the full URL below</span>
+    </div>
+  </div>
+
+  <div class="pmx-checklist">
+    <div class="pmx-checklist__head">Correct links</div>
+    <ol>
+      <li><strong>Docs home:</strong> <a href="https://abscodex.github.io/pmxtrader/">https://abscodex.github.io/pmxtrader/</a></li>
+      <li><strong>Commands:</strong> <a href="{{ base_url }}commands/">Command reference</a></li>
+      <li><strong>Repository:</strong> <a href="https://github.com/AbsCodeX/pmxtrader">github.com/AbsCodeX/pmxtrader</a></li>
+    </ol>
+  </div>
+
+  <div class="md-typeset">
+    <div class="admonition note">
+      <p class="admonition-title">Why you may see this page</p>
+      <ul>
+        <li><code>https://abscodex.github.io/</code> (no repo name) is not configured — use <code>/pmxtrader/</code></li>
+        <li>An old bookmark from before the MkDocs deploy may point to a removed path</li>
+        <li>A typo in the URL — check spelling and include the trailing slash</li>
+      </ul>
+    </div>
+    <p><a href="{{ base_url }}" class="md-button">Go to docs home</a></p>
+  </div>
+{% endblock %}
