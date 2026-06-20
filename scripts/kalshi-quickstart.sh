@@ -26,6 +26,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/pmxt-env.sh"
 # shellcheck source=kill-switch-lib.sh
 source "$ROOT/scripts/kill-switch-lib.sh"
+# shellcheck source=trade-safety-lib.sh
+source "$ROOT/scripts/trade-safety-lib.sh"
 PMXT="$PMXT_DIR"
 EXCHANGE=kalshi
 
@@ -91,10 +93,28 @@ case "$cmd" in
       echo "Add KALSHI_API_KEY and KALSHI_PRIVATE_KEY to pmxt/.env"
       exit 1
     fi
-    kill_switch_require_clear || exit 1
-    market_id="${2:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount]}"
-    outcome_id="${3:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount]}"
+    DRY_RUN=0
+    market_id="${2:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run]}"
+    outcome_id="${3:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run]}"
     amount="${4:-1}"
+    if [[ "$amount" == "--dry-run" ]]; then
+      amount=1
+      DRY_RUN=1
+    fi
+    if [[ "${5:-}" == "--dry-run" ]]; then
+      DRY_RUN=1
+    fi
+    trade_safety_require_live || exit 1
+    trade_safety_check_amount "$amount" || exit 1
+    if trade_safety_is_dry_run; then
+      PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+from apps.bridge.trade_safety import format_dry_run_order
+print(format_dry_run_order(
+    venue='Kalshi', action='buy', market='$market_id', outcome='$outcome_id', amount='$amount'
+))
+"
+      exit 0
+    fi
     echo "WARNING: Live Kalshi — real money. Buying $amount contract(s)."
     pmxt_cli "$EXCHANGE" order:create --local \
       --market-id "$market_id" \

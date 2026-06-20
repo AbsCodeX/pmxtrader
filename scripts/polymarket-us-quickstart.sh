@@ -31,6 +31,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/pmxt-env.sh"
 # shellcheck source=kill-switch-lib.sh
 source "$ROOT/scripts/kill-switch-lib.sh"
+# shellcheck source=trade-safety-lib.sh
+source "$ROOT/scripts/trade-safety-lib.sh"
 
 EXCHANGE=polymarket_us
 ENV_FILE="$PMXT_DIR/.env"
@@ -84,10 +86,21 @@ place_order() {
   oid="$(outcome_id_for "$slug" "$outcome_side")"
   outcome_side="$(normalize_side "$outcome_side")"
 
+  trade_safety_check_amount "$qty" || return 1
+
   if [[ "$order_side" == "buy" ]]; then
     action="buy"
   else
     action="sell"
+  fi
+
+  if trade_safety_is_dry_run; then
+    if [[ -n "$limit_price" ]]; then
+      echo "[dry-run] Polymarket US: would ${action} ${qty} on ${slug} (${outcome_side}) @ limit ${limit_price}"
+    else
+      echo "[dry-run] Polymarket US: would ${action} ${qty} on ${slug} (${outcome_side}) @ market"
+    fi
+    return 0
   fi
 
   if [[ -n "$limit_price" ]]; then
@@ -132,6 +145,17 @@ for p in positions:
         sys.exit(0)
 print('', end='')
 " "$slug" "$outcome_side"
+}
+
+_poly_flag_dry_run() {
+  DRY_RUN=0
+  for arg in "$@"; do
+    if [[ "$arg" == "--dry-run" ]]; then
+      DRY_RUN=1
+      break
+    fi
+  done
+  export DRY_RUN
 }
 
 cmd="${1:-help}"
@@ -186,34 +210,46 @@ case "$cmd" in
     ;;
   trade|buy)
     require_poly_us_env
-    kill_switch_require_clear || exit 1
-    slug="${1:?Usage: $0 trade SLUG [long|short] [qty] [limit_price]}"
+    _poly_flag_dry_run "$@"
+    trade_safety_require_live || exit 1
+    slug="${1:?Usage: $0 trade SLUG [long|short] [qty] [limit_price] [--dry-run]}"
     side="${2:-long}"
     qty="${3:-1}"
     limit_price="${4:-}"
+    if [[ "$qty" == "--dry-run" ]]; then qty=1; fi
+    if [[ "$limit_price" == "--dry-run" ]]; then limit_price=""; fi
     place_order buy "$slug" "$side" "$qty" "$limit_price"
-    echo
-    echo "=== Balance ==="
-    pmxt_cli "$EXCHANGE" balance --local --json
+    if ! trade_safety_is_dry_run; then
+      echo
+      echo "=== Balance ==="
+      pmxt_cli "$EXCHANGE" balance --local --json
+    fi
     ;;
   sell)
     require_poly_us_env
-    kill_switch_require_clear || exit 1
-    slug="${1:?Usage: $0 sell SLUG [long|short] [qty] [limit_price]}"
+    _poly_flag_dry_run "$@"
+    trade_safety_require_live || exit 1
+    slug="${1:?Usage: $0 sell SLUG [long|short] [qty] [limit_price] [--dry-run]}"
     side="${2:-long}"
     qty="${3:-1}"
     limit_price="${4:-}"
+    if [[ "$qty" == "--dry-run" ]]; then qty=1; fi
+    if [[ "$limit_price" == "--dry-run" ]]; then limit_price=""; fi
     place_order sell "$slug" "$side" "$qty" "$limit_price"
-    echo
-    echo "=== Balance ==="
-    pmxt_cli "$EXCHANGE" balance --local --json
+    if ! trade_safety_is_dry_run; then
+      echo
+      echo "=== Balance ==="
+      pmxt_cli "$EXCHANGE" balance --local --json
+    fi
     ;;
   close|flatten|exit)
     require_poly_us_env
-    kill_switch_require_clear || exit 1
-    slug="${1:?Usage: $0 close SLUG [long|short] [qty]}"
+    _poly_flag_dry_run "$@"
+    trade_safety_require_live || exit 1
+    slug="${1:?Usage: $0 close SLUG [long|short] [qty] [--dry-run]}"
     side="${2:-long}"
     qty="${3:-}"
+    if [[ "$qty" == "--dry-run" ]]; then qty=""; fi
     if [[ -z "$qty" ]]; then
       qty="$(position_size_for "$slug" "$side")"
       if [[ -z "$qty" || "$qty" == "0" ]]; then
@@ -223,9 +259,11 @@ case "$cmd" in
       echo "Closing full position: $qty contracts on $slug ($side)"
     fi
     place_order sell "$slug" "$side" "$qty" ""
-    echo
-    echo "=== Balance ==="
-    pmxt_cli "$EXCHANGE" balance --local --json
+    if ! trade_safety_is_dry_run; then
+      echo
+      echo "=== Balance ==="
+      pmxt_cli "$EXCHANGE" balance --local --json
+    fi
     ;;
   watch|stream)
     require_poly_us_env
