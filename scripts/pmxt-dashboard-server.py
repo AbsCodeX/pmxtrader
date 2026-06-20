@@ -25,6 +25,7 @@ from apps.bridge.dashboard_security import (  # noqa: E402
     send_security_headers,
     write_secret_token,
 )
+from apps.bridge.parse import extract_trade_preview  # noqa: E402
 
 PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
 HOST = resolve_bind_host()
@@ -83,6 +84,10 @@ def analyze_link(
     result = run_pmx(argv, timeout=180)
     result["venue"] = venue
     result["url"] = normalized
+    if result.get("stdout"):
+        preview = extract_trade_preview(result["stdout"])
+        if preview:
+            result["preview"] = preview
     return result
 
 

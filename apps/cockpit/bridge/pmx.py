@@ -136,4 +136,10 @@ def analyze_link(url: str, outcome: str = "USA", side: str = "long", size: float
     result = run_argv(argv, timeout=180)
     result["venue"] = venue
     result["url"] = normalized
+    if result.get("stdout"):
+        from apps.bridge.parse import extract_trade_preview
+
+        preview = extract_trade_preview(result["stdout"])
+        if preview:
+            result["preview"] = preview
     return result

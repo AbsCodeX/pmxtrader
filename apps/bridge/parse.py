@@ -29,6 +29,46 @@ def parse_kill_switch(stdout: str) -> str:
     return "?"
 
 
+_PREVIEW_LINE_PREFIXES = (
+    "Event:",
+    "Outcome:",
+    "Market:",
+    "Slug:",
+    "Price:",
+    "Fill est:",
+    "Fill:",
+    "Book:",
+    "Side:",
+    "Size:",
+    "Cost:",
+    "Total:",
+    "Estimated",
+    "Best bid:",
+    "Best ask:",
+    "Mid:",
+)
+
+
+def extract_trade_preview(stdout: str, *, max_lines: int = 12) -> str:
+    """Pull human-readable quote/fill lines from link-analyzer stdout."""
+    if not stdout:
+        return ""
+    picked: list[str] = []
+    for line in stdout.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        lower = stripped.lower()
+        if lower.startswith(("error:", "failed", "warning:", "unavailable")):
+            picked.append(stripped)
+            continue
+        if any(stripped.startswith(prefix) for prefix in _PREVIEW_LINE_PREFIXES):
+            picked.append(stripped)
+        if len(picked) >= max_lines:
+            break
+    return "\n".join(picked)
+
+
 def parse_status(stdout: str) -> StatusSummary:
     s = StatusSummary()
     s.kill_switch = parse_kill_switch(stdout)

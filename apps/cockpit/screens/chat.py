@@ -28,6 +28,9 @@ class ChatPane(Vertical):
     #chat-input {
         width: 1fr;
     }
+    #chat-run-suggested {
+        margin-top: 1;
+    }
     .hint {
         color: $text-muted;
         margin-bottom: 1;
@@ -51,6 +54,7 @@ class ChatPane(Vertical):
         with Horizontal(id="chat-input-row"):
             yield Input(placeholder="Ask: analyze this link, top poly markets, my balance…", id="chat-input")
             yield Button("Send", variant="primary", id="chat-send")
+        yield Button("Run suggested command (Ctrl+Enter)", variant="warning", id="chat-run-suggested", disabled=True)
         yield Static("", id="suggested-cmd")
 
     def on_mount(self) -> None:
@@ -60,12 +64,21 @@ class ChatPane(Vertical):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "chat-send":
             self._send()
+        elif event.button.id == "chat-run-suggested":
+            self.action_run_suggested()
         elif event.button.id == "chat-clear":
             self.query_one("#chat-log", RichLog).clear()
+            self._clear_suggestion()
         elif event.button.id == "chat-new":
             ai.clear_session()
             self.query_one("#chat-log", RichLog).clear()
+            self._clear_suggestion()
             self.app.notify("New AI session")
+
+    def _clear_suggestion(self) -> None:
+        self._pending_cmd = None
+        self.query_one("#suggested-cmd", Static).update("")
+        self.query_one("#chat-run-suggested", Button).disabled = True
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "chat-input":
@@ -85,7 +98,11 @@ class ChatPane(Vertical):
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.worker.group == "chat":
             if event.state == WorkerState.ERROR:
-                self.query_one("#chat-log", RichLog).write("[red]AI request failed[/red]\n")
+                err = event.worker.error
+                msg = "[red]AI request failed[/red]"
+                if err:
+                    msg += f"\n[dim]{err}[/dim]"
+                self.query_one("#chat-log", RichLog).write(msg + "\n")
                 return
             if event.state != WorkerState.SUCCESS:
                 return
@@ -98,11 +115,12 @@ class ChatPane(Vertical):
             cmds = pmx.extract_pmx_commands(text)
             if cmds:
                 self.query_one("#suggested-cmd", Static).update(
-                    f"Suggested: [cyan]{escape_rich(cmds[0])}[/cyan] — press [bold]Ctrl+Enter[/bold] to confirm"
+                    f"Suggested: [cyan]{escape_rich(cmds[0])}[/cyan] — confirm below or Ctrl+Enter"
                 )
                 self._pending_cmd = cmds[0]
+                self.query_one("#chat-run-suggested", Button).disabled = False
             else:
-                self._pending_cmd = None
+                self._clear_suggestion()
             return
 
         if event.worker.group == "chat-exec" and event.state == WorkerState.SUCCESS:

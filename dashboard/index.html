@@ -11,7 +11,7 @@
 <header>
     <div>
       <h1>pmx<span>trader</span></h1>
-      <div class="sub">Command center — shortcuts, link analysis, mini terminal</div>
+      <div class="sub">Manual command center — AI runs in Cockpit (tab 2) or Terminal</div>
     </div>
     <div class="header-actions">
       <span id="conn-badge" class="badge offline"><span class="dot"></span> offline</span>
@@ -42,11 +42,18 @@
         </div>
       </div>
       <div class="card">
-        <h3>Research</h3>
-        <p>Paste a market link below or run Scout in Terminal.</p>
+        <h3>Research <span class="mode-badge manual">Manual</span></h3>
+        <p>Paste a market link below for quote + fill estimate (read-only preview).</p>
         <div class="btn-row">
           <button class="primary" id="btn-goto-analyze">Analyze a link</button>
-          <button data-copy="./pmx scout grok">Scout (grok)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>AI agents <span class="mode-badge ai">AI</span></h3>
+        <p>Scout/Trader run in Terminal or Cockpit — not executed from this page.</p>
+        <div class="btn-row">
+          <button data-copy="./pmx scout grok">Copy Scout (grok)</button>
+          <button data-copy="./pmx trader openai briefs/active/BRIEF.md">Copy Trader</button>
         </div>
       </div>
       <div class="card">
@@ -98,6 +105,10 @@
           <button id="btn-analyze-copy" disabled>Copy terminal cmd</button>
           <button id="btn-analyze-clear">Clear</button>
         </div>
+        <div id="analyze-preview" class="preview-summary hidden" aria-live="polite">
+          <div class="preview-label">Trade preview (estimate only — confirm in Terminal or Cockpit)</div>
+          <pre id="analyze-preview-body"></pre>
+        </div>
         <div id="analyze-out" class="empty">Paste a link and click Analyze. Requires live dashboard server (<code>./pmx dashboard</code>) and warmed sidecar.</div>
       </div>
     </section>
@@ -109,7 +120,7 @@
       — copy-paste shortcuts still work here.
     </div>
 
-    <div class="section-label">Command reference</div>
+    <div class="section-label">Manual commands <span class="mode-hint">copy or safe-run · trades Terminal/Cockpit only</span></div>
     <input class="search" id="search" type="search" placeholder="Search commands…" />
 
     <div class="tabs" id="tabs"></div>

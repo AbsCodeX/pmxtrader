@@ -118,7 +118,7 @@ const API = (location.protocol.startsWith('http') && location.port)
                 <small>${x.d||''}</small>
               </div>
               <div class="btn-row">
-                <button data-copy="${x.c.replace(/"/g,'&quot;')}">Copy</button>
+                <button data-copy="${x.c.replace(/"/g,'&quot;')}">${x.tag === 'trade' ? 'Copy to Terminal' : 'Copy'}</button>
                 ${x.run ? `<button class="primary" data-run="${x.run}">Run</button>` : ''}
               </div>
             </div>`).join('')}</div>
@@ -196,20 +196,45 @@ const API = (location.protocol.startsWith('http') && location.port)
       return h;
     }
 
+    function friendlyApiError(status, data) {
+      if (status === 403) {
+        return 'Session token invalid — reload this page via ./pmx dashboard (do not open file://).';
+      }
+      if (status === 400 && data?.error) {
+        return data.error + (data.hint ? `\nHint: ${data.hint}` : '');
+      }
+      if (status >= 500) return 'Dashboard server error — check Terminal where ./pmx dashboard is running.';
+      if (data?.error) return data.error;
+      return `Request failed (HTTP ${status})`;
+    }
+
+    async function postJson(path, payload) {
+      const r = await fetch(`${API}${path}`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify(payload),
+      });
+      let data = {};
+      try { data = await r.json(); } catch { /* non-JSON */ }
+      if (!r.ok) {
+        const msg = friendlyApiError(r.status, data);
+        return { ok: false, error: msg, status: r.status, ...data };
+      }
+      return data;
+    }
+
     async function refreshStatusBar() {
       if (!live) {
         statusBar.classList.remove('visible');
         return;
       }
       try {
-        const r = await fetch(`${API}/api/run`, {
-          method: 'POST',
-          headers: apiHeaders(),
-          body: JSON.stringify({ command: 'status' }),
-        });
-        const data = await r.json();
+        const data = await postJson('/api/run', { command: 'status' });
         if (data.stdout) {
           statusBar.innerHTML = parseStatusSummary(data.stdout);
+          statusBar.classList.add('visible');
+        } else if (data.error) {
+          statusBar.textContent = data.error;
           statusBar.classList.add('visible');
         }
       } catch {
@@ -259,12 +284,7 @@ const API = (location.protocol.startsWith('http') && location.port)
         return;
       }
       try {
-        const r = await fetch(`${API}/api/run`, {
-          method: 'POST',
-          headers: apiHeaders(),
-          body: JSON.stringify({ command: cmd }),
-        });
-        const data = await r.json();
+        const data = await postJson('/api/run', { command: cmd });
         if (data.command) appendOut(`→ ${data.command}\n`);
         if (data.stdout) appendOut(data.stdout + (data.stdout.endsWith('\n') ? '' : '\n'));
         if (data.stderr) appendOut(data.stderr);
@@ -319,6 +339,8 @@ const API = (location.protocol.startsWith('http') && location.port)
     const linkSide = document.getElementById('link-side');
     const linkSize = document.getElementById('link-size');
     const analyzeOut = document.getElementById('analyze-out');
+    const analyzePreview = document.getElementById('analyze-preview');
+    const analyzePreviewBody = document.getElementById('analyze-preview-body');
     const venueTag = document.getElementById('venue-tag');
     const fieldOutcome = document.getElementById('field-outcome');
     const fieldSide = document.getElementById('field-side');
@@ -369,6 +391,16 @@ const API = (location.protocol.startsWith('http') && location.port)
       analyzeOut.classList.toggle('error', !!opts.error);
     }
 
+    function setAnalyzePreview(text) {
+      if (!text || !text.trim()) {
+        analyzePreview.classList.add('hidden');
+        analyzePreviewBody.textContent = '';
+        return;
+      }
+      analyzePreviewBody.textContent = text.trim();
+      analyzePreview.classList.remove('hidden');
+    }
+
     async function analyzeLink() {
       const url = linkUrl.value.trim();
       if (!url) {
@@ -377,6 +409,7 @@ const API = (location.protocol.startsWith('http') && location.port)
       }
       lastAnalyzeCmd = buildAnalyzeCmd();
       btnAnalyzeCopy.disabled = !lastAnalyzeCmd;
+      setAnalyzePreview('');
       setAnalyzeOutput('Analyzing… (may take up to ~30s while sidecar fetches data)', {});
       btnAnalyze.disabled = true;
 
@@ -396,15 +429,12 @@ const API = (location.protocol.startsWith('http') && location.port)
           side: linkSide.value,
           size: linkSize.value || 1,
         };
-        const r = await fetch(`${API}/api/analyze`, {
-          method: 'POST',
-          headers: apiHeaders(),
-          body: JSON.stringify(payload),
-        });
-        const data = await r.json();
+        const data = await postJson('/api/analyze', payload);
         let text = '';
         if (data.venue) text += `[${data.venue === 'kalshi' ? 'Kalshi' : 'Poly US'}] ${data.url || url}\n\n`;
         if (data.command) text += `$ ${data.command}\n\n`;
+        if (data.preview) setAnalyzePreview(data.preview);
+        else if (data.stdout) setAnalyzePreview(data.stdout.split('\n').slice(0, 6).join('\n'));
         if (data.stdout) text += data.stdout;
         if (data.stderr) text += (text && !text.endsWith('\n') ? '\n' : '') + data.stderr;
         if (data.error) text += `\nERROR: ${data.error}\n`;
@@ -413,6 +443,7 @@ const API = (location.protocol.startsWith('http') && location.port)
         setAnalyzeOutput(text, { error: !data.ok });
         appendOut(`\n[analyze] ${url}\n${(data.stdout || data.error || '').slice(0, 600)}\n`);
       } catch (err) {
+        setAnalyzePreview('');
         setAnalyzeOutput(`ERROR: ${err.message}`, { error: true });
       } finally {
         btnAnalyze.disabled = false;
@@ -443,6 +474,7 @@ const API = (location.protocol.startsWith('http') && location.port)
     };
     document.getElementById('btn-analyze-clear').onclick = () => {
       linkUrl.value = '';
+      setAnalyzePreview('');
       setAnalyzeOutput('Paste a link and click Analyze. Requires live dashboard server (./pmx dashboard) and warmed sidecar.', { empty: true });
       lastAnalyzeCmd = '';
       btnAnalyzeCopy.disabled = true;
