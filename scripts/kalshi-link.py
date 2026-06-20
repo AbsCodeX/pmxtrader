@@ -232,9 +232,9 @@ def run_eval(
     print(f"URL:       {url}")
     print(f"Resolved:  {event_id}")
     print()
-    result = subprocess.run(cmd, check=False)
-    if result.returncode != 0:
-        return result.returncode
+    proc = subprocess.run(cmd, check=False)
+    if proc.returncode != 0:
+        return proc.returncode
 
     # Fetch outcome id for next-step hints
     hint_cmd = [

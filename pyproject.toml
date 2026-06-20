@@ -23,4 +23,7 @@ exclude = [
   "^node_modules/",
   "^\\.venv",
   "^\\.tmp-ci-tools/",
+  "^\\.tmp-mypy/",
+  "^apps/cockpit/",
+  "^tests/",
 ]

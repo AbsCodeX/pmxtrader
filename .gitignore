@@ -44,6 +44,7 @@ venv/
 .venv/
 .venv-cockpit/
 .tmp-ci-tools/
+.tmp-mypy/
 
 .env/
 
