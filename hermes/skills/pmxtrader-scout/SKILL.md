@@ -20,6 +20,12 @@ cd ~/pmxtrader
 ./pmx scan poly-us "nfl" --limit 10              # US retail search
 ./pmx scan verify-us MARKET-SLUG                 # confirm before ./pmx poly trade
 ./pmx scan kalshi-btc --horizon all --limit 10   # BTC 15m + hourly Kalshi
+./pmx watchlist list                             # curated markets + filters
+./pmx watchlist add --url 'MARKET_URL' [--note NOTE]
+./pmx watchlist add kalshi EVENT_ID [--note NOTE]
+./pmx watchlist remove ID|INDEX
+./pmx watchlist filter --min-volume N --min-liquidity N
+./pmx watchlist scan                             # live check vs filters (JSON)
 ./pmx agent snapshot              # portfolio + capability manifest (JSON)
 ./pmx agent discover 'MARKET_URL' # discovery + orderbook + rules snippet
 ./pmx agent portfolio             # balances, positions, P&L, exposure
@@ -43,7 +49,7 @@ Trade rec · Confidence · Reasoning · Positions · P&L · Exposure
 
 Template: `briefs/TEMPLATE.md` · Reference: `docs/trading-agent-capabilities.md`
 
-**Poly discovery:** `./pmx poly markets` only searches one US page — use `./pmx scan poly-global` (ideas) or `./pmx scan poly-us` (tradable catalog).
+**Poly discovery:** `./pmx poly markets` only searches one US page — use `./pmx scan poly-global` (ideas), `./pmx scan poly-us` (tradable catalog), or **`./pmx watchlist`** for a persisted curated list.
 
 **BTC short-term (Kalshi):** `./pmx scan kalshi-btc --horizon 15m|1h|all` — 15-minute (`KXBTC15M`) and hourly (`KXBTCD`) up/down markets.
 

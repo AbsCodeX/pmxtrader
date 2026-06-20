@@ -6,7 +6,7 @@ Hermes agents **cannot** rely on PMXT MCP (Grok schema errors) or `./pmx poly ma
 
 | Capability | Scout | Trader | Command / module |
 |------------|-------|--------|------------------|
-| **Market discovery** | ✓ | read brief | `./pmx link URL …` · `./pmx agent discover URL` |
+| **Market discovery** | ✓ | read brief | `./pmx link URL …` · `./pmx agent discover URL` · `./pmx watchlist scan` |
 | **Market rules** | ✓ | read brief | Paste from venue UI; `./pmx link` may include Resolution line |
 | **Live order book** | ✓ | ✓ (max 2 calls) | `./pmx quote` · `./pmx poly quote` · link analyzer |
 | **Fair value estimate** | ✓ | read brief | Scout sets `fair_value_prob` in brief; edge = fair − ask |
@@ -29,6 +29,9 @@ Hermes agents **cannot** rely on PMXT MCP (Grok schema errors) or `./pmx poly ma
 ./pmx scan poly-us "nfl" --limit 10             # US retail search (tradable)
 ./pmx scan verify-us MARKET-SLUG                # confirm US slug before trade
 ./pmx scan kalshi-btc --horizon all --limit 10  # BTC 15m + hourly on Kalshi
+./pmx watchlist list                            # curated markets + filters
+./pmx watchlist add --url 'MARKET_URL'          # infer venue from URL
+./pmx watchlist scan                            # live check + volume/liquidity filters
 ```
 
 Python module: `apps/bridge/trading_agent.py`
@@ -38,7 +41,7 @@ Python module: `apps/bridge/trading_agent.py`
 | Limitation | Workaround |
 |------------|------------|
 | PMXT MCP breaks Grok | Terminal `./pmx` only; MCP off in `setup-hermes.sh` |
-| `./pmx poly markets` → `[]` | `./pmx scan poly-global QUERY` (Gamma) · paginated `./pmx scan poly-us` · slug verify |
+| `./pmx poly markets` → `[]` | `./pmx scan poly-global QUERY` (Gamma) · paginated `./pmx scan poly-us` · slug verify · **`./pmx watchlist`** curated list |
 | Short-term BTC discovery | `./pmx scan kalshi-btc --horizon 15m\|1h\|all` (public Kalshi API) |
 | No live order execution in Hermes | Trader outputs command; human runs or confirms |
 | No news API in repo | Scout cites BLS/Fed/venue pages in brief |

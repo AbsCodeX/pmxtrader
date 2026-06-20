@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-20T18:56:51.168613+00:00",
+  "filters": {
+    "min_volume_24h": null,
+    "min_liquidity": null
+  },
+  "markets": []
+}

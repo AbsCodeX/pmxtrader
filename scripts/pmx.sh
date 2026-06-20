@@ -60,6 +60,7 @@ Shared
   scan poly-us QUERY                        Paginated Polymarket US search
   scan verify-us SLUG                       Check US retail slug exists
   scan kalshi-btc [--horizon 15m|1h|all]    Short-term BTC markets on Kalshi
+  watchlist list|add|remove|filter|scan     Curated markets + volume/liquidity filters
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
@@ -127,6 +128,7 @@ normalize_verb() {
     compare|ph|odds|hunt) printf '%s\n' compare ;;
     agent|capabilities|cap) printf '%s\n' agent ;;
     scan|scanner) printf '%s\n' scan ;;
+    watchlist|watch-list|wl) printf '%s\n' watchlist ;;
     brief|plan|idea) printf '%s\n' brief ;;
     scout|research|look) printf '%s\n' scout ;;
     trader|execute|exec|trade-mode) printf '%s\n' trader ;;
@@ -325,6 +327,11 @@ except Exception as e:
         exit 1
         ;;
     esac
+    ;;
+  watchlist)
+    sub="${1:-list}"
+    shift || true
+    exec python3 -m apps.bridge.watchlist "$sub" "$@"
     ;;
   scan)
     sub="${1:-}"
