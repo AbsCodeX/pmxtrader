@@ -43,6 +43,7 @@ __pycache__/
 venv/
 .venv/
 .venv-cockpit/
+.tmp-ci-tools/
 
 .env/
 

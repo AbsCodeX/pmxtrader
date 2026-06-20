@@ -84,7 +84,7 @@ class AnalyzePane(Vertical):
             return
         if event.state == WorkerState.ERROR:
             err = event.worker.error
-            msg = f"[red]Analysis failed[/red]"
+            msg = "[red]Analysis failed[/red]"
             if err:
                 msg += f"\n[dim]{err}[/dim]"
             self.query_one("#analyze-log", OutputLog).write(msg)

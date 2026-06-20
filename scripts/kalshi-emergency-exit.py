@@ -43,7 +43,6 @@ def load_env() -> None:
     if not ENV_FILE.exists():
         return
     raw = ENV_FILE.read_text(encoding="utf-8")
-    i = 0
     lines = raw.splitlines(keepends=True)
     idx = 0
     while idx < len(lines):

@@ -1,0 +1,26 @@
+[tool.ruff]
+exclude = [
+  "pmxt",
+  "site",
+  "node_modules",
+  ".venv",
+  ".venv-cockpit",
+  ".tmp-ci-tools",
+  "dist",
+  "build",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# sys.path bootstrap before local imports
+"apps/cockpit/app.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+exclude = [
+  "^pmxt/",
+  "^site/",
+  "^node_modules/",
+  "^\\.venv",
+  "^\\.tmp-ci-tools/",
+]

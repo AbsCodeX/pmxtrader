@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from apps.bridge.trade_audit import append_trade_log, parse_order_id
 from apps.bridge.trade_safety import (

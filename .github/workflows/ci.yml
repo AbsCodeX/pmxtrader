@@ -38,10 +38,12 @@ jobs:
         run: npx markdownlint-cli2
 
       - name: Link check (lychee)
-        uses: lycheeorg/lychee-action@v2
+        uses: lycheeverse/lychee-action@v2
         with:
           args: --config .lychee.toml README.md AGENTS.md LIVE_READINESS_REPORT.md DRY_RUN_TEST_REPORT.md docs/
           fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docs site
         run: bash scripts/docs-build.sh

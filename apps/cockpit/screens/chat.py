@@ -109,7 +109,7 @@ class ChatPane(Vertical):
             result = event.worker.result
             log = self.query_one("#chat-log", RichLog)
             text = result.get("text", "")
-            log.write(f"[bold green]AI:[/bold green] ", markup=True)
+            log.write("[bold green]AI:[/bold green] ", markup=True)
             log.write(text, markup=False)
             log.write("")
             cmds = pmx.extract_pmx_commands(text)
