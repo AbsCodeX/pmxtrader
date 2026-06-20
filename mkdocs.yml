@@ -37,6 +37,7 @@ theme:
     - navigation.path
     - navigation.indexes
     - navigation.footer
+    - navigation.prev_next
     - search.suggest
     - search.highlight
     - search.share
@@ -108,6 +109,10 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/AbsCodeX/pmxtrader
   footer:
+    - title: Start here
+      links:
+        - Home: README.md
+        - Operations overview: operations/index.md
     - title: Operations
       links:
         - Command reference: commands.md

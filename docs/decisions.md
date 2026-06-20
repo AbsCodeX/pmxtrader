@@ -1,10 +1,18 @@
-# Project Decisions
+---
+description: Architectural and process decision log.
+---
 
-This document records important architectural and process decisions made during the development of `pmxtrader`.
+<div class="pmx-page-hero pmx-glass" markdown="1">
 
-## Decision Log
+# Decision log
 
-### 2026-06-16 – PMXT as Source Copy
+<p class="pmx-page-lead">
+Recorded architectural and process decisions for pmxtrader — why the repo is structured the way it is.
+</p>
+
+</div>
+
+## 2026-06-16 – PMXT as Source Copy
 
 **Decision:** Treat the PMXT fork as a source copy only, not as a separately maintained repository.
 
@@ -18,7 +26,7 @@ This document records important architectural and process decisions made during 
 
 ---
 
-### 2026-06-16 – Pre-Commit Secret Scanner
+## 2026-06-16 – Pre-Commit Secret Scanner
 
 **Decision:** Implement a Python-based pre-commit hook to scan for secrets before every commit.
 
@@ -32,7 +40,7 @@ This document records important architectural and process decisions made during 
 
 ---
 
-### 2026-06-16 – Documentation Approach
+## 2026-06-16 – Documentation Approach
 
 **Decision:** Maintain lightweight but professional documentation in the `docs/` folder.
 
@@ -46,7 +54,7 @@ This document records important architectural and process decisions made during 
 
 ---
 
-### 2026-06-16 – Added PMXT MCP Server
+## 2026-06-16 – Added PMXT MCP Server
 
 **Decision:** Clone `pmxt-mcp` into the project to enable MCP-based agent integration.
 
@@ -60,7 +68,7 @@ This document records important architectural and process decisions made during 
 
 ---
 
-### 2026-06-16 – Added molt-pmxt Agent Skill
+## 2026-06-16 – Added molt-pmxt Agent Skill
 
 **Decision:** Clone `molt-pmxt` into the project and copy it into Hermes skills.
 
@@ -74,7 +82,7 @@ This document records important architectural and process decisions made during 
 
 ---
 
-### 2026-06-16 – Created MCP Wrapper Script
+## 2026-06-16 – Created MCP Wrapper Script
 
 **Decision:** Create `scripts/start-pmxt-mcp.sh` to automatically use the CLI auth key.
 

@@ -3,7 +3,7 @@ hide:
   - toc
 ---
 
-<div class="pmx-hero" markdown="1">
+<div class="pmx-hero pmx-glass" markdown="1">
 
 # pmxtrader
 

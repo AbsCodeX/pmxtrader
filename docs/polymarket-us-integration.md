@@ -1,6 +1,21 @@
+---
+description: Polymarket US retail API, MCP docs, and ./pmx poly commands.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
 # Polymarket US integration
 
-Maps [Polymarket US docs](https://docs.polymarket.us/getting-started/welcome) to pmxtrader tooling.
+<p class="pmx-page-lead">
+Maps Polymarket US documentation to pmxtrader tooling. Docs MCP for research; execution via <code>./pmx poly</code>.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--blue"><code>./pmx poly</code></span>
+  <span class="pmx-pill"><a href="commands.md#polymarket-us-pmx-poly">Poly commands</a></span>
+</div>
+
+</div>
 
 ## What Polymarket US MCP is
 
@@ -13,7 +28,7 @@ Maps [Polymarket US docs](https://docs.polymarket.us/getting-started/welcome) to
 
 Use it when building Polymarket US features, debugging auth, or looking up order API fields. **Execution** goes through `./pmx poly` (see below).
 
-## Cursor
+## Editor MCP (IDE)
 
 Project config: `.cursor/mcp.json`
 

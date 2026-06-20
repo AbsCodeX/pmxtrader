@@ -1,10 +1,21 @@
-# Kalshi + PMXT integration (free streaming & evaluation)
+---
+description: Kalshi API mapping, scripts, streaming, and execution paths.
+---
 
-Maps [Kalshi official API](https://docs.kalshi.com/welcome) capabilities to pmxtrader scripts. No paid Prediction Hunt required.
+<div class="pmx-page-hero pmx-glass" markdown="1">
 
-**Plain-language shortcuts:** [`docs/commands.md`](commands.md) (`./pmx link`, `./pmx quote`, `./pmx trade`, …)
+# Kalshi integration
 
-Full doc index: [docs.kalshi.com/llms.txt](https://docs.kalshi.com/llms.txt)
+<p class="pmx-page-lead">
+Maps official Kalshi API capabilities to pmxtrader scripts. Free streaming and evaluation — no paid Prediction Hunt required.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--blue"><code>./pmx</code> shortcuts</span>
+  <span class="pmx-pill"><a href="commands.md">Command reference</a></span>
+</div>
+
+</div>
 
 ## Kalshi API surface (official)
 

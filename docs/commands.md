@@ -22,12 +22,11 @@ Plain-language shortcuts via <code>./pmx</code> (<code>scripts/pmx.sh</code>). R
 
 | Section | Jump to |
 |---------|---------|
-| Agent routing | [Which tool to use](#which-tool-to-use-agents) |
+| Session | [Session modes](#session-modes) · [Start a session](#start-a-session) |
 | Kalshi | [Kalshi commands](#kalshi-default-pmx-balance) |
 | Polymarket US | [Poly commands](#polymarket-us-pmx-poly) |
-| Session | [Start a session](#start-a-session) |
 | Safety | [Safety & agents](#safety-agents) |
-| Hermes | [Hermes bundles](#hermes-bundles) |
+| Agents | [Tool routing](#which-tool-to-use-agents) · [Hermes](#hermes-bundles) |
 
 ---
 

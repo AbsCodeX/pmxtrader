@@ -1,10 +1,21 @@
+---
+description: Repository layout, entry points, and folder responsibilities.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
 # Project structure
 
-Last reviewed: **2026-06-19** · Visual index: [`README.md`](README.md)
+<p class="pmx-page-lead">
+pmxtrader is a thin orchestration layer around vendored <code>pmxt/</code>. Application code lives under
+<code>apps/</code>, <code>dashboard/</code>, and <code>scripts/</code>.
+</p>
 
-`pmxtrader` is a thin orchestration layer around vendored **`pmxt/`**. Application code lives under `apps/`, `dashboard/`, and `scripts/`.
+<div class="pmx-pill-row">
+  <span class="pmx-pill">Reviewed 2026-06-20</span>
+</div>
 
----
+</div>
 
 ## Layer diagram
 

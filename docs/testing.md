@@ -1,10 +1,21 @@
-# Testing
-
-Last reviewed: **2026-06-19** (Batch K — see `reviews/2026-06-19/documentation-review.md`).
-
-pmxtrader CI runs **offline** tests — no live venue API keys required.
-
 ---
+description: pytest, CI, lint, docs quality checks, and PMXT engine tests.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
+# Testing & CI
+
+<p class="pmx-page-lead">
+pmxtrader CI runs offline — no live venue keys required. Docs, Python tests, lint, and type checks run on every push.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--green">pytest · ruff · mypy</span>
+  <span class="pmx-pill">Reviewed 2026-06-20</span>
+</div>
+
+</div>
 
 ## Documentation quality (CI)
 
@@ -24,7 +35,7 @@ npm run docs:serve   # http://127.0.0.1:8000
 
 CI runs all three on every push. Published to **GitHub Pages** on `main` via `.github/workflows/docs-publish.yml`.
 
-**Editor setup:** open the repo in Cursor/VS Code and install recommended extensions (`.vscode/extensions.json`).
+**Editor setup:** install recommended extensions from `.vscode/extensions.json`.
 
 ---
 
