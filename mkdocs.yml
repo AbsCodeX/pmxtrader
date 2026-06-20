@@ -1,40 +1,52 @@
 site_name: pmxtrader
-site_description: Prediction market trading with PMXT — CLI, dashboard, cockpit, and human-gated agents.
+site_description: Human-gated prediction market operations for Kalshi and Polymarket US.
 site_url: https://abscodex.github.io/pmxtrader/
 repo_url: https://github.com/AbsCodeX/pmxtrader
 repo_name: AbsCodeX/pmxtrader
 edit_uri: edit/main/docs/
+copyright: Copyright &copy; Abigail
 
 theme:
   name: material
+  custom_dir: docs/overrides
   language: en
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
   icon:
     repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: blue
+      accent: blue
       toggle:
         icon: material/brightness-7
-        name: Switch to dark mode
+        name: Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: blue
+      accent: blue
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.top
+    - navigation.path
     - navigation.indexes
+    - navigation.footer
     - search.suggest
     - search.highlight
+    - search.share
     - content.code.copy
     - content.tabs.link
     - toc.follow
+    - header.autohide
 
 plugins:
   - search
@@ -52,26 +64,35 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
 
+extra_css:
+  - stylesheets/extra.css
+
 nav:
   - Home: README.md
-  - Operator guide:
+  - Operations:
+      - Overview: README.md
       - Command reference: commands.md
-      - Environment variables: environment.md
+      - Environment & safety: environment.md
       - Known risks: known-risks.md
       - Cockpit TUI: cockpit.md
-      - Multi-agent: multi-agent.md
+      - Multi-agent workflow: multi-agent.md
       - LLM providers: providers.md
+  - Venues:
       - Kalshi: kalshi-integration.md
       - Polymarket US: polymarket-us-integration.md
-  - Developer guide:
+  - Engineering:
       - Architecture: architecture.md
       - Project structure: project-structure.md
-      - Testing: testing.md
+      - Testing & CI: testing.md
       - Dependencies: dependencies.md
       - Decisions: decisions.md
   - Reference:
@@ -82,6 +103,21 @@ nav:
       - Dry-run test: reports/dry-run-test.md
 
 extra:
+  generator: false
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/AbsCodeX/pmxtrader
+  footer:
+    - title: Operations
+      links:
+        - Command reference: commands.md
+        - Environment: environment.md
+        - Known risks: known-risks.md
+    - title: Venues
+      links:
+        - Kalshi: kalshi-integration.md
+        - Polymarket US: polymarket-us-integration.md
+    - title: Engineering
+      links:
+        - Architecture: architecture.md
+        - Testing: testing.md

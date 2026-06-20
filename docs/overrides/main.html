@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block htmltitle %}
+  {% if page.meta and page.meta.title %}
+    <title>{{ page.meta.title }} · pmxtrader</title>
+  {% elif page.title and not page.is_homepage %}
+    <title>{{ page.title | striptags }} · pmxtrader</title>
+  {% else %}
+    <title>pmxtrader · Prediction market operations</title>
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {{ super() }}
+  <meta name="author" content="Abigail">
+  <meta name="theme-color" content="#007aff">
+{% endblock %}

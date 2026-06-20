@@ -1,155 +1,218 @@
-# Documentation index
-
-**Published site:** [abscodex.github.io/pmxtrader](https://abscodex.github.io/pmxtrader/) (MkDocs Material)
-
-**Local preview:** `pip install -r requirements-docs.txt && ./scripts/docs-serve.sh` → [http://127.0.0.1:8000](http://127.0.0.1:8000)
-
-**Start here** if you need to review, visualize, or look up how pmxtrader fits together.
-
+---
+hide:
+  - toc
 ---
 
-## At a glance
+<div class="pmx-hero" markdown="1">
 
-| What | Where | Can place live orders? |
-|------|-------|------------------------|
-| **Terminal CLI** | `./pmx` | Yes — after `./pmx go-live` + YES confirm |
-| **Web dashboard** | `./pmx dashboard` → `dashboard/` | **No** — copy commands to Terminal |
-| **Cockpit TUI** | `./pmx cockpit` | Yes — confirm modal required |
-| **Scout agent** | `./pmx scout` | **No** — research only |
-| **Trader agent** | `./pmx trader` | Prepares commands; human executes |
-| **PMXT engine** | `pmxt/` sidecar `:3847` | Used by all of the above |
-| **Secrets** | `pmxt/.env` only | Never commit |
+# pmxtrader
 
----
+<p class="pmx-lead">
+Human-gated prediction market operations for <strong>Kalshi</strong> and <strong>Polymarket US</strong>.
+Terminal-first execution, layered safety defaults, and venue adapters powered by PMXT.
+</p>
 
-## Choose your path
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--green">Read-only by default</span>
+  <span class="pmx-pill pmx-pill--blue">Kalshi · Polymarket US</span>
+  <span class="pmx-pill pmx-pill--orange">Real money after go-live</span>
+</div>
 
-```mermaid
-flowchart TD
-  A[New to pmxtrader?] --> B{Goal?}
-  B -->|Install & run| C[README Quick start]
-  B -->|Every command| D[commands.md]
-  B -->|Env vars & safety| E[environment.md]
-  B -->|Risks before live| F[known-risks.md]
-  B -->|Repo layout| G[project-structure.md]
-  B -->|Architecture| H[architecture.md]
-  B -->|Tests & CI| I[testing.md]
-  C --> J[./pmx preflight]
-  J --> K{Live trading?}
-  K -->|No| L[preview / dashboard / scout]
-  K -->|Yes| M[go-live → preflight GO → trade]
-```
+</div>
 
----
+<div class="grid cards" markdown="1">
 
-## By audience
+-   :material-rocket-launch-outline:{ .lg .middle } **Start a session**
 
-### Operator (trading session)
+    ---
 
-| Doc | Use when |
-|-----|----------|
-| [commands.md](commands.md) | Full `./pmx` reference |
-| [environment.md](environment.md) | Env vars, defaults, go-live |
-| [known-risks.md](known-risks.md) | Before real money |
-| [kalshi-integration.md](kalshi-integration.md) | Kalshi URLs, panic, demo |
-| [polymarket-us-integration.md](polymarket-us-integration.md) | Poly US, `./pmx poly` |
-| [cockpit.md](cockpit.md) | Textual TUI |
-| [multi-agent.md](multi-agent.md) | Scout / Trader workflow |
-| [providers.md](providers.md) | LLM keys and routing |
+    Bootstrap the sidecar, check balances, and confirm safety posture before any trade prep.
 
-### Developer (code & CI)
+    [:octicons-arrow-right-24: Command reference](commands.md#start-a-session){ .md-button }
 
-| Doc | Use when |
-|-----|----------|
-| [project-structure.md](project-structure.md) | Folders and entry points |
-| [architecture.md](architecture.md) | Request flow, security layers |
-| [testing.md](testing.md) | pytest, smoke, lint |
-| [dependencies.md](dependencies.md) | npm/pip inventory |
-| [AGENTS.md](https://github.com/AbsCodeX/pmxtrader/blob/main/AGENTS.md) | Cursor Cloud, PMXT build |
-| [hermes/README.md](https://github.com/AbsCodeX/pmxtrader/blob/main/hermes/README.md) | Hermes bundles, MCP policy |
+-   :material-shield-check-outline:{ .lg .middle } **Before live money**
 
-### Audit & readiness
+    ---
 
-| Doc | Use when |
-|-----|----------|
-| [Live readiness](reports/live-readiness.md) | Go / No-Go checklist |
-| [Dry-run test](reports/dry-run-test.md) | Dry-run verification |
-| [Batch audit mirrors](https://github.com/AbsCodeX/pmxtrader/tree/main/reviews/2026-06-19) | Review folder on GitHub |
-| [official-links.md](official-links.md) | PMXT, venue, API URLs |
+    Review risks, environment defaults, and the preflight checklist. Sessions stay read-only until you explicitly go live.
 
----
+    [:octicons-arrow-right-24: Known risks](known-risks.md){ .md-button }
 
-## Live session flow (reference)
+-   :material-chart-timeline-variant:{ .lg .middle } **Venue playbooks**
 
-```mermaid
-sequenceDiagram
-  participant You
-  participant pmx as ./pmx
-  participant Sidecar as PMXT sidecar
-  participant Venue as Kalshi / Poly US
+    ---
 
-  You->>pmx: session / warm
-  pmx->>Sidecar: health check
-  You->>pmx: preflight
-  Note over You,pmx: Expect NO-GO while read-only
-  You->>pmx: preview trade …
-  Note over pmx: No order sent
-  You->>pmx: go-live
-  You->>pmx: preflight
-  Note over You,pmx: Expect GO
-  You->>pmx: trade …
-  pmx->>You: type YES
-  pmx->>Sidecar: order:create
-  Sidecar->>Venue: signed request
-```
+    Kalshi event IDs, Poly US slugs, panic flatten, and venue-specific credential setup.
 
----
+    [:octicons-arrow-right-24: Kalshi](kalshi-integration.md){ .md-button }
+    [:octicons-arrow-right-24: Polymarket US](polymarket-us-integration.md){ .md-button }
 
-## Safety layers (reference)
+</div>
 
-```mermaid
-flowchart TB
-  subgraph UI["Layer 1 — UI"]
-    D[Web dashboard<br/>trades blocked]
-    C[Cockpit<br/>confirm modal]
-    T[Terminal<br/>YES prompt]
-  end
-  subgraph Env["Layer 2 — Session"]
-    R[PMX_READ_ONLY default ON]
-    K[Kill switch file]
-    M[PMX_MAX_TRADE_CONTRACTS]
-    P[preflight / sidecar gate]
-  end
-  subgraph Agent["Layer 3 — Agents"]
-    S[Scout read-only]
-    B[Brief approved: true]
-  end
-  UI --> Env --> Agent
-  Agent --> Order[order:create]
-```
+## Live session checklist
 
-Details: [known-risks.md](known-risks.md) · [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md)
+<div class="pmx-checklist" markdown="1">
 
----
+<div class="pmx-checklist__head">Recommended operator flow</div>
+
+1. **`./pmx session`** — warm sidecar; session starts read-only (`PMX_READ_ONLY=1`).
+2. **`./pmx preflight`** — expect **NO-GO** until you intentionally enable live trading.
+3. **`./pmx preview trade …`** or **`./pmx preview poly trade …`** — quote and intent only; no order sent.
+4. **`./pmx go-live`** — clears read-only; re-run **`./pmx preflight`** and expect **GO**.
+5. **`./pmx trade …`** — terminal prompts **YES** before `order:create` (unless `--yes`).
+
+</div>
+
+!!! warning "Web dashboard is not an execution surface"
+    `./pmx dashboard` is for read-only analysis and copying commands into Terminal.
+    Live orders belong in Terminal or Cockpit with explicit confirmation.
+
+<div class="pmx-stats" markdown="1">
+
+<div class="pmx-stat" markdown="1">
+<div class="pmx-stat__label">Terminal CLI</div>
+<div class="pmx-stat__value">`./pmx` — primary execution path</div>
+</div>
+
+<div class="pmx-stat" markdown="1">
+<div class="pmx-stat__label">Cockpit TUI</div>
+<div class="pmx-stat__value">`./pmx cockpit` — confirm modal on trades</div>
+</div>
+
+<div class="pmx-stat" markdown="1">
+<div class="pmx-stat__label">PMXT sidecar</div>
+<div class="pmx-stat__value">`:3847` · credentials in `pmxt/.env`</div>
+</div>
+
+<div class="pmx-stat" markdown="1">
+<div class="pmx-stat__label">Agents</div>
+<div class="pmx-stat__value">Scout research · Trader prepares · human executes</div>
+</div>
+
+</div>
+
+## Surfaces at a glance
+
+| Surface | Entry | Can place live orders? |
+|---------|-------|----------------------|
+| **Terminal** | `./pmx` | Yes — after `./pmx go-live` + YES confirm |
+| **Cockpit** | `./pmx cockpit` | Yes — confirm modal required |
+| **Dashboard** | `./pmx dashboard` | **No** — copy commands to Terminal |
+| **Scout** | `./pmx scout` | **No** — research only |
+| **Trader** | `./pmx trader` | Prepares commands; human runs them |
+
+## Documentation map
+
+<div class="grid cards" markdown="1">
+
+-   :material-book-open-page-variant-outline:{ .lg .middle } **Operations**
+
+    ---
+
+    Commands, environment variables, cockpit, multi-agent workflow, LLM routing.
+
+    [Commands](commands.md) · [Environment](environment.md) · [Multi-agent](multi-agent.md)
+
+-   :material-source-branch:{ .lg .middle } **Engineering**
+
+    ---
+
+    Architecture, repo layout, CI/testing, dependency inventory, decision log.
+
+    [Architecture](architecture.md) · [Structure](project-structure.md) · [Testing](testing.md)
+
+-   :material-clipboard-check-outline:{ .lg .middle } **Reports & audit**
+
+    ---
+
+    Live readiness, dry-run verification, official venue links.
+
+    [Live readiness](reports/live-readiness.md) · [Dry-run test](reports/dry-run-test.md) · [Official links](official-links.md)
+
+</div>
+
+??? note "Reference diagrams"
+    ### Choose your path
+
+    ```mermaid
+    flowchart TD
+      A[New to pmxtrader?] --> B{Goal?}
+      B -->|Install & run| C[Command reference]
+      B -->|Env vars & safety| D[Environment]
+      B -->|Risks before live| E[Known risks]
+      B -->|Repo layout| F[Project structure]
+      C --> G[./pmx preflight]
+      G --> H{Live trading?}
+      H -->|No| I[preview / dashboard / scout]
+      H -->|Yes| J[go-live → preflight GO → trade]
+    ```
+
+    ### Live session sequence
+
+    ```mermaid
+    sequenceDiagram
+      participant You
+      participant pmx as ./pmx
+      participant Sidecar as PMXT sidecar
+      participant Venue as Kalshi / Poly US
+
+      You->>pmx: session / warm
+      pmx->>Sidecar: health check
+      You->>pmx: preflight
+      Note over You,pmx: NO-GO while read-only
+      You->>pmx: preview trade …
+      You->>pmx: go-live
+      You->>pmx: preflight
+      Note over You,pmx: GO
+      You->>pmx: trade … + YES
+      pmx->>Sidecar: order:create
+      Sidecar->>Venue: signed request
+    ```
+
+    ### Safety layers
+
+    ```mermaid
+    flowchart TB
+      subgraph UI["Layer 1 — UI"]
+        D[Dashboard<br/>trades blocked]
+        C[Cockpit<br/>confirm modal]
+        T[Terminal<br/>YES prompt]
+      end
+      subgraph Env["Layer 2 — Session"]
+        R[PMX_READ_ONLY default]
+        K[Kill switch]
+        M[Max contracts cap]
+        P[preflight / sidecar gate]
+      end
+      subgraph Agent["Layer 3 — Agents"]
+        S[Scout read-only]
+        B[Brief approved: true]
+      end
+      UI --> Env --> Agent --> Order[order:create]
+    ```
 
 ## Config vs secrets
 
 | Location | Contains | In git? |
 |----------|----------|---------|
-| `pmxt/.env` | API keys, LLM keys | **No** |
+| `pmxt/.env` | Venue + LLM API keys | **No** |
 | `config/agents.json` | Scout/Trader policy | Yes |
 | `config/providers.json` | Model defaults | Yes |
 | `KILL_SWITCH` | Halt sentinel file | **No** |
 | `.pmx-live` | Go-live marker | **No** |
 | `briefs/active/` | Trade briefs | **No** |
 
+## Venues
+
+| Venue | CLI prefix | Demo / preview |
+|-------|------------|----------------|
+| **Kalshi** | `./pmx` | `./scripts/kalshi-demo-quickstart.sh` |
+| **Polymarket US** | `./pmx poly` | `./pmx preview poly trade …` only |
+
+Other PMXT exchanges live under `pmxt/` but are not wired to `./pmx` shortcuts today.
+
 ---
 
-## Venues supported by `./pmx`
+**Local preview:** `pip install -r requirements-docs.txt && ./scripts/docs-serve.sh` → [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-| Venue | CLI prefix | Demo / paper? |
-|-------|------------|---------------|
-| **Kalshi** | `./pmx` (default) | `./scripts/kalshi-demo-quickstart.sh` |
-| **Polymarket US** | `./pmx poly` | Preview/dry-run only (no retail demo) |
-
-International Polymarket and other PMXT exchanges live in `pmxt/` but are not wired to `./pmx` shortcuts.
+**Repository:** [github.com/AbsCodeX/pmxtrader](https://github.com/AbsCodeX/pmxtrader)
