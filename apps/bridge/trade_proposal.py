@@ -16,16 +16,16 @@ import argparse
 import json
 import sys
 from dataclasses import asdict, dataclass, field
-from math import floor
 from pathlib import Path
 from typing import Any
 
-from apps.bridge.trade_safety import (
-    check_live_trade_allowed,
-    check_trade_amount,
-    max_trade_contracts,
-    read_kill_switch,
+from apps.bridge.risk_engine import (
+    RiskCheck,
+    kelly_fraction_no,
+    kelly_fraction_yes,
+    size_from_kelly,
 )
+from apps.bridge.trade_safety import max_trade_contracts
 from apps.bridge.trading_agent import (
     build_trade_recommendation,
     detect_mispricing,
@@ -36,13 +36,6 @@ from apps.bridge.trading_agent import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-
-
-@dataclass
-class RiskCheck:
-    name: str
-    ok: bool
-    detail: str
 
 
 @dataclass
@@ -71,21 +64,6 @@ class TradeProposal:
     reasoning: str = ""
     commands: list[str] = field(default_factory=list)
     brief_markdown: str = ""
-
-
-def kelly_fraction_yes(fair: float, ask: float) -> float:
-    """Full Kelly fraction of bankroll for buying YES at ``ask``."""
-    if ask <= 0 or ask >= 1 or fair <= ask:
-        return 0.0
-    return max(0.0, (fair - ask) / (1.0 - ask))
-
-
-def kelly_fraction_no(fair: float, no_ask: float) -> float:
-    """Full Kelly fraction of bankroll for buying NO at ``no_ask``."""
-    fair_no = 1.0 - fair
-    if no_ask <= 0 or no_ask >= 1 or fair_no <= no_ask:
-        return 0.0
-    return max(0.0, (fair_no - no_ask) / (1.0 - no_ask))
 
 
 def pick_recommendation(
@@ -131,23 +109,6 @@ def pick_recommendation(
     )
 
 
-def size_from_kelly(
-    *,
-    kelly_fraction: float,
-    bankroll: float,
-    price_per_contract: float,
-    max_contracts: int,
-) -> tuple[int, float | None]:
-    """Kelly contracts capped by max_contracts and bankroll."""
-    if price_per_contract <= 0 or bankroll <= 0 or kelly_fraction <= 0:
-        return 0, None
-    raw = kelly_fraction * bankroll / price_per_contract
-    size = int(floor(raw))
-    size = max(0, min(size, max_contracts))
-    cost = round(size * price_per_contract, 2) if size else None
-    return size, cost
-
-
 def run_risk_checks(
     *,
     size: int,
@@ -156,72 +117,26 @@ def run_risk_checks(
     root: Path,
     max_risk_dollars: float | None,
     estimated_cost: float | None,
+    bankroll: float | None = None,
+    fair: float | None = None,
+    ask: float | None = None,
+    bid: float | None = None,
 ) -> tuple[list[RiskCheck], bool]:
-    checks: list[RiskCheck] = []
-    engaged, reason = read_kill_switch(root)
-    live = check_live_trade_allowed(kill_switch_engaged=engaged, root=root)
-    checks.append(
-        RiskCheck(
-            "kill_switch",
-            not engaged,
-            "OFF" if not engaged else f"ON — {reason or 'engaged'}",
-        )
+    from apps.bridge.risk_engine import check_risk
+
+    report = check_risk(
+        size=size,
+        recommendation=recommendation,
+        venue=venue,
+        root=root,
+        max_risk_dollars=max_risk_dollars,
+        estimated_cost=estimated_cost,
+        bankroll=bankroll,
+        fair=fair,
+        ask=ask,
+        bid=bid,
     )
-    checks.append(
-        RiskCheck(
-            "read_only",
-            live.ok or "READ-ONLY" not in live.error,
-            "proposal only" if not live.ok else "live trading allowed",
-        )
-    )
-    if recommendation == "PASS":
-        checks.append(RiskCheck("edge_threshold", False, "PASS — no +EV side at min edge"))
-    else:
-        checks.append(RiskCheck("edge_threshold", True, f"{recommendation} meets min edge"))
-
-    if size > 0:
-        amt = check_trade_amount(size)
-        cap = max_trade_contracts()
-        checks.append(
-            RiskCheck(
-                "max_contracts",
-                amt.ok,
-                f"{size} contracts (cap {cap:g})" if amt.ok else amt.error,
-            )
-        )
-    else:
-        checks.append(RiskCheck("kelly_size", False, "Kelly size is 0 — skip or raise bankroll"))
-
-    if max_risk_dollars is not None and estimated_cost is not None:
-        under = estimated_cost <= max_risk_dollars
-        checks.append(
-            RiskCheck(
-                "max_risk_dollars",
-                under,
-                f"${estimated_cost:.2f} vs max ${max_risk_dollars:.2f}",
-            )
-        )
-
-    if venue == "kalshi":
-        checks.append(
-            RiskCheck(
-                "venue_keys",
-                True,
-                "verify KALSHI keys in pmxt/.env before live trade",
-            )
-        )
-    elif venue == "polymarket_us":
-        checks.append(
-            RiskCheck(
-                "venue_keys",
-                True,
-                "verify POLYMARKET_US keys in pmxt/.env before live trade",
-            )
-        )
-
-    blocking = [c for c in checks if c.name in ("max_contracts", "max_risk_dollars", "kelly_size")]
-    passes = recommendation != "PASS" and size > 0 and all(c.ok for c in blocking)
-    return checks, passes
+    return report.checks, report.ok
 
 
 def format_brief_markdown(proposal: TradeProposal, *, title: str = "Trade proposal") -> str:
@@ -336,6 +251,10 @@ def generate_proposal(
         root=root,
         max_risk_dollars=max_risk_dollars,
         estimated_cost=cost,
+        bankroll=br,
+        fair=fair_value_prob,
+        ask=ask,
+        bid=bid,
     )
 
     conf = score_confidence(

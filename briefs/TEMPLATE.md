@@ -27,6 +27,9 @@ Run before approval (Hermes uses terminal — no PMXT MCP on Grok):
 ./pmx scan verify-us SLUG
 ./pmx scan kalshi-btc --horizon all --limit 10
 ./pmx watchlist scan
+./pmx risk check --fair 0.62 --ask 0.50 --event EVENT --outcome YES
+./pmx approve --fair 0.62 --ask 0.50 --event EVENT
+./pmx alert scan --once
 ./pmx propose --fair 0.62 --ask 0.50 --event EVENT --outcome YES
 ./pmx agent portfolio
 ./pmx agent snapshot
