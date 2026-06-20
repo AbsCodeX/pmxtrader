@@ -27,6 +27,7 @@ Run before approval (Hermes uses terminal — no PMXT MCP on Grok):
 ./pmx scan verify-us SLUG
 ./pmx scan kalshi-btc --horizon all --limit 10
 ./pmx watchlist scan
+./pmx propose --fair 0.62 --ask 0.50 --event EVENT --outcome YES
 ./pmx agent portfolio
 ./pmx agent snapshot
 ```
@@ -39,7 +40,7 @@ Run before approval (Hermes uses terminal — no PMXT MCP on Grok):
 | Fair value estimate | ☐ | Your prob vs ask → edge |
 | Mispricing (+EV) | ☐ | Edge ≥ category threshold? |
 | Data sources checked | ☐ | List primary sources (not LLM guesses) |
-| Trade recommendation | ☐ | Venue, side, size, price |
+| Trade recommendation | ☐ | `./pmx propose` or fill proposal section below |
 | Confidence score | ☐ | 0–1 heuristic in frontmatter |
 | Trade reasoning | ☐ | Thesis below |
 | Positions | ☐ | `./pmx positions` / `poly positions` |

@@ -26,6 +26,8 @@ cd ~/pmxtrader
 ./pmx watchlist remove ID|INDEX
 ./pmx watchlist filter --min-volume N --min-liquidity N
 ./pmx watchlist scan                             # live check vs filters (JSON)
+./pmx propose --fair 0.62 --ask 0.50 --event EVENT --outcome YES --use-portfolio
+./pmx propose --url 'MARKET_URL' --fair 0.62 --markdown
 ./pmx agent snapshot              # portfolio + capability manifest (JSON)
 ./pmx agent discover 'MARKET_URL' # discovery + orderbook + rules snippet
 ./pmx agent portfolio             # balances, positions, P&L, exposure

@@ -12,7 +12,7 @@ Hermes agents **cannot** rely on PMXT MCP (Grok schema errors) or `./pmx poly ma
 | **Fair value estimate** | ✓ | read brief | Scout sets `fair_value_prob` in brief; edge = fair − ask |
 | **Mispricing detection** | ✓ | read brief | Compare edge to category threshold (see playbooks) |
 | **News / data sources** | ✓ | — | External sources listed in brief — **not** LLM-invented prices |
-| **Trade recommendation** | ✓ | validate | Brief trade proposal + draft `./pmx` commands |
+| **Trade recommendation** | ✓ | validate | `./pmx propose` · brief trade proposal + draft `./pmx` commands |
 | **Confidence scoring** | ✓ | read brief | `confidence:` frontmatter + `score_confidence()` heuristic |
 | **Trade reasoning** | ✓ | read brief | Thesis section |
 | **Position tracking** | ✓ | ✓ | `./pmx positions` · `./pmx poly positions` · `./pmx agent portfolio` |
@@ -32,6 +32,8 @@ Hermes agents **cannot** rely on PMXT MCP (Grok schema errors) or `./pmx poly ma
 ./pmx watchlist list                            # curated markets + filters
 ./pmx watchlist add --url 'MARKET_URL'          # infer venue from URL
 ./pmx watchlist scan                            # live check + volume/liquidity filters
+./pmx propose --fair 0.62 --ask 0.50 --event EVENT --outcome YES --use-portfolio
+./pmx propose --url 'MARKET_URL' --fair 0.62 --markdown   # paste into brief
 ```
 
 Python module: `apps/bridge/trading_agent.py`

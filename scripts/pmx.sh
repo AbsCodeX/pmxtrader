@@ -56,11 +56,13 @@ Shared
   event EVENT                           Raw event JSON
   compare slate SPORT | compare url URL Prediction Hunt odds
   agent snapshot | agent portfolio | agent discover URL  Trading agent capabilities (JSON)
+  agent propose | propose --fair P --ask A ...   Trade proposal (edge, Kelly, risk, YES/NO)
   scan poly-global QUERY [--book]           Global Poly Gamma/CLOB search (research)
   scan poly-us QUERY                        Paginated Polymarket US search
   scan verify-us SLUG                       Check US retail slug exists
   scan kalshi-btc [--horizon 15m|1h|all]    Short-term BTC markets on Kalshi
   watchlist list|add|remove|filter|scan     Curated markets + volume/liquidity filters
+  propose --fair P [--ask A] [--url URL] ...   Formatted trade proposal (JSON or --markdown)
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
@@ -127,6 +129,7 @@ normalize_verb() {
     cockpit|tui|ui|terminal-ui) printf '%s\n' cockpit ;;
     compare|ph|odds|hunt) printf '%s\n' compare ;;
     agent|capabilities|cap) printf '%s\n' agent ;;
+    propose|proposal) printf '%s\n' propose ;;
     scan|scanner) printf '%s\n' scan ;;
     watchlist|watch-list|wl) printf '%s\n' watchlist ;;
     brief|plan|idea) printf '%s\n' brief ;;
@@ -322,8 +325,12 @@ except Exception as e:
       snapshot|portfolio|discover)
         exec python3 -m apps.bridge.trading_agent "$sub" "$@"
         ;;
+      propose|proposal)
+        shift || true
+        exec python3 -m apps.bridge.trade_proposal "$@"
+        ;;
       *)
-        echo "Usage: pmx agent snapshot|portfolio|discover URL" >&2
+        echo "Usage: pmx agent snapshot|portfolio|discover URL|propose ..." >&2
         exit 1
         ;;
     esac
@@ -332,6 +339,9 @@ except Exception as e:
     sub="${1:-list}"
     shift || true
     exec python3 -m apps.bridge.watchlist "$sub" "$@"
+    ;;
+  propose|proposal)
+    exec python3 -m apps.bridge.trade_proposal "$@"
     ;;
   scan)
     sub="${1:-}"
