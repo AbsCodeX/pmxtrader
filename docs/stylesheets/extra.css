@@ -95,10 +95,8 @@ body,
 
 .pmx-site-header {
   background: var(--doc-bg);
-  border-bottom: 1px solid var(--doc-border);
-  position: sticky;
-  top: 0;
-  z-index: 4;
+  position: static;
+  z-index: auto;
 }
 
 .pmx-site-header__inner {
@@ -255,25 +253,94 @@ body,
   font-size: var(--doc-text-sm);
 }
 
+/* ── App header shell (topnav + search/theme toolbar) ── */
+
+.pmx-shell-header {
+  background: var(--doc-bg);
+  border-bottom: 1px solid var(--doc-border);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.pmx-site-header {
+  border-bottom: none;
+  position: static;
+}
+
+.pmx-shell-header__toolbar .md-header {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--doc-text);
+  min-height: 0;
+  padding: 0;
+}
+
+.pmx-shell-header__toolbar .md-header__inner {
+  justify-content: flex-end;
+  margin: 0 auto;
+  max-width: 72rem;
+  min-height: 2rem;
+  padding: 0 clamp(1rem, 3vw, 1.25rem) 0.45rem;
+}
+
+.pmx-shell-header__toolbar .md-header__button {
+  color: var(--doc-muted);
+  margin: 0;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+}
+
+.pmx-shell-header__toolbar .md-header__button:hover {
+  color: var(--doc-text);
+}
+
+.pmx-shell-header__toolbar .md-header__button svg {
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.pmx-shell-header__toolbar .md-logo,
+.pmx-shell-header__toolbar .md-header__title,
+.pmx-shell-header__toolbar .md-header__source {
+  display: none;
+}
+
+.md-skip {
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.md-skip:focus {
+  background: var(--doc-bg);
+  border: 1px solid var(--doc-border);
+  clip: auto;
+  height: auto;
+  left: 1rem;
+  overflow: visible;
+  padding: 0.35rem 0.55rem;
+  top: 0.35rem;
+  width: auto;
+  z-index: 10;
+}
+
+@media screen and (min-width: 76.25em) {
+  .pmx-shell-header__toolbar .md-header__button[for="__drawer"] {
+    display: none;
+  }
+}
+
 /* ── Homepage layout ── */
 
 .pmx-doc-home {
   margin: 0 auto;
   max-width: none;
   padding: 0;
-}
-
-.pmx-home .md-sidebar--primary,
-.pmx-home .md-sidebar--secondary {
-  display: none;
-}
-
-.pmx-home .md-header {
-  display: none;
-}
-
-.pmx-home .md-content {
-  margin: 0;
 }
 
 .pmx-home .md-content__inner {
@@ -284,6 +351,59 @@ body,
 
 .pmx-home .md-footer-nav {
   display: none;
+}
+
+/* ── Left navigation tree ── */
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary {
+    width: 15rem;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    width: 15rem;
+  }
+}
+
+.md-sidebar--primary {
+  background: var(--doc-bg);
+  border-right: 1px solid var(--doc-border);
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+  padding: 0.65rem 0 1.25rem;
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__title,
+  .md-sidebar--primary .md-nav__source {
+    display: none;
+  }
+}
+
+.md-nav--primary > .md-nav__list {
+  padding: 0 0.55rem;
+}
+
+.md-nav__item--section > .md-nav__link {
+  color: var(--doc-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-top: 0.75rem;
+  min-height: auto;
+  padding: 0.25rem 0.45rem 0.15rem;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.md-nav__item--section:first-child > .md-nav__link {
+  margin-top: 0.1rem;
+}
+
+.md-nav .md-nav .md-nav__link {
+  font-size: 0.76rem;
+  padding-left: 0.65rem;
 }
 
 /* ── Hero ── */
@@ -725,7 +845,7 @@ body,
 
 .md-header {
   background: var(--doc-bg);
-  border-bottom: 1px solid var(--doc-border);
+  border-bottom: none;
   box-shadow: none;
 }
 
@@ -733,14 +853,20 @@ body,
   background: var(--doc-bg);
 }
 
-.md-header__title,
-.md-header .md-logo {
-  display: none;
+.md-sidebar--secondary {
+  border-left: 1px solid var(--doc-border);
 }
 
-.md-sidebar--primary {
-  background: var(--doc-bg);
-  border-right: 1px solid var(--doc-border);
+.md-sidebar--secondary .md-nav__title {
+  color: var(--doc-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-sidebar--secondary .md-nav__link {
+  font-size: 0.76rem;
 }
 
 .md-nav__link {
@@ -759,14 +885,6 @@ body,
   font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.md-nav__item--section > .md-nav__link {
-  color: var(--doc-muted);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 .md-content__inner {

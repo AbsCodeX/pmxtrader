@@ -1,7 +1,6 @@
 ---
 hide:
   - toc
-  - navigation
 ---
 
 <section class="pmx-hero" aria-labelledby="hero-title">

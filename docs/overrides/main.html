@@ -20,8 +20,12 @@
 {% endblock %}
 
 {% block header %}
-  {% include "partials/pmx-topnav.html" %}
-  {{ super() }}
+  <div class="pmx-shell-header">
+    {% include "partials/pmx-topnav.html" %}
+    <div class="pmx-shell-header__toolbar">
+      {{ super() }}
+    </div>
+  </div>
 {% endblock %}
 
 {% block content %}

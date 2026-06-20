@@ -20,34 +20,27 @@ theme:
       primary: black
       accent: black
       toggle:
-        icon: material/brightness-7
-        name: Dark mode
+        icon: material/weather-night
+        name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: black
       accent: black
       toggle:
-        icon: material/brightness-4
-        name: Light mode
+        icon: material/weather-sunny
+        name: Switch to light mode
   font:
     text: Inter
     code: Roboto Mono
   features:
     - navigation.sections
     - navigation.expand
-    - navigation.top
-    - navigation.path
-    - navigation.indexes
     - navigation.footer
     - navigation.prev_next
     - search.suggest
     - search.highlight
-    - search.share
     - content.code.copy
     - content.tabs.link
-    - toc.follow
-    - header.autohide
-    - toc.integrate
 
 plugins:
   - search
