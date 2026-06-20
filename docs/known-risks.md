@@ -31,9 +31,12 @@ Read this before live trading or deploying agents.
 | Control | Limitation |
 |---------|------------|
 | Kill switch (`./pmx stop`) | Blocks **new** trades; does not undo filled orders |
-| `PMX_READ_ONLY=1` | Env-level block; easy to forget if unset |
-| `PMX_MAX_TRADE_CONTRACTS` | Per-order cap only, not portfolio exposure |
+| `PMX_READ_ONLY=1` (default on session start) | Env-level block; cleared by `./pmx go-live` or `.pmx-live` file |
+| `PMX_MAX_TRADE_CONTRACTS` (default 10) | Per-order cap only, not portfolio exposure |
+| Trade confirm (Terminal) | Requires typing YES/y unless `--yes` or `PMX_TRADE_CONFIRM=0` |
 | Dry-run (`--dry-run`, `PMX_DRY_RUN`) | Scripts only — verify flags before live session |
+| `./pmx panic` | Kalshi + Polymarket US when keys present — cancel orders + market flatten |
+| Trade audit | Live orders append to `briefs/alerts/trades.jsonl` (gitignored) |
 
 Full audit: `reviews/2026-06-19/trading-safety-review.md`
 

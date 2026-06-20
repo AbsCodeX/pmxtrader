@@ -95,6 +95,24 @@ Agent commands: **`docs/commands.md`** · `hermes/README.md`
 
 Cross-venue **research** from Kalshi links still uses Prediction Hunt / PMXT Router (often international Polymarket, not US).
 
+## Emergency flatten (panic)
+
+`./pmx panic` now includes **Polymarket US** when `POLYMARKET_US_*` keys are in `pmxt/.env`:
+
+1. Engages kill switch
+2. Cancels all resting Poly US orders (`scripts/polymarket-us-emergency-exit.py`)
+3. Market-sells all open positions (when `--cash-out`, the default for `./pmx panic`)
+
+Preview without execution:
+
+```bash
+./pmx stop dry
+# or
+./scripts/kill-switch.sh stop --dry-run --cash-out
+```
+
+Implementation mirrors Kalshi panic (`scripts/kalshi-emergency-exit.py`) and supports `--dry-run`.
+
 ## Related
 
 - **Command reference:** `docs/commands.md`

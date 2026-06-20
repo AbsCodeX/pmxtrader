@@ -58,11 +58,13 @@ class StatsBar(Horizontal):
     def apply_snapshot(self, snap: LiveSnapshot) -> None:
         ks = snap.kill_switch
         ks_cls = "stat-bad" if ks == "ON" else "stat-ok"
+        ro_cls = "stat-warn" if snap.read_only else "stat-ok"
+        ro_label = "RO" if snap.read_only else "LIVE"
         self.query_one("#s-kalshi", _StatCell).update(
             f"[#58a6ff]KALSHI[/]\n[bold]${snap.kalshi_available or '?'}[/] [{ks_cls}]{ks}[/]"
         )
         self.query_one("#s-poly", _StatCell).update(
-            f"[#58a6ff]POLY US[/]\n[bold]${snap.poly_available or '?'}[/]"
+            f"[#58a6ff]POLY US[/]\n[bold]${snap.poly_available or '?'}[/] [{ro_cls}]{ro_label}[/]"
         )
         self.query_one("#s-markets", _StatCell).update(
             f"[#58a6ff]MARKETS[/]\n[bold][#39c5cf]{len(snap.markets)}[/][/]"

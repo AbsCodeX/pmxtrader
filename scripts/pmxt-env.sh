@@ -32,6 +32,14 @@ _pmxt_env_root() {
 export PMXTRADER_ROOT="$(_pmxt_env_root)"
 export PMXT_DIR="$PMXTRADER_ROOT/pmxt"
 
+# Default-safe session: read-only + per-order cap unless operator runs ./pmx go-live.
+export PMX_MAX_TRADE_CONTRACTS="${PMX_MAX_TRADE_CONTRACTS:-10}"
+if [[ -f "$PMXTRADER_ROOT/.pmx-live" ]]; then
+  export PMX_READ_ONLY=0
+else
+  export PMX_READ_ONLY="${PMX_READ_ONLY:-1}"
+fi
+
 # Prefer global @pmxt/cli (newer); fall back to vendored copy in pmxt/.
 if command -v pmxt >/dev/null 2>&1; then
   export PMXT_CLI_BIN="pmxt"

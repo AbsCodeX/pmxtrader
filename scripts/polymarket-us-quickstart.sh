@@ -82,7 +82,7 @@ outcome_id_for() {
 
 place_order() {
   local order_side=$1 slug=$2 outcome_side=$3 qty=$4 limit_price=$5
-  local oid action
+  local oid action preview order_stdout
   oid="$(outcome_id_for "$slug" "$outcome_side")"
   outcome_side="$(normalize_side "$outcome_side")"
 
@@ -103,9 +103,26 @@ place_order() {
     return 0
   fi
 
+  preview="$(PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+from apps.bridge.trade_safety import format_dry_run_order
+print(format_dry_run_order(
+    venue='Polymarket US',
+    action='$action',
+    market='$slug',
+    outcome='$outcome_side',
+    amount='$qty',
+    order_type='limit' if '$limit_price' else 'market',
+    limit_price='$limit_price' or None,
+))
+")"
+  trade_safety_confirm_live "$preview" "${POLY_TRADE_EXTRA[@]}" || {
+    echo "Aborted." >&2
+    return 1
+  }
+
   if [[ -n "$limit_price" ]]; then
     echo "WARNING: Live Polymarket US — limit $action $qty @ $limit_price on $slug ($outcome_side)."
-    pmxt_cli order:create --local \
+    order_stdout="$(pmxt_cli order:create --local \
       --exchange "$EXCHANGE" \
       --market-id "$slug" \
       --outcome-id "$oid" \
@@ -113,18 +130,26 @@ place_order() {
       --type limit \
       --price "$limit_price" \
       --amount "$qty" \
-      --json
+      --json 2>&1)" || {
+      echo "$order_stdout"
+      return 1
+    }
   else
     echo "WARNING: Live Polymarket US — market $action $qty on $slug ($outcome_side)."
-    pmxt_cli order:create --local \
+    order_stdout="$(pmxt_cli order:create --local \
       --exchange "$EXCHANGE" \
       --market-id "$slug" \
       --outcome-id "$oid" \
       --side "$order_side" \
       --type market \
       --amount "$qty" \
-      --json
+      --json 2>&1)" || {
+      echo "$order_stdout"
+      return 1
+    }
   fi
+  echo "$order_stdout"
+  trade_safety_audit_log polymarket_us "$action" "$slug" "$outcome_side" "$qty" "$order_stdout"
 }
 
 position_size_for() {
@@ -149,10 +174,12 @@ print('', end='')
 
 _poly_flag_dry_run() {
   DRY_RUN=0
+  POLY_TRADE_EXTRA=()
   for arg in "$@"; do
     if [[ "$arg" == "--dry-run" ]]; then
       DRY_RUN=1
-      break
+    else
+      POLY_TRADE_EXTRA+=("$arg")
     fi
   done
   export DRY_RUN

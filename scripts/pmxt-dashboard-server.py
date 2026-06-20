@@ -26,6 +26,7 @@ from apps.bridge.dashboard_security import (  # noqa: E402
     write_secret_token,
 )
 from apps.bridge.parse import extract_trade_preview  # noqa: E402
+from apps.bridge.trade_safety import safety_snapshot  # noqa: E402
 
 PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
 HOST = resolve_bind_host()
@@ -182,6 +183,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
+            return
+        if parsed.path == "/api/safety":
+            if not self._check_token():
+                self._send_json(403, {"ok": False, "error": "Invalid or missing X-Pmxtrader-Token header"})
+                return
+            snap = safety_snapshot(ROOT)
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "killSwitch": snap.kill_switch,
+                    "killSwitchReason": snap.kill_switch_reason,
+                    "readOnly": snap.read_only,
+                    "maxTradeContracts": snap.max_trade_contracts,
+                    "liveMode": snap.live_mode,
+                },
+            )
             return
         if parsed.path == "/api/commands":
             if not self._check_token():

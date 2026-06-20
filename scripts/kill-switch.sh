@@ -45,12 +45,12 @@ confirm_panic() {
   if [[ "${1:-}" == "--yes" ]]; then
     return 0
   fi
-  echo "WARNING: Live Kalshi — real money."
+  echo "WARNING: Live trading — real money."
   echo "This will:"
   echo "  1. Engage the kill switch (block new trades)"
-  echo "  2. Cancel all resting orders"
+  echo "  2. Cancel all resting orders (Kalshi + Polymarket US when keys set)"
   if [[ "$CASH_OUT" -eq 1 ]]; then
-    echo "  3. Market-close ALL open positions (reduce-only)"
+    echo "  3. Market-close ALL open positions (reduce-only / market sell)"
   fi
   echo
   read -r -p "Type PANIC to confirm: " answer
@@ -104,7 +104,21 @@ case "$cmd" in
     [[ "$CASH_OUT" -eq 1 ]] && EXIT_ARGS+=(--close-positions)
     [[ "$DRY_RUN" -eq 1 ]] && EXIT_ARGS+=(--dry-run)
 
-    python3 "$ROOT/scripts/kalshi-emergency-exit.py" "${EXIT_ARGS[@]}"
+    exit_code=0
+    ran=0
+    if has_kalshi_env; then
+      ran=1
+      python3 "$ROOT/scripts/kalshi-emergency-exit.py" "${EXIT_ARGS[@]}" || exit_code=1
+    fi
+    if has_poly_us_env; then
+      ran=1
+      python3 "$ROOT/scripts/polymarket-us-emergency-exit.py" "${EXIT_ARGS[@]}" || exit_code=1
+    fi
+    if [[ "$ran" -eq 0 ]]; then
+      echo "No venue keys configured (Kalshi or Polymarket US)." >&2
+      exit_code=1
+    fi
+    exit "$exit_code"
     ;;
   *)
     usage

@@ -19,6 +19,7 @@ class SafetyPane(Vertical):
     def compose(self) -> ComposeResult:
         yield Static("[bold]Safety controls[/bold]")
         yield Static("Block new trades or emergency flatten. Trades always need confirm.", classes="warn")
+        yield Static("", id="safety-status", markup=True)
         with Horizontal():
             yield Input(placeholder='Stop reason e.g. "halftime"', id="stop-reason")
             yield Button("Stop trading", variant="warning", id="btn-stop")
@@ -27,6 +28,25 @@ class SafetyPane(Vertical):
             yield Button("PANIC — flatten all", variant="error", id="btn-panic")
             yield Button("Status", id="btn-status")
         yield OutputLog(id="safety-log", markup=True)
+
+    def on_mount(self) -> None:
+        self._refresh_safety_status()
+
+    def _refresh_safety_status(self) -> None:
+        from apps.bridge.trade_safety import safety_snapshot
+
+        snap = safety_snapshot(pmx.ROOT)
+        ks = snap.kill_switch
+        ks_style = "red" if ks == "ON" else "green"
+        ro_style = "yellow" if snap.read_only else "green"
+        ro = "ON" if snap.read_only else "OFF"
+        max_sz = int(snap.max_trade_contracts or 10)
+        reason = f" — {snap.kill_switch_reason}" if snap.kill_switch_reason else ""
+        self.query_one("#safety-status", Static).update(
+            f"Kill switch: [{ks_style}]{ks}[/]  "
+            f"Read-only: [{ro_style}]{ro}[/]  "
+            f"Max size: [bold]{max_sz}[/] contracts/order{reason}"
+        )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
@@ -69,3 +89,4 @@ class SafetyPane(Vertical):
         r = event.worker.result
         log.clear()
         log.write_block(r.get("command", "pmx").replace(str(pmx.ROOT / "pmx"), "./pmx"), r.get("stdout") or r.get("stderr") or "")
+        self._refresh_safety_status()

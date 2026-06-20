@@ -69,7 +69,7 @@ Stop / safety
   stop orders | cancel                  Halt + cancel resting orders
   panic | cashout | flatten             Halt + cancel + close all positions
   stop dry                              Preview panic (no execution)
-  resume | go                           Allow trading again
+  resume | go-live | go                 Allow trading (kill switch OFF + read-only OFF)
 
 Examples
   ./pmx session                       # start sidecar + show status (or: pmxt-start)
@@ -116,7 +116,7 @@ normalize_verb() {
     trade|buy|order) printf '%s\n' trade ;;
     stop|halt|kill|switch|pause) printf '%s\n' stop ;;
     panic|cashout|cash-out|flatten|exit|bail|get-out) printf '%s\n' panic ;;
-    resume|unstop|unhalt|go|start) printf '%s\n' resume ;;
+    resume|unstop|unhalt|go|start|go-live|golive|live) printf '%s\n' go-live ;;
     poly|poly-us|polymarket-us|polymarketus) printf '%s\n' poly ;;
     *) printf '%s\n' "$v" ;;
   esac
@@ -138,6 +138,12 @@ case "$verb" in
     ;;
   status)
     "$ROOT/scripts/kill-switch.sh" status
+    if [[ "${PMX_READ_ONLY:-1}" =~ ^([1yY]|true|yes|TRUE|YES)$ ]]; then
+      echo "Read-only: ON (PMX_READ_ONLY) — run ./pmx go-live to trade"
+    else
+      echo "Read-only: OFF"
+    fi
+    echo "Max trade size: ${PMX_MAX_TRADE_CONTRACTS:-10} contracts (PMX_MAX_TRADE_CONTRACTS)"
     echo
     echo "Kalshi:"
     pmxt_cli kalshi balance --local --json 2>/dev/null | python3 -c "
@@ -317,8 +323,8 @@ except Exception as e:
   panic)
     exec "$ROOT/scripts/kill-switch.sh" stop --cash-out "$@"
     ;;
-  resume)
-    exec "$ROOT/scripts/kill-switch.sh" off
+  go-live|resume)
+    exec "$ROOT/scripts/pmx-go-live.sh"
     ;;
   poly)
     sub="${1:-help}"

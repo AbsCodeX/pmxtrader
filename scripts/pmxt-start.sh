@@ -16,6 +16,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+rm -f "$ROOT/.pmx-live"
 # shellcheck source=pmxt-env.sh
 source "$ROOT/scripts/pmxt-env.sh"
 
@@ -44,6 +45,9 @@ say() {
 
 say "=== pmxtrader session start ==="
 say "Root: $PMXTRADER_ROOT"
+say
+say "Safety: READ-ONLY (default) — max ${PMX_MAX_TRADE_CONTRACTS} contracts/order"
+say "  Live trades: ./pmx go-live   (after kill switch OFF)"
 say
 
 say "Starting PMXT sidecar (loads pmxt/.env)..."
@@ -94,6 +98,7 @@ Quick commands:
 
 Full reference: docs/commands.md
 Stop trading:     ./pmx stop on "reason"
+Go live:          ./pmx go-live   (clears read-only default)
 Emergency:        ./pmx panic
 
 EOF

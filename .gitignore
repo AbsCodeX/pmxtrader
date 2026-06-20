@@ -53,6 +53,7 @@ briefs/alerts/*
 
 # Operator kill switch (touch to halt trading)
 KILL_SWITCH
+.pmx-live
 
 # Local dashboard server pid
 .pmxt-dashboard.pid

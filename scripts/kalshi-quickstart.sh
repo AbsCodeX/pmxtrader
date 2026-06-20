@@ -94,14 +94,20 @@ case "$cmd" in
       exit 1
     fi
     DRY_RUN=0
-    market_id="${2:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run]}"
-    outcome_id="${3:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run]}"
+    TRADE_EXTRA=()
+    market_id="${2:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run] [--yes]}"
+    outcome_id="${3:?Usage: $0 trade MARKET_ID OUTCOME_ID [amount] [--dry-run] [--yes]}"
     amount="${4:-1}"
+    shift 4 || true
+    for arg in "$@"; do
+      case "$arg" in
+        --dry-run) DRY_RUN=1 ;;
+        --yes|-y) TRADE_EXTRA+=("$arg") ;;
+        *) TRADE_EXTRA+=("$arg") ;;
+      esac
+    done
     if [[ "$amount" == "--dry-run" ]]; then
       amount=1
-      DRY_RUN=1
-    fi
-    if [[ "${5:-}" == "--dry-run" ]]; then
       DRY_RUN=1
     fi
     trade_safety_require_live || exit 1
@@ -115,14 +121,29 @@ print(format_dry_run_order(
 "
       exit 0
     fi
+    preview="$(PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+from apps.bridge.trade_safety import format_dry_run_order
+print(format_dry_run_order(
+    venue='Kalshi', action='buy', market='$market_id', outcome='$outcome_id', amount='$amount'
+))
+")"
+    trade_safety_confirm_live "$preview" "${TRADE_EXTRA[@]}" || {
+      echo "Aborted."
+      exit 1
+    }
     echo "WARNING: Live Kalshi — real money. Buying $amount contract(s)."
-    pmxt_cli "$EXCHANGE" order:create --local \
+    order_stdout="$(pmxt_cli "$EXCHANGE" order:create --local \
       --market-id "$market_id" \
       --outcome-id "$outcome_id" \
       --side buy \
       --type market \
       --amount "$amount" \
-      --json
+      --json 2>&1)" || {
+      echo "$order_stdout"
+      exit 1
+    }
+    echo "$order_stdout"
+    trade_safety_audit_log kalshi buy "$market_id" "$outcome_id" "$amount" "$order_stdout"
     echo
     echo "=== Balance ==="
     pmxt_cli "$EXCHANGE" balance --local --json

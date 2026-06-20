@@ -35,6 +35,8 @@ class TickerBar(Horizontal):
     """
 
     kill = reactive("?")
+    read_only = reactive(True)
+    max_size = reactive("10")
     kalshi = reactive("—")
     poly = reactive("—")
     sidecar = reactive("…")
@@ -43,6 +45,8 @@ class TickerBar(Horizontal):
     def compose(self) -> ComposeResult:
         yield Static(" PMX ", classes="tick tick-cyan")
         yield Static("", id="t-kill", classes="tick")
+        yield Static("", id="t-ro", classes="tick")
+        yield Static("", id="t-max", classes="tick")
         yield Static("", id="t-kalshi", classes="tick")
         yield Static("", id="t-poly", classes="tick")
         yield Static("", id="t-side", classes="tick")
@@ -56,6 +60,8 @@ class TickerBar(Horizontal):
 
     def apply_snapshot(self, snap: LiveSnapshot) -> None:
         self.kill = snap.kill_switch
+        self.read_only = snap.read_only
+        self.max_size = str(int(snap.max_trade_contracts or 10))
         self.kalshi = snap.kalshi_available or "?"
         self.poly = snap.poly_available or "?"
         self.sidecar = "LIVE" if snap.sidecar_ok else "DOWN"
@@ -70,6 +76,15 @@ class TickerBar(Horizontal):
             cls = "tick tick-warn"
         self.query_one("#t-kill", Static).set_classes(cls)
         self.query_one("#t-kill", Static).update(f" KILL:{v} ")
+
+    def watch_read_only(self, v: bool) -> None:
+        cls = "tick tick-warn" if v else "tick tick-ok"
+        label = "RO:ON" if v else "RO:OFF"
+        self.query_one("#t-ro", Static).set_classes(cls)
+        self.query_one("#t-ro", Static).update(f" {label} ")
+
+    def watch_max_size(self, v: str) -> None:
+        self.query_one("#t-max", Static).update(f" MAX:{v} ")
 
     def watch_kalshi(self, v: str) -> None:
         self.query_one("#t-kalshi", Static).update(f" KALSHI ${v} ")

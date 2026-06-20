@@ -24,6 +24,9 @@ HEAVY_HEALTH_EVERY = 3
 class LiveSnapshot:
     ok: bool = False
     kill_switch: str = "?"
+    read_only: bool = True
+    max_trade_contracts: float | None = 10.0
+    live_mode: bool = False
     kalshi_available: str | None = None
     kalshi_total: str | None = None
     poly_available: str | None = None
@@ -78,6 +81,12 @@ def fetch_snapshot(include_markets: bool = False, market_query: str = "") -> Liv
 
     s = parse.parse_status(snap.status_text)
     snap.kill_switch = s.kill_switch
+    from apps.bridge.trade_safety import safety_snapshot
+
+    safety = safety_snapshot(ROOT)
+    snap.read_only = safety.read_only
+    snap.max_trade_contracts = safety.max_trade_contracts
+    snap.live_mode = safety.live_mode
     snap.kalshi_available = s.kalshi_available
     snap.kalshi_total = s.kalshi_total
     snap.poly_available = s.poly_available

@@ -190,6 +190,26 @@ const API = (location.protocol.startsWith('http') && location.port)
       return parts.join(' · ');
     }
 
+    function renderSafetyBadges(data) {
+      if (!data || !data.ok) return '';
+      const chips = [];
+      const ks = data.killSwitch || '?';
+      chips.push(`<span class="safety-chip ${ks === 'ON' ? 'danger' : 'ok'}">KILL ${ks}</span>`);
+      const ro = data.readOnly ? 'ON' : 'OFF';
+      chips.push(`<span class="safety-chip ${data.readOnly ? 'warn' : 'ok'}">READ-ONLY ${ro}</span>`);
+      if (data.maxTradeContracts != null) {
+        chips.push(`<span class="safety-chip neutral">MAX ${data.maxTradeContracts}</span>`);
+      }
+      return chips.join(' ');
+    }
+
+    function mergeStatusBar(statusStdout, safety) {
+      const base = parseStatusSummary(statusStdout);
+      const badges = renderSafetyBadges(safety);
+      if (!badges) return base;
+      return `${badges}${base ? ' · ' + base : ''}`;
+    }
+
     function apiHeaders() {
       const h = { 'Content-Type': 'application/json' };
       if (apiToken) h['X-Pmxtrader-Token'] = apiToken;
@@ -229,12 +249,17 @@ const API = (location.protocol.startsWith('http') && location.port)
         return;
       }
       try {
-        const data = await postJson('/api/run', { command: 'status' });
-        if (data.stdout) {
-          statusBar.innerHTML = parseStatusSummary(data.stdout);
+        const [statusData, safetyData] = await Promise.all([
+          postJson('/api/run', { command: 'status' }),
+          fetch(`${API}/api/safety`, { headers: apiHeaders() }).then(async r => {
+            try { return await r.json(); } catch { return {}; }
+          }),
+        ]);
+        if (statusData.stdout || safetyData.ok) {
+          statusBar.innerHTML = mergeStatusBar(statusData.stdout, safetyData);
           statusBar.classList.add('visible');
-        } else if (data.error) {
-          statusBar.textContent = data.error;
+        } else if (statusData.error) {
+          statusBar.textContent = statusData.error;
           statusBar.classList.add('visible');
         }
       } catch {
@@ -291,8 +316,16 @@ const API = (location.protocol.startsWith('http') && location.port)
         if (data.error) appendOut(`ERROR: ${data.error}\n`);
         if (!data.ok && !data.error && !data.stdout) appendOut(`exit ${data.exitCode}\n`);
         if (cmd === 'status' && data.stdout) {
-          statusBar.innerHTML = parseStatusSummary(data.stdout);
-          statusBar.classList.add('visible');
+          fetch(`${API}/api/safety`, { headers: apiHeaders() })
+            .then(r => r.json())
+            .then(safety => {
+              statusBar.innerHTML = mergeStatusBar(data.stdout, safety);
+              statusBar.classList.add('visible');
+            })
+            .catch(() => {
+              statusBar.innerHTML = parseStatusSummary(data.stdout);
+              statusBar.classList.add('visible');
+            });
         }
       } catch (err) {
         appendOut(`ERROR: ${err.message}\n`);
