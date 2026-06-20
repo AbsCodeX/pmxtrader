@@ -77,3 +77,4 @@ Subprocess environment: dashboard and cockpit use `minimal_subprocess_env()` (`a
 | Functionality | `reviews/2026-06-19/functionality-review.md` |
 | Trading safety | `reviews/2026-06-19/trading-safety-review.md` |
 | Project structure | `reviews/2026-06-19/project-structure-review.md` |
+| Documentation | `reviews/2026-06-19/documentation-review.md` |

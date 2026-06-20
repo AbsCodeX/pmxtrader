@@ -41,6 +41,7 @@ cd ~/pmxtrader && direnv allow
 ### First-time build
 
 ```bash
+git submodule update --init     # optional: pmxt-mcp, molt-pmxt
 ./scripts/setup-dev.sh          # CLI, build PMXT
 ```
 
@@ -52,6 +53,9 @@ cd ~/pmxtrader && direnv allow
 | Polymarket US | `POLYMARKET_US_KEY_ID`, `POLYMARKET_US_SECRET_KEY` | `pmxt/core/docs/SETUP_POLYMARKET_US.md` |
 | LLM agents | `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | `docs/providers.md` |
 | Prediction Hunt (optional) | `PREDICTION_HUNT_API_KEY` | `docs/kalshi-integration.md` |
+| Safety (optional) | `PMX_READ_ONLY`, `PMX_DRY_RUN`, `PMX_MAX_TRADE_CONTRACTS` | `docs/environment.md` |
+
+Full env reference: **[`docs/environment.md`](docs/environment.md)** · Template: `pmxt/.env.example`
 
 After editing `.env`, restart sidecar: `./pmx warm` or `./scripts/pmxt-server.sh restart`.
 
@@ -114,19 +118,57 @@ Separate **research** (Scout) from **execution** (Trader). Human approves every 
 
 | Directory | Purpose |
 |-----------|---------|
+| `pmx`, `scripts/` | CLI shim, shell entry points, servers |
+| `apps/bridge/` | Shared Python (commands, parse, trade safety) |
+| `apps/cockpit/` | Textual TUI — see `docs/cockpit.md` |
+| `dashboard/` | Web command center (not `apps/dashboard/`) |
 | `pmxt/` | PMXT engine (sidecar, exchanges) |
-| `scripts/` | `./pmx`, agents, kill switch, venue quickstarts |
 | `briefs/` | Trade brief templates + active briefs |
 | `config/` | `agents.json`, `providers.json` |
 | `hermes/skills/` | Hermes agent skills |
 | `apps/agents/` | Scout/Trader prompts |
-| `docs/` | Guides and command reference |
+| `docs/` | Guides — see table below |
+| `tests/` | Python test suite |
+
+Full layout: [`docs/project-structure.md`](docs/project-structure.md)
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [`docs/commands.md`](docs/commands.md) | Complete `./pmx` reference |
+| [`docs/environment.md`](docs/environment.md) | All env vars (venues, safety, dashboard) |
+| [`docs/testing.md`](docs/testing.md) | Test and lint commands |
+| [`docs/known-risks.md`](docs/known-risks.md) | Real money, agents, limitations |
+| [`docs/official-links.md`](docs/official-links.md) | PMXT, venue, and API URLs |
+| [`docs/multi-agent.md`](docs/multi-agent.md) | Scout / Trader roles |
+| [`docs/providers.md`](docs/providers.md) | LLM routing |
+| [`docs/kalshi-integration.md`](docs/kalshi-integration.md) | Kalshi ↔ scripts |
+| [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md) | Poly US keys, `./pmx poly` |
+| [`AGENTS.md`](AGENTS.md) | Cursor Cloud + PMXT engine notes |
+
+## Testing
+
+```bash
+python3 -m pip install -r requirements-cockpit.txt pytest ruff mypy
+python3 -m pytest tests/ -q
+./scripts/smoke-functionality.sh
+python3 -m ruff check .
+```
+
+CI runs the same on every push. Details: [`docs/testing.md`](docs/testing.md)
 
 ## Safety
 
 - Kill switch: `./pmx stop on "reason"` · `./pmx resume` · `./pmx panic`
+- Read-only: `export PMX_READ_ONLY=1` (blocks live trades)
+- Dry-run: `./pmx trade MKT OUT 1 --dry-run` or `export PMX_DRY_RUN=1`
+- Max size: `export PMX_MAX_TRADE_CONTRACTS=10`
+- Web dashboard **cannot** place live orders; cockpit requires confirm
 - Pre-commit secret scanner · strict `.gitignore` for `.env`
 - Trader requires `approved: true` in brief before preparing orders
+
+Risks and limits: [`docs/known-risks.md`](docs/known-risks.md) · Safety audit: `reviews/2026-06-19/trading-safety-review.md`
 
 ## License
 

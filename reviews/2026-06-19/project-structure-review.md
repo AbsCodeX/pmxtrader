@@ -1,7 +1,7 @@
 # Project structure review — 2026-06-19
 
-**Linear parent:** [ABI-79](https://linear.app/pmxt/issue/ABI-79/project-structure-review-2026-06-19)  
-**Sub-issues:** ABI-80–ABI-85  
+**Linear parent:** [ABI-86](https://linear.app/pmxt/issue/ABI-86/project-structure-review-2026-06-19)  
+**Sub-issues:** ABI-87–ABI-92  
 **Guide:** `docs/project-structure.md`
 
 ---
@@ -49,12 +49,12 @@ agents         →  agent-run.sh            →  Hermes (external)
 
 | Linear | Fix |
 |--------|-----|
-| [ABI-80](https://linear.app/pmxt/issue/ABI-80) | Rewrote `docs/architecture.md` to match repo |
-| [ABI-81](https://linear.app/pmxt/issue/ABI-81) | Added `docs/project-structure.md` |
-| [ABI-82](https://linear.app/pmxt/issue/ABI-82) | Placeholder READMEs in empty dirs |
-| [ABI-83](https://linear.app/pmxt/issue/ABI-83) | `tests/test_project_structure.py` invariants |
-| [ABI-84](https://linear.app/pmxt/issue/ABI-84) | Trim `tsconfig.json` packages include |
-| [ABI-85](https://linear.app/pmxt/issue/ABI-85) | Review mirror (this file + `linear-task-structure.md`) |
+| [ABI-87](https://linear.app/pmxt/issue/ABI-87) | Rewrote `docs/architecture.md` to match repo |
+| [ABI-88](https://linear.app/pmxt/issue/ABI-88) | Added `docs/project-structure.md` |
+| [ABI-89](https://linear.app/pmxt/issue/ABI-89) | Placeholder READMEs in empty dirs |
+| [ABI-92](https://linear.app/pmxt/issue/ABI-92) | `tests/test_project_structure.py` invariants |
+| [ABI-91](https://linear.app/pmxt/issue/ABI-91) | Trim `tsconfig.json` packages include |
+| [ABI-90](https://linear.app/pmxt/issue/ABI-90) | Review mirror (this file + `linear-task-structure.md`) |
 
 ---
 
@@ -62,5 +62,5 @@ agents         →  agent-run.sh            →  Hermes (external)
 
 | Batch | Issues | Done |
 |-------|--------|------|
-| Batch J | 6 (ABI-80–ABI-85) | 6 |
-| **Parent ABI-79** | **6 sub-issues** | **6** |
+| Batch J | 6 (ABI-87–ABI-92) | 6 |
+| **Parent ABI-86** | **6 sub-issues** | **6** |
