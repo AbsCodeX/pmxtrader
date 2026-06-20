@@ -14,6 +14,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=pmxt-env.sh
+source "$ROOT/scripts/pmxt-env.sh"
 PMXT="$ROOT/pmxt"
 CLI=(node "$PMXT/sdks/cli/bin/pmxt.js")
 EXCHANGE=kalshi-demo
@@ -36,10 +38,6 @@ if [[ ! -f .env ]]; then
   echo "  # Set KALSHI_API_KEY and KALSHI_PRIVATE_KEY from demo.kalshi.com"
   exit 1
 fi
-
-has_kalshi_env() {
-  grep -q '^KALSHI_API_KEY=.\+' .env 2>/dev/null && grep -q '^KALSHI_PRIVATE_KEY=.\+' .env
-}
 
 cmd="${1:-search}"
 

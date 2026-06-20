@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Canonical Kalshi trade evaluation entry point (used by pmx quote/link, kalshi-link.py, pmxt-monitor).
 # Trade evaluation snapshot: event + orderbook + fill cost + optional cross-venue.
 #
 # Free stack — no paid Prediction Hunt. Uses PMXT local sidecar + optional Router (--hosted).

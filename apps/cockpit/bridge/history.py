@@ -2,25 +2,20 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from apps.cockpit.bridge.json_store import read_json, write_json
 
 HISTORY_FILE = Path.home() / ".pmxt-cockpit" / "balance-history.json"
 MAX_POINTS = 48
 
 
 def _load() -> dict:
-    if HISTORY_FILE.is_file():
-        try:
-            return json.loads(HISTORY_FILE.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {"kalshi": [], "poly": []}
+    return read_json(HISTORY_FILE, {"kalshi": [], "poly": []})
 
 
 def _save(data: dict) -> None:
-    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    HISTORY_FILE.write_text(json.dumps(data))
+    write_json(HISTORY_FILE, data)
 
 
 def record(kalshi: str | None, poly: str | None) -> dict[str, list[float]]:

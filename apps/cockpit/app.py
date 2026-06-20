@@ -66,6 +66,7 @@ class CommandPalette(ModalScreen[None]):
             yield ListView(id="palette-list")
 
     def on_mount(self) -> None:
+        self._cmd_by_slug: dict[str, str] = {}
         self._filter("")
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -75,16 +76,21 @@ class CommandPalette(ModalScreen[None]):
     def _filter(self, query: str) -> None:
         lv = self.query_one("#palette-list", ListView)
         lv.clear()
+        self._cmd_by_slug.clear()
         q = query.lower()
         for cmd, desc in COMMANDS:
             if q and q not in cmd and q not in desc.lower():
                 continue
-            lv.append(ListItem(Static(f"./pmx {cmd}  [dim]{desc}[/dim]", markup=True), id=f"cmd:{cmd}"))
+            slug = cmd.replace(" ", "-")
+            self._cmd_by_slug[slug] = cmd
+            lv.append(ListItem(Static(f"./pmx {cmd}  [dim]{desc}[/dim]", markup=True), id=f"cmd:{slug}"))
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         item_id = event.item.id or ""
         if item_id.startswith("cmd:"):
-            self._run(item_id[4:])
+            slug = item_id[4:]
+            cmd = self._cmd_by_slug.get(slug, slug.replace("-", " "))
+            self._run(cmd)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id != "palette-input":

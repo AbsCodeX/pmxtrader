@@ -73,3 +73,8 @@ alias flatten='pmx panic'
 alias resume='pmx resume'
 alias scout='pmx scout'
 alias trader='pmx trader'
+
+if [[ "${BASH_SOURCE[0]:-}" == "${0:-}" ]]; then
+  echo "Source this file: source scripts/pmx-aliases.sh" >&2
+  exit 1
+fi

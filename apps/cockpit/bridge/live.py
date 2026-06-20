@@ -7,10 +7,17 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from apps.cockpit.bridge import parse, pmx
+from apps.bridge import parse
+from apps.cockpit.bridge import pmx
 from apps.cockpit.bridge.history import record
 
 ROOT = Path(__file__).resolve().parents[3]
+
+_HEADER_WORDS = frozenset(
+    {"ticker", "market", "symbol", "outcome", "side", "size", "price", "total", "slug", "title"}
+)
+_health_poll_counter = 0
+HEAVY_HEALTH_EVERY = 3
 
 
 @dataclass
@@ -32,6 +39,34 @@ class LiveSnapshot:
     positions_count: int = 0
     spark_kalshi: list[float] = field(default_factory=list)
     spark_poly: list[float] = field(default_factory=list)
+
+
+def _count_positions(body: str) -> int:
+    body = body.strip()
+    if not body or body == "(empty)":
+        return 0
+    try:
+        data = json.loads(body)
+        if isinstance(data, list):
+            return len(data)
+        if isinstance(data, dict):
+            for key in ("positions", "orders", "data", "markets"):
+                rows = data.get(key)
+                if isinstance(rows, list):
+                    return len(rows)
+    except json.JSONDecodeError:
+        pass
+
+    count = 0
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("===", "---", "#", "(", "[")):
+            continue
+        tokens = stripped.split()
+        if tokens and all(token.lower() in _HEADER_WORDS for token in tokens):
+            continue
+        count += 1
+    return count
 
 
 def fetch_snapshot(include_markets: bool = False, market_query: str = "") -> LiveSnapshot:
@@ -58,11 +93,14 @@ def fetch_snapshot(include_markets: bool = False, market_query: str = "") -> Liv
 
 
 def fetch_dashboard() -> LiveSnapshot:
+    global _health_poll_counter  # noqa: PLW0603
     snap = fetch_snapshot(include_markets=True)
     preview, count = _positions_preview()
     snap.positions_preview = preview
     snap.positions_count = count
-    checks = _health_checks(snap.sidecar_ok)
+    full_health = (_health_poll_counter % HEAVY_HEALTH_EVERY) == 0
+    _health_poll_counter += 1
+    checks = _health_checks(snap, full_probe=full_health)
     snap.health_checks = checks
     snap.health_score = sum(1 for _, ok in checks if ok)
     snap.health_total = len(checks)
@@ -80,19 +118,23 @@ def _positions_preview() -> tuple[str, int]:
             lines.append(f"[dim]{label}: none[/dim]")
             continue
         body_lines = [ln for ln in body.splitlines() if ln.strip()]
-        count += max(0, len(body_lines) - 1)
+        count += _count_positions(body)
         preview = "\n".join(body_lines[:6])
         lines.append(f"[bold #39c5cf]{label}[/bold #39c5cf]\n{preview}")
     text = "\n\n".join(lines) or "[dim]No open positions[/dim]"
     return text, count
 
 
-def _health_checks(sidecar_ok: bool) -> list[tuple[str, bool]]:
-    checks: list[tuple[str, bool]] = [("Sidecar", sidecar_ok)]
-    r = pmx.run_pmx("balance", timeout=20)
-    checks.append(("Kalshi API", r.get("ok", False)))
-    r = pmx.run_pmx("poly", "balance", timeout=20)
-    checks.append(("Poly US API", r.get("ok", False)))
+def _health_checks(snap: LiveSnapshot, *, full_probe: bool) -> list[tuple[str, bool]]:
+    checks: list[tuple[str, bool]] = [("Sidecar", snap.sidecar_ok)]
+    if full_probe:
+        r = pmx.run_pmx("balance", timeout=20)
+        checks.append(("Kalshi API", r.get("ok", False)))
+        r = pmx.run_pmx("poly", "balance", timeout=20)
+        checks.append(("Poly US API", r.get("ok", False)))
+    else:
+        checks.append(("Kalshi API", bool(snap.kalshi_available)))
+        checks.append(("Poly US API", bool(snap.poly_available)))
     checks.append(("Hermes CLI", shutil.which("hermes") is not None))
     skills = Path.home() / ".hermes" / "skills" / "prediction-markets" / "pmxtrader-commands"
     checks.append(("Hermes skills", skills.is_symlink() or skills.is_dir()))

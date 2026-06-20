@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from apps.bridge.dashboard_security import (
+    DASHBOARD_CSP,
     inject_dashboard_token,
     minimal_subprocess_env,
     resolve_bind_host,
@@ -56,3 +57,8 @@ def test_write_secret_token_mode(tmp_path: Path):
     write_secret_token(path, "secret")
     assert path.read_text().strip() == "secret"
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+def test_dashboard_csp_present():
+    assert "default-src 'self'" in DASHBOARD_CSP
+    assert "frame-ancestors 'none'" in DASHBOARD_CSP

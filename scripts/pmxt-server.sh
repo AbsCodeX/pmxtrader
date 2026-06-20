@@ -38,8 +38,8 @@ case "$cmd" in
     ;;
   ensure)
     if "${CLI[@]}" server status 2>/dev/null | grep -q "running"; then
-      if ! pmxt_cli kalshi balance --local --json >/dev/null 2>&1 \
-        && grep -qE '^KALSHI_API_KEY=.+[^[:space:]]' "$ENV_FILE" 2>/dev/null; then
+      sidecar_port="${PMXT_SIDECAR_PORT:-3847}"
+      if ! curl -fsS "http://127.0.0.1:${sidecar_port}/health" >/dev/null 2>&1; then
         "$0" restart
       fi
     else

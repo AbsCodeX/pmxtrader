@@ -52,6 +52,21 @@ pmxt_cli() {
 
 export -f pmxt_cli 2>/dev/null || true
 
+has_kalshi_env() {
+  local env_file="${PMXT_DIR:?}/.env"
+  [[ -f "$env_file" ]] || return 1
+  grep -qE '^KALSHI_API_KEY=.+[^[:space:]]' "$env_file" 2>/dev/null \
+    && grep -qE '^KALSHI_PRIVATE_KEY=.+[^[:space:]]' "$env_file" 2>/dev/null
+}
+
+has_poly_us_env() {
+  local env_file="${PMXT_DIR:?}/.env"
+  [[ -f "$env_file" ]] || return 1
+  grep -qE '^POLYMARKET_US_API_KEY=.+[^[:space:]]' "$env_file" 2>/dev/null
+}
+
+export -f has_kalshi_env has_poly_us_env 2>/dev/null || true
+
 if [[ "$_PMXT_ENV_SOURCED" -eq 0 ]]; then
   echo "PMXTRADER_ROOT=$PMXTRADER_ROOT"
   echo "PMXT_DIR=$PMXT_DIR"

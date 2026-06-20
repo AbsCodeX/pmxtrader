@@ -38,7 +38,9 @@ class MarketsPane(Vertical):
             self.search_markets(event.value.strip())
 
     def search_markets(self, query: str) -> None:
-        self.query_one("#markets-out", OutputLog).write("[dim]Loading markets…[/dim]")
+        log = self.query_one("#markets-out", OutputLog)
+        log.clear()
+        log.write("[dim]Loading markets…[/dim]")
         self.run_worker(lambda: self._fetch(query), thread=True, exclusive=True, group="markets")
 
     def _fetch(self, query: str) -> str:

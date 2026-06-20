@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import subprocess
 from pathlib import Path
+
+from apps.cockpit.bridge.json_store import read_json, write_json
 
 ROOT = Path(__file__).resolve().parents[3]
 SESSION_FILE = Path.home() / ".pmxt-cockpit" / "hermes-session.json"
@@ -25,17 +26,11 @@ Keep answers concise. Include runnable ./pmx commands on their own lines when he
 
 
 def _load_session() -> dict:
-    if SESSION_FILE.is_file():
-        try:
-            return json.loads(SESSION_FILE.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {}
+    return read_json(SESSION_FILE, {})
 
 
 def _save_session(data: dict) -> None:
-    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
-    SESSION_FILE.write_text(json.dumps(data, indent=2))
+    write_json(SESSION_FILE, data)
 
 
 def chat_turn(message: str, provider: str = "grok") -> dict:

@@ -65,3 +65,22 @@ def inject_dashboard_token(html: str, token: str) -> str:
     if "</head>" in html:
         return html.replace("</head>", snippet + "\n</head>", 1)
     return snippet + html
+
+
+DASHBOARD_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "connect-src 'self'; "
+    "img-src 'self' data:; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'"
+)
+
+
+def send_security_headers(handler) -> None:
+    """Attach baseline security headers to dashboard HTTP responses."""
+    handler.send_header("Content-Security-Policy", DASHBOARD_CSP)
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.send_header("X-Frame-Options", "DENY")
+    handler.send_header("Referrer-Policy", "same-origin")

@@ -1,4 +1,5 @@
 from apps.bridge.commands import classify_command, is_palette_allowed, resolve_dashboard_command
+from apps.bridge.dotenv import parse_dotenv
 from apps.bridge.parse import parse_kill_switch, parse_status
 
 
@@ -45,3 +46,9 @@ def test_resolve_dashboard_blocks_trade():
 def test_resolve_dashboard_allows_status():
     argv = resolve_dashboard_command("status")
     assert argv == ["./pmx", "status"]
+
+
+def test_parse_dotenv_multiline_quoted():
+    raw = 'KALSHI_PRIVATE_KEY="-----BEGIN KEY-----\nline2\n-----END KEY-----"\n'
+    pairs = parse_dotenv(raw)
+    assert "line2" in pairs["KALSHI_PRIVATE_KEY"]

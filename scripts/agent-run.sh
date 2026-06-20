@@ -133,7 +133,7 @@ else:
 
 run_hermes_with_profile() {
   local profile="$1"
-  local skills prompt provider model args=()
+  local skills prompt provider model args=() prompt_file=""
   case "$role" in
     scout) skills="pmxtrader-scout,pmxtrader-commands,multi-agent-handoff" ;;
     trader) skills="pmxtrader-trader,pmxtrader-commands,multi-agent-handoff" ;;
@@ -144,9 +144,14 @@ run_hermes_with_profile() {
   args=(chat --cli -t no_mcp --provider "$provider" --skills "$skills")
   [[ -n "$model" && "$model" != "null" ]] && args+=(--model "$model")
 
+  prompt_file="$(mktemp "${TMPDIR:-/tmp}/pmxt-prompt.XXXXXX")"
+  chmod 600 "$prompt_file"
+  printf '%s' "$prompt" > "$prompt_file"
+  trap 'rm -f "$prompt_file"' RETURN
+
   echo "Hermes provider=$provider${model:+ model=$model} (terminal ./pmx — no MCP)"
   cd "$PMXTRADER_ROOT"
-  hermes "${args[@]}" -z "$prompt"
+  hermes "${args[@]}" -Q < "$prompt_file"
 }
 
 cursor_instructions() {

@@ -63,3 +63,8 @@ kill_switch_status_line() {
     printf 'OFF (%s)\n' "$(kill_switch_path)"
   fi
 }
+
+if [[ "${BASH_SOURCE[0]:-}" == "${0:-}" ]]; then
+  echo "Source this file: source scripts/kill-switch-lib.sh" >&2
+  exit 1
+fi

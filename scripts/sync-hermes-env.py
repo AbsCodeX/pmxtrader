@@ -2,10 +2,15 @@
 """Sync pmxtrader keys into ~/.hermes/.env without printing secrets."""
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from apps.bridge.dotenv import load_dotenv  # noqa: E402
 
 
 def main() -> int:
@@ -27,19 +32,11 @@ def main() -> int:
         "PREDICTION_HUNT_API_URL",
     )
 
-    if pmxt_env.is_file():
-        for raw in pmxt_env.read_text().splitlines():
-            line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key = line.split("=", 1)[0].strip()
-            if key not in llm_keys:
-                continue
-            val = line.split("=", 1)[1].strip().strip('"').strip("'")
-            if val:
-                pairs[key] = val
+    for key, val in load_dotenv(pmxt_env).items():
+        if key in llm_keys and val:
+            pairs[key] = val
 
-    text = env_path.read_text() if env_path.exists() else ""
+    text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
     marker = "# pmxtrader integration (managed by scripts/setup-hermes.sh)"
     if marker not in text:
         text = text.rstrip() + f"\n\n{marker}\n"
@@ -53,7 +50,7 @@ def main() -> int:
             text = text.rstrip() + f"\n{replacement}\n"
 
     env_path.parent.mkdir(parents=True, exist_ok=True)
-    env_path.write_text(text)
+    env_path.write_text(text, encoding="utf-8")
     print(f"Updated: {env_path}")
     for key in pairs:
         print(f"  {key}=***")

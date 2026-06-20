@@ -21,6 +21,7 @@ from apps.bridge.dashboard_security import (  # noqa: E402
     inject_dashboard_token,
     minimal_subprocess_env,
     resolve_bind_host,
+    send_security_headers,
     write_secret_token,
 )
 
@@ -121,6 +122,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        send_security_headers(self)
         self.end_headers()
         self.wfile.write(body)
 
@@ -133,6 +135,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
+        send_security_headers(self)
         self.end_headers()
         self.wfile.write(data)
 

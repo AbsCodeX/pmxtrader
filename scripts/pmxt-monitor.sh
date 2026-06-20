@@ -63,17 +63,18 @@ run_once() {
   if [[ "$AS_JSON" == true ]]; then
     printf '%s\n' "$OUT"
   else
-    python3 -c "
+    python3 - "$LATEST" <<'PY'
 import json, sys
-d = json.loads(open('$LATEST').read())
-print(f\"[{d.get('ts')}] {d.get('outcomeLabel')} price={d.get('price')} bid={d.get('bid')} ask={d.get('ask')}\")
+path = sys.argv[1]
+d = json.loads(open(path, encoding="utf-8").read())
+print(f"[{d.get('ts')}] {d.get('outcomeLabel')} price={d.get('price')} bid={d.get('bid')} ask={d.get('ask')}")
 ex = d.get('execution') or {}
 if ex:
-    print(f\"  fill est: {ex.get('price') or ex}\")
+    print(f"  fill est: {ex.get('price') or ex}")
 b = d.get('balance')
 if isinstance(b, list) and b:
-    print(f\"  available: {b[0].get('available')}\")
-"
+    print(f"  available: {b[0].get('available')}")
+PY
   fi
 }
 

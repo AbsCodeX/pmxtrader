@@ -36,7 +36,8 @@ def scan_file(filepath):
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
-    except:
+    except OSError as exc:
+        print(f"Skipping unreadable file: {filepath} ({exc})", file=sys.stderr)
         return []
     
     issues = []

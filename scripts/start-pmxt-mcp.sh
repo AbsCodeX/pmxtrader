@@ -1,5 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Start PMXT MCP server using the API key from CLI auth
+
+set -euo pipefail
 
 AUTH_FILE="$HOME/.pmxt/cli-auth.json"
 
@@ -9,7 +11,7 @@ if [ ! -f "$AUTH_FILE" ]; then
     exit 1
 fi
 
-API_KEY=$(cat "$AUTH_FILE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('pmxtApiKey') or d.get('apiKey') or '')")
+API_KEY=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('pmxtApiKey') or d.get('apiKey') or '')" "$AUTH_FILE")
 
 if [ -z "$API_KEY" ]; then
     echo "Error: Could not read API key from $AUTH_FILE"

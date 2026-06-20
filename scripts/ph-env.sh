@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Load Prediction Hunt settings from pmxt/.env
 
+if [[ "${BASH_SOURCE[0]:-}" == "${0:-}" ]]; then
+  echo "Source this file: source scripts/ph-env.sh" >&2
+  exit 1
+fi
+
 load_prediction_hunt_env() {
   local env_file="${PMXT_DIR:?PMXT_DIR not set}/.env"
 
@@ -47,7 +52,7 @@ require_prediction_hunt_key() {
 ph_api_get() {
   local endpoint="$1"
   shift
-  curl -sS \
+  curl -fsS \
     -H "X-API-Key: ${PREDICTION_HUNT_API_KEY}" \
     "${PREDICTION_HUNT_API_URL%/}/${endpoint}" \
     "$@"
