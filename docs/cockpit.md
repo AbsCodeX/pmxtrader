@@ -41,8 +41,11 @@ Balance sparklines accumulate in `~/.pmxt-cockpit/balance-history.json`.
 
 ## Web dashboard (`pmx dashboard`)
 
-- Binds **127.0.0.1** only by default
-- POST `/api/run` and `/api/analyze` require header `X-Pmxtrader-Token` (token from `/api/health` or `.pmxt-dashboard.token`)
+- Binds **127.0.0.1** only by default (set `PMXT_DASHBOARD_INSECURE_BIND=1` to bind elsewhere)
+- Session token injected into served `index.html` only — **not** returned by `/api/health`
+- Token also written to `.pmxt-dashboard.token` with mode **600**
+- POST `/api/run` and `/api/analyze` require header `X-Pmxtrader-Token`
+- Subprocesses get a **minimal env** (no full parent shell secrets)
 - No CORS — same-origin only
 - Trades blocked by deny-by-default allowlist
 
@@ -65,7 +68,7 @@ Creates `.venv-cockpit/` on first `pmxt-cockpit` run.
 |---------|-----|
 | Kill switch shows `?` | Run `./pmx status` — should show ENGAGED or OFF |
 | PANIC does nothing | Use Safety tab, type PANIC in modal (not old confirm-only flow) |
-| Dashboard API 403 | Reload page after server start to fetch token from `/api/health` |
+| Dashboard API 403 | Reload page from `http://127.0.0.1:8765/` (token injected at serve time, not via health) |
 | Stale balances | `./pmx warm` or `./scripts/pmxt-server.sh restart` |
 
 ## Tests

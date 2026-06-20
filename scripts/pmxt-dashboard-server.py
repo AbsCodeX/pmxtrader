@@ -10,18 +10,26 @@ import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from apps.bridge.commands import resolve_dashboard_command  # noqa: E402
+from apps.bridge.dashboard_security import (  # noqa: E402
+    inject_dashboard_token,
+    minimal_subprocess_env,
+    resolve_bind_host,
+    write_secret_token,
+)
 
 PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
-HOST = os.environ.get("PMXT_DASHBOARD_HOST", "127.0.0.1")
+HOST = resolve_bind_host()
 DASHBOARD_TOKEN = os.environ.get("PMXT_DASHBOARD_TOKEN") or secrets.token_urlsafe(24)
 TOKEN_FILE = ROOT / ".pmxt-dashboard.token"
+INDEX_HTML = ROOT / "index.html"
+_SUBPROCESS_ENV = minimal_subprocess_env(ROOT)
 
 
 def detect_venue(url: str) -> str | None:
@@ -76,14 +84,11 @@ def analyze_link(
 
 
 def run_pmx(argv: list[str], timeout: int = 120) -> dict:
-    env = os.environ.copy()
-    env["PMXTRADER_ROOT"] = str(ROOT)
-    env["PMXT_DIR"] = str(ROOT / "pmxt")
     try:
         proc = subprocess.run(
             argv,
             cwd=ROOT,
-            env=env,
+            env=_SUBPROCESS_ENV,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -119,13 +124,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _send_file(self, path: Path, content_type: str) -> None:
-        if not path.is_file():
+    def _send_index(self) -> None:
+        if not INDEX_HTML.is_file():
             self.send_error(404)
             return
-        data = path.read_bytes()
+        html = inject_dashboard_token(INDEX_HTML.read_text(encoding="utf-8"), DASHBOARD_TOKEN)
+        data = html.encode("utf-8")
         self.send_response(200)
-        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -137,12 +143,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path in ("/", "/index.html"):
-            self._send_file(ROOT / "index.html", "text/html; charset=utf-8")
+            self._send_index()
             return
         if parsed.path == "/api/health":
-            self._send_json(200, {"ok": True, "root": str(ROOT), "token": DASHBOARD_TOKEN})
+            self._send_json(200, {"ok": True})
             return
         if parsed.path == "/api/commands":
+            if not self._check_token():
+                self._send_json(403, {"ok": False, "error": "Invalid or missing X-Pmxtrader-Token header"})
+                return
             from apps.bridge.commands import SAFE_COMMANDS
 
             self._send_json(200, {"safe": list(SAFE_COMMANDS.keys())})
@@ -197,11 +206,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     os.chdir(ROOT)
-    TOKEN_FILE.write_text(DASHBOARD_TOKEN + "\n")
-    server = HTTPServer((HOST, PORT), DashboardHandler)
+    write_secret_token(TOKEN_FILE, DASHBOARD_TOKEN)
+    os.environ["PMXT_DASHBOARD_TOKEN"] = DASHBOARD_TOKEN
+    global _SUBPROCESS_ENV  # noqa: PLW0603
+    _SUBPROCESS_ENV = minimal_subprocess_env(ROOT)
+
+    try:
+        server = HTTPServer((HOST, PORT), DashboardHandler)
+    except OSError as exc:
+        print(f"Failed to bind {HOST}:{PORT}: {exc}", file=sys.stderr)
+        TOKEN_FILE.unlink(missing_ok=True)
+        raise SystemExit(1) from exc
+
     print(f"pmxtrader dashboard: http://{HOST}:{PORT}/")
     print(f"Root: {ROOT}")
-    print(f"API token written to: {TOKEN_FILE}")
+    print(f"API token: {TOKEN_FILE} (mode 600)")
     print("Ctrl+C to stop")
     try:
         server.serve_forever()

@@ -57,3 +57,4 @@ KILL_SWITCH
 # Local dashboard server pid
 .pmxt-dashboard.pid
 .pmxt-dashboard.token
+.pmxt-dashboard.lock
