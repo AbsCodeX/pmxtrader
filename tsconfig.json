@@ -14,6 +14,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["pmxt/**/*", "apps/**/*", "packages/**/*"],
+  "include": ["pmxt/**/*", "apps/**/*"],
   "exclude": ["node_modules", "dist"]
 }
