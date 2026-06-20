@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 DOC_FILES = [
+    "docs/README.md",
     "docs/environment.md",
     "docs/testing.md",
     "docs/known-risks.md",
@@ -48,9 +49,22 @@ def test_core_doc_files_exist():
         assert (ROOT / rel).is_file(), rel
 
 
+def test_mkdocs_config_exists():
+    assert (ROOT / "mkdocs.yml").is_file()
+    mkdocs = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+    assert "material" in mkdocs
+    assert "docs/README.md" in mkdocs or "README.md" in mkdocs
+
+
+def test_docs_build_script_exists():
+    assert (ROOT / "scripts/docs-build.sh").is_file()
+    assert (ROOT / "requirements-docs.txt").is_file()
+
+
 def test_readme_links_to_new_guides():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     for fragment in (
+        "docs/README.md",
         "docs/environment.md",
         "docs/testing.md",
         "docs/known-risks.md",

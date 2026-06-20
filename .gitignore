@@ -6,6 +6,7 @@ node_modules/
 # Build outputs
 dist/
 build/
+site/
 .next/
 out/
 
@@ -29,7 +30,9 @@ Thumbs.db
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 *.swp
 *.swo
 
@@ -42,6 +45,10 @@ venv/
 .venv-cockpit/
 
 .env/
+
+# MkDocs build copies (source: repo root reports)
+docs/reports/live-readiness.md
+docs/reports/dry-run-test.md
 
 # Misc
 *.tsbuildinfo

@@ -1,0 +1,14 @@
+config: .markdownlint.json
+globs:
+  - README.md
+  - AGENTS.md
+  - LIVE_READINESS_REPORT.md
+  - DRY_RUN_TEST_REPORT.md
+  - docs/**/*.md
+ignores:
+  - pmxt/**
+  - node_modules/**
+  - .venv/**
+  - .venv-cockpit/**
+  - docs/reports/live-readiness.md
+  - docs/reports/dry-run-test.md

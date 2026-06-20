@@ -1,80 +1,122 @@
 # Known risks and limitations
 
-Last reviewed: **2026-06-19** (Batch K — see `reviews/2026-06-19/documentation-review.md`).
+Last reviewed: **2026-06-19** · Index: [`docs/README.md`](README.md)
 
-Read this before live trading or deploying agents.
+Read this **before live trading** or deploying agents.
+
+---
+
+## Decision flow
+
+```mermaid
+flowchart TD
+  Start[Start session] --> RO{Read-only ON?}
+  RO -->|default yes| Safe[Safe: preview, research, dashboard]
+  RO -->|./pmx go-live| GL[Live mode enabled]
+  GL --> PF[./pmx preflight GO?]
+  PF -->|no| Fix[Fix sidecar / keys / kill switch]
+  PF -->|yes| Prev[Optional: preview trade]
+  Prev --> Trade[./pmx trade + YES]
+  Trade --> Live[Real money at venue]
+```
 
 ---
 
 ## Real money
 
-- `./pmx trade`, `./pmx poly trade|sell|close`, and `./pmx panic` move **real funds** when venue keys are configured.
-- There is **no automated daily loss limit** — use brief `max-loss`, `./pmx stop`, and manual discipline.
-- Failed orders **do not auto-repeat**; emergency GET retries (429/503) are not order retries.
+| Risk | Detail |
+|------|--------|
+| Live orders | `./pmx trade`, `./pmx poly trade/sell/close` use real funds after go-live |
+| Panic | `./pmx panic` flattens Kalshi + Poly US when keys present |
+| No daily loss cap | Use brief `max-loss`, `./pmx stop`, discipline |
+| No auto-retry on failed POST | Failed orders are not repeated |
 
 ---
 
 ## Execution surfaces
 
-| Surface | Live orders? |
-|---------|--------------|
-| Terminal `./pmx` | Yes (when kill switch OFF and not read-only) |
-| Cockpit TUI | Yes — **ConfirmCommandModal** required |
-| Web dashboard | **No** — trades blocked by design |
-| Scout agent | **No** — read-only policy |
-| Trader agent | Prepares commands; human runs `./pmx trade` |
+| Surface | Live orders? | Guard |
+|---------|--------------|-------|
+| Terminal `./pmx` | Yes (after go-live) | YES prompt, preflight, kill switch |
+| Cockpit TUI | Yes | ConfirmCommandModal |
+| Web dashboard | **No** | Command allowlist |
+| Scout agent | **No** | `config/agents.json` |
+| Trader agent | Prepares only | `approved: true` + human runs trade |
+
+```mermaid
+flowchart LR
+  subgraph Safe["No live orders"]
+    D[Web dashboard]
+    S[Scout agent]
+  end
+  subgraph Guarded["Live with guards"]
+    C[Cockpit + confirm]
+    T[Terminal + YES]
+  end
+  subgraph Indirect["Human executes"]
+    TR[Trader agent → you run ./pmx]
+  end
+  Safe --> Research[Research / preview]
+  Guarded --> Live[order:create]
+  Indirect --> Live
+```
 
 ---
 
 ## Safety controls
 
-| Control | Limitation |
-|---------|------------|
-| Kill switch (`./pmx stop`) | Blocks **new** trades; does not undo filled orders |
-| `PMX_READ_ONLY=1` (default on session start) | Env-level block; cleared by `./pmx go-live` or `.pmx-live` file |
-| `PMX_MAX_TRADE_CONTRACTS` (default 10) | Per-order cap only, not portfolio exposure |
-| `./pmx preflight` | Pre-live GO/NO-GO — sidecar, kill switch, read-only, keys (no secrets printed) |
-| `PMX_PREFLIGHT=0` | Skip sidecar gate on live trade scripts (escape hatch) |
-| Trade confirm (Terminal) | Requires typing YES/y unless `--yes` or `PMX_TRADE_CONFIRM=0` |
-| Dry-run (`--dry-run`, `PMX_DRY_RUN`, `./pmx preview`) | Scripts only — verify flags before live session |
-| `./pmx panic` | Kalshi + Polymarket US when keys present — cancel orders + market flatten |
-| `./pmx panic status` / `./pmx panic --dry-run` | Shows venue scope before flatten |
-| Trade audit | Live orders append to `briefs/alerts/trades.jsonl` (gitignored) |
+| Control | What it does | Limitation |
+|---------|--------------|------------|
+| `./pmx preflight` | GO/NO-GO checklist | Read-only NO-GO is expected until go-live |
+| `PMX_READ_ONLY=1` | Blocks live trades | Default ON; cleared by `./pmx go-live` |
+| Kill switch | Blocks new trades | Does not undo fills |
+| `PMX_MAX_TRADE_CONTRACTS` | Per-order cap (default 10) | Not portfolio exposure |
+| Trade confirm | Type YES | Skipped with `--yes` / `PMX_TRADE_CONFIRM=0` |
+| Dry-run / preview | No `order:create` | Script-level only |
+| `./pmx panic --dry-run` | Preview flatten scope | Test on your network |
+| Trade audit | `briefs/alerts/trades.jsonl` | Gitignored; no UI yet |
 
-Full audit: `reviews/2026-06-19/trading-safety-review.md`
+Full audit: [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md)
 
 ---
 
 ## Agents and MCP
 
-- **Grok + PMXT MCP** causes schema errors — Hermes setup disables trading MCP by default.
-- Scout/Trader should use **terminal `./pmx`**, not MCP, for live venue actions.
-- LLM output can be wrong — always verify quotes with `./pmx quote` before trading.
-- Trader requires `approved: true` in brief frontmatter; still needs human confirmation in cockpit or manual `./pmx`.
+| Topic | Guidance |
+|-------|----------|
+| Grok + PMXT MCP | Disabled by default (schema errors) |
+| Execution path | Terminal `./pmx`, not MCP |
+| LLM accuracy | Verify with `./pmx quote` before trading |
+| Trader brief | Requires `approved: true` in frontmatter |
 
 ---
 
 ## Sidecar and infrastructure
 
-- PMXT sidecar **replaces** a manually started dev server when CLI/SDK runs (`~/.pmxt/server.lock`).
-- Committed `pmxt/node_modules` may contain **macOS arm64** binaries — run `npm --prefix pmxt install` on Linux (do not commit resulting changes).
-- Git submodules `pmxt-mcp/`, `molt-pmxt/` need `git submodule update --init`.
-- CI does **not** call live venue APIs — production behavior requires manual `./pmx warm` testing.
+| Topic | Risk |
+|-------|------|
+| Sidecar replacement | CLI replaces manual dev server (`~/.pmxt/server.lock`) |
+| `pmxt/node_modules` | macOS binaries in git; run `npm --prefix pmxt install` on Linux |
+| Submodules | `git submodule update --init` for MCP |
+| CI | No live venue tests — manual `./pmx warm` before trading |
 
 ---
 
 ## Security
 
-- Dashboard binds **127.0.0.1** by default; wide bind requires `PMXT_DASHBOARD_INSECURE_BIND=1`.
-- Never commit `pmxt/.env`, `KILL_SWITCH`, or `briefs/active/` contents.
-- Pre-commit and CI scan for common secret patterns — not a guarantee.
+| Topic | Rule |
+|-------|------|
+| Dashboard bind | `127.0.0.1` default; wide bind needs `PMXT_DASHBOARD_INSECURE_BIND=1` |
+| Never commit | `pmxt/.env`, `KILL_SWITCH`, `briefs/active/` |
+| Secret scan | Pre-commit + CI — not a guarantee |
 
 ---
 
-## Documentation gaps (accepted)
+## Accepted gaps
 
 | Gap | Mitigation |
 |-----|------------|
-| Root npm `build`/`lint` not functional | Use Python CI + `pmxt-core` build (`AGENTS.md`) |
-| No E2E Hermes test in CI | Manual `./pmx scout grok` with keys |
-| Order book streaming not UI-tested | Terminal `./pmx watch` by design |
+| Root npm lint not functional | Python CI + `pmxt-core` build |
+| No Hermes E2E in CI | Manual agent testing |
+| Order book not UI-tested | `./pmx watch` in Terminal |
+| No Poly US demo venue | Use `./pmx preview poly` |

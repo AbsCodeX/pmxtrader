@@ -1,11 +1,44 @@
 # pmxtrader command reference
 
-Plain-language shortcuts via `./pmx` (wrapper around `scripts/pmx.sh`).  
-Always run from repo root. Load env once per shell: `source scripts/pmxt-env.sh` or `direnv allow`.
+Plain-language shortcuts via `./pmx` (`scripts/pmx.sh`). Run from repo root.
 
-**Sidecar:** credentials load from `pmxt/.env`. After restart run `./pmx warm` or `./scripts/pmxt-server.sh restart`.
+> **Visual index:** [`docs/README.md`](README.md) · **Live flow:** preflight → go-live → preview → trade
 
-**Real money:** Kalshi + Polymarket US live keys. Check `./pmx status` before trades. Kill switch blocks new orders on `./pmx trade`, `./pmx poly trade|sell|close`.
+---
+
+## On this page
+
+| Section | Jump to |
+|---------|---------|
+| Agent routing | [Which tool to use](#which-tool-to-use-agents) |
+| Kalshi | [Kalshi commands](#kalshi-default-pmx-balance) |
+| Polymarket US | [Poly commands](#polymarket-us-pmx-poly) |
+| Session | [Start a session](#start-a-session) |
+| Safety | [Safety & agents](#safety-agents) |
+| Hermes | [Hermes bundles](#hermes-bundles) |
+
+---
+
+## Session modes
+
+| Mode | How | Live trades? |
+|------|-----|--------------|
+| **Safe default** | `./pmx session` | No — read-only ON |
+| **Preview** | `./pmx preview trade …` | No — dry-run text |
+| **Live** | `./pmx go-live` then `./pmx trade …` | Yes — YES confirm |
+
+```mermaid
+flowchart LR
+  A[session] --> B[preflight]
+  B --> C{go-live?}
+  C -->|no| D[preview / dashboard]
+  C -->|yes| E[preflight GO]
+  E --> F[trade + YES]
+```
+
+**Sidecar:** credentials in `pmxt/.env` — restart with `./pmx warm` after edits.
+
+**Real money:** Kalshi + Polymarket US when live. Kill switch blocks `./pmx trade`, `./pmx poly trade|sell|close`.
 
 ---
 
@@ -111,7 +144,7 @@ Does: ensure PMXT sidecar (loads `pmxt/.env`), warm Kalshi + Poly US balances, `
 
 ---
 
-## Safety & agents
+## Safety & agents {#safety-agents}
 
 | Command | Purpose |
 |---------|---------|

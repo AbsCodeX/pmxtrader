@@ -76,4 +76,3 @@ No live orders were submitted during this session.
 2. Treat preflight exit 1 with only read-only FAIL as **expected** during safe/dry-run sessions; optional wrapper could distinguish “safe NO-GO” vs “broken infra.”
 3. Before any live session, run `./pmx preflight` after explicit `./pmx go-live` only when the human intends to trade; keep read-only ON for agent/automation lanes by default.
 4. Re-run `./pmx panic --dry-run` periodically to validate panic scope against current holdings without engaging the kill switch.
-

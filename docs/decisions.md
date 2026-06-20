@@ -8,7 +8,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Treat the PMXT fork as a source copy only, not as a separately maintained repository.
 
-**Rationale:**  
+**Rationale:**
+
 - Simplifies project tracking (single repo: `pmxtrader`)
 - Reduces maintenance overhead
 - All work and history stays in one place
@@ -21,7 +22,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Implement a Python-based pre-commit hook to scan for secrets before every commit.
 
-**Rationale:**  
+**Rationale:**
+
 - Security is a top priority
 - Prevents accidental exposure of API keys, private keys, and environment variables
 - Complements GitHub’s native secret scanning
@@ -34,7 +36,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Maintain lightweight but professional documentation in the `docs/` folder.
 
-**Rationale:**  
+**Rationale:**
+
 - Keeps the project understandable for future self or contributors
 - Architecture and decisions should be recorded early
 - Avoids over-documentation in early stages
@@ -47,7 +50,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Clone `pmxt-mcp` into the project to enable MCP-based agent integration.
 
-**Rationale:**  
+**Rationale:**
+
 - Provides standardized MCP tools for AI agents
 - Complements the existing PMXT CLI
 - Enables future Hermes agent workflows
@@ -60,7 +64,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Clone `molt-pmxt` into the project and copy it into Hermes skills.
 
-**Rationale:**  
+**Rationale:**
+
 - Ready-made agent skill for prediction market trading
 - Can be used directly in Hermes
 - Serves as reference for custom tool development
@@ -73,7 +78,8 @@ This document records important architectural and process decisions made during 
 
 **Decision:** Create `scripts/start-pmxt-mcp.sh` to automatically use the CLI auth key.
 
-**Rationale:**  
+**Rationale:**
+
 - Simplifies running the MCP server
 - Reuses existing authentication
 - Avoids managing multiple API keys

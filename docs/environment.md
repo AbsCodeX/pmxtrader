@@ -1,14 +1,36 @@
 # Environment variables
 
-Last reviewed: **2026-06-19** (Batch K — see `reviews/2026-06-19/documentation-review.md`).
+Last reviewed: **2026-06-19** · Index: [`README.md`](README.md)
 
-Secrets live in **`pmxt/.env`** (gitignored). Policy JSON lives in **`config/`** (committed, no keys). Operator overrides can be exported in the shell.
-
-Template: **`pmxt/.env.example`**
+Secrets → **`pmxt/.env`** · Policy → **`config/`** · Template → **`pmxt/.env.example`**
 
 ---
 
-## Venue credentials (`pmxt/.env`)
+## Quick reference
+
+| Category | Section | In git? |
+|----------|---------|---------|
+| Venue keys | [Venue credentials](#venue-credentials) | No |
+| LLM keys | [LLM agents](#llm-agents) | No |
+| Research | [Research](#research) | No |
+| Safety defaults | [Trading safety](#trading-safety) | N/A (env) |
+| Sidecar | [PMXT sidecar](#pmxt-sidecar) | N/A |
+| Dashboard | [Dashboard / cockpit](#dashboard-cockpit) | N/A |
+| Paths | [Operator / paths](#operator-paths) | N/A |
+
+```mermaid
+flowchart LR
+  ENV[pmxt/.env] --> SC[PMXT sidecar]
+  ENV --> HM[Hermes ~/.hermes/.env]
+  CFG[config/*.json] --> AG[agent policy]
+  SHELL[shell exports] --> SAFE[PMX_READ_ONLY etc.]
+  SAFE --> SCR[trade scripts]
+  SC --> VEN[Kalshi · Poly US]
+```
+
+---
+
+## Venue credentials (`pmxt/.env`) {#venue-credentials}
 
 | Variable | Venue | Required for |
 |----------|-------|--------------|
@@ -30,7 +52,7 @@ After editing `.env`, restart the sidecar: `./pmx warm` or `./scripts/pmxt-serve
 
 ---
 
-## LLM agents (`pmxt/.env` → synced to Hermes)
+## LLM agents (`pmxt/.env` → synced to Hermes) {#llm-agents}
 
 | Variable | Used by | Notes |
 |----------|---------|-------|
@@ -42,7 +64,7 @@ Sync: `./scripts/setup-hermes.sh` · Verify: `./scripts/check-providers.sh` · R
 
 ---
 
-## Research (optional)
+## Research (optional) {#research}
 
 | Variable | Purpose |
 |----------|---------|
@@ -51,7 +73,7 @@ Sync: `./scripts/setup-hermes.sh` · Verify: `./scripts/check-providers.sh` · R
 
 ---
 
-## Trading safety (shell env)
+## Trading safety (shell env) {#trading-safety}
 
 These are **not** secrets. **`scripts/pmxt-env.sh` sets safe defaults** when sourced (via `./pmx`, direnv, or `pmxt-start`).
 
@@ -75,7 +97,7 @@ See `reviews/2026-06-19/trading-safety-review.md`.
 
 ---
 
-## PMXT sidecar
+## PMXT sidecar {#pmxt-sidecar}
 
 | Variable | Purpose |
 |----------|---------|
@@ -87,7 +109,7 @@ Sidecar state: `~/.pmxt/server.lock` (port + access token). See `AGENTS.md` for 
 
 ---
 
-## Dashboard / cockpit
+## Dashboard / cockpit {#dashboard-cockpit}
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -98,7 +120,7 @@ Sidecar state: `~/.pmxt/server.lock` (port + access token). See `AGENTS.md` for 
 
 ---
 
-## Operator / paths
+## Operator / paths {#operator-paths}
 
 | Variable | Purpose |
 |----------|---------|

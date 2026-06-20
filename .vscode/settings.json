@@ -1,0 +1,14 @@
+{
+  "markdown.preview.breaks": true,
+  "markdownlint.config": {
+    "extends": "../.markdownlint.json"
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  }
+}

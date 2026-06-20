@@ -43,7 +43,10 @@
     "agent:trader:openai": "./scripts/agent-run.sh trader openai",
     "providers:check": "./scripts/check-providers.sh",
     "brief:new": "./scripts/new-brief.sh",
-    "setup:hermes": "./scripts/setup-hermes.sh"
+    "setup:hermes": "./scripts/setup-hermes.sh",
+    "docs:build": "./scripts/docs-build.sh",
+    "docs:serve": "./scripts/docs-serve.sh",
+    "docs:lint": "markdownlint-cli2"
   },
   "keywords": [
     "pmxt",
@@ -60,6 +63,7 @@
     "typescript": "^5.4.5",
     "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0"
+    "@typescript-eslint/parser": "^7.13.0",
+    "markdownlint-cli2": "^0.17.0"
   }
 }

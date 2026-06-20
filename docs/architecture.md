@@ -2,79 +2,156 @@
 
 ## Overview
 
-`pmxtrader` is a prediction market trading platform built around PMXT as the core integration layer. Terminal-first workflows (`./pmx`), a Textual cockpit, a web command center, and Hermes agents share one subprocess → PMXT sidecar → venue API chain.
+`pmxtrader` orchestrates prediction market workflows around **PMXT**. Terminal (`./pmx`), web dashboard, Textual cockpit, and Hermes agents all share one chain:
 
-Full directory map: **`docs/project-structure.md`**
+**UI → scripts → PMXT CLI → local sidecar → venue APIs**
 
-## High-Level Architecture
+Full directory map: [`docs/project-structure.md`](project-structure.md) · Visual index: [`docs/README.md`](README.md)
 
-```
-pmxtrader/
-├── pmx, scripts/         # Entry points (CLI router, servers, quickstarts)
-├── apps/
-│   ├── bridge/           # Shared Python: commands, parse, trade_safety, security
-│   ├── cockpit/          # Textual TUI + cockpit/bridge adapter
-│   └── agents/           # Scout / Trader / Monitor prompts
-├── dashboard/            # Web command center (static + local API)
-├── config/               # agents.json, providers.json (no secrets)
-├── docs/, tests/, reviews/
-├── briefs/               # Trade briefs (active/ gitignored)
-├── pmxt/                 # Vendored PMXT monorepo (sidecar, CLI, SDKs)
-├── pmxt-mcp/, molt-pmxt/ # Optional git submodules
-└── packages/, tools/     # Reserved scaffolds (see READMEs)
+---
 
-Multi-agent workflow: `docs/multi-agent.md` · `config/agents.json` · `briefs/`
-```
+## System diagram
 
-## Key Principles
-
-- **PMXT as the core**: Market data and execution go through the PMXT sidecar (`pmxt/`).
-- **Secrets in `pmxt/.env` only**: Policy JSON in `config/`; never commit keys.
-- **UI does not trade**: Web dashboard blocks live orders; cockpit confirms; Terminal executes.
-- **Modular design**: `apps/bridge` (shared) vs `apps/cockpit/bridge` (TUI adapter) vs `scripts/` (shell).
-
-## Technology Stack
-
-- **Languages**: Python (bridge, cockpit, tests), Bash (scripts), HTML/CSS/JS (dashboard)
-- **Engine**: TypeScript/npm in vendored `pmxt/` only
-- **CI**: GitHub Actions (Python lint/test, secret scan, dependency audit)
-
-## Security Architecture
-
-- Secrets are never committed to the repository
-- Pre-commit hook scans for common secret patterns
-- GitHub Actions runs additional secret scanning on every push
-- Trading safety: kill switch, `trade_safety.py`, dashboard command allowlist — see `reviews/2026-06-19/trading-safety-review.md`
-
-## Network and API transparency
-
-Most pmxtrader commands do **not** call venue APIs directly from Python/shell. The usual chain is:
-
-```
-./pmx / cockpit / dashboard  →  subprocess  →  pmxt CLI  →  local sidecar (:3847)  →  Kalshi / Polymarket US
+```mermaid
+flowchart TB
+  subgraph Entry["Entry points"]
+    PMX[./pmx]
+    DASH[dashboard/]
+    COCK[apps/cockpit/]
+    AGENT[agent-run.sh]
+  end
+  subgraph Orchestration["pmxtrader"]
+    SH[scripts/]
+    BR[apps/bridge/]
+  end
+  subgraph Engine["PMXT pmxt/"]
+    CLI[@pmxt/cli]
+    SC[sidecar HTTP]
+    EX[kalshi · polymarket_us]
+  end
+  subgraph External["Venues"]
+    K[Kalshi API]
+    P[Polymarket US API]
+  end
+  PMX --> SH
+  DASH --> SH
+  COCK --> BR --> SH
+  AGENT --> SH
+  SH --> BR
+  SH --> CLI --> SC --> EX
+  EX --> K
+  EX --> P
 ```
 
-| Integration | How you see network activity |
-|-------------|------------------------------|
-| Terminal `./pmx` | stdout/stderr from CLI |
-| PMXT sidecar | `x-pmxt-verbose: true` header → request logs in sidecar |
-| Web dashboard | Subprocess output only (no raw venue HTTP) |
-| Cockpit TUI | Same as dashboard — activity log shows command + output |
-| Prediction Hunt | `ph-sports-compare.sh` — curl with bounded retry |
-| Hermes / LLM | Opaque inside `hermes` binary; stderr only |
-| Panic flatten | `kalshi-emergency-exit.py` — direct Kalshi REST for position closes (documented in `docs/kalshi-integration.md`) |
+---
 
-Subprocess environment: dashboard and cockpit use `minimal_subprocess_env()` (`apps/bridge/dashboard_security.py`) — scripts load credentials from `pmxt/.env` themselves.
+## Request flow (typical read)
+
+```mermaid
+sequenceDiagram
+  participant U as Operator
+  participant P as pmxtrader
+  participant S as PMXT sidecar
+  participant V as Venue API
+
+  U->>P: ./pmx quote / balance
+  P->>S: pmxt … --local
+  S->>V: authenticated or public REST
+  V-->>S: JSON
+  S-->>P: unified response
+  P-->>U: stdout / UI
+```
+
+Live **trade** adds guards in `apps/bridge/trade_safety.py` before `order:create`.
+
+---
+
+## Layer responsibilities
+
+| Layer | Location | Responsibility |
+|-------|----------|------------------|
+| **UI** | `dashboard/`, `apps/cockpit/` | Presentation; browser has no keys |
+| **Bridge** | `apps/bridge/` | Command policy, parse, trade guards, dashboard security |
+| **Cockpit adapter** | `apps/cockpit/bridge/` | TUI subprocess wrappers |
+| **Shell** | `scripts/` | CLI router, quickstarts, kill switch, dashboard server |
+| **Engine** | `pmxt/` | Sidecar, exchange adapters, `@pmxt/cli` |
+| **Secrets** | `pmxt/.env` | Venue + LLM keys only |
+
+---
+
+## Key principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| PMXT as core | All venue I/O via sidecar |
+| Secrets isolated | `pmxt/.env` only; policy in `config/` |
+| UI does not trade (web) | Dashboard allowlist blocks `trade` |
+| Human gate | Read-only default, YES confirm, brief approval |
+| Modular | `apps/bridge` shared; cockpit adapter thin |
+
+---
+
+## Safety architecture
+
+```mermaid
+flowchart TB
+  subgraph L1["UI / API"]
+    D[Dashboard denylist]
+    C[Cockpit confirm]
+    T[Terminal YES]
+  end
+  subgraph L2["Env / files"]
+    RO[PMX_READ_ONLY]
+    KS[KILL_SWITCH]
+    MX[MAX size]
+    PF[preflight gate]
+  end
+  subgraph L3["Agents"]
+    AG[agents.json policy]
+    BF[approved: true]
+  end
+  L1 --> L2 --> L3 --> OC[order:create]
+```
+
+See [`known-risks.md`](known-risks.md) · [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md)
+
+---
+
+## Technology stack
+
+| Area | Stack |
+|------|-------|
+| pmxtrader app | Python, Bash, HTML/CSS/JS |
+| PMXT engine | TypeScript/npm in `pmxt/` |
+| CI | GitHub Actions — pytest, ruff, mypy, secret scan |
+
+---
+
+## Network transparency
+
+| Integration | How you observe it |
+|-------------|-------------------|
+| `./pmx` | CLI stdout/stderr |
+| Sidecar | Verbose header → sidecar logs |
+| Dashboard / cockpit | Subprocess output in UI |
+| Prediction Hunt | `ph-sports-compare.sh` (curl) |
+| Hermes / LLM | Opaque; stderr only |
+| Panic flatten | Direct venue REST in emergency scripts |
+
+Subprocess env: `minimal_subprocess_env()` in `apps/bridge/dashboard_security.py`.
+
+---
 
 ## Audit trail
 
-| Review | Doc |
-|--------|-----|
-| Cockpit / scripts / dashboard | `reviews/2026-06-19/cockpit-scripts-dashboard-review.md` |
-| API integration | `reviews/2026-06-19/api-integration-review.md` |
-| Dependencies | `docs/dependencies.md` |
-| UI / dashboard | `reviews/2026-06-19/ui-dashboard-review.md` |
-| Functionality | `reviews/2026-06-19/functionality-review.md` |
-| Trading safety | `reviews/2026-06-19/trading-safety-review.md` |
-| Project structure | `reviews/2026-06-19/project-structure-review.md` |
-| Documentation | `reviews/2026-06-19/documentation-review.md` |
+| Review | Document |
+|--------|----------|
+| Cockpit / scripts / dashboard | [cockpit-scripts-dashboard review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/cockpit-scripts-dashboard-review.md) |
+| API integration | [api-integration review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/api-integration-review.md) |
+| Dependencies | [`dependencies.md`](dependencies.md) |
+| UI / dashboard | [ui-dashboard review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/ui-dashboard-review.md) |
+| Functionality | [functionality review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/functionality-review.md) |
+| Trading safety | [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md) |
+| Project structure | [project-structure review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/project-structure-review.md) |
+| Documentation | [documentation review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/documentation-review.md) |
+| Live readiness | [Live readiness report](reports/live-readiness.md) |

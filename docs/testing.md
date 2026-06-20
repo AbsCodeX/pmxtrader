@@ -6,6 +6,28 @@ pmxtrader CI runs **offline** tests — no live venue API keys required.
 
 ---
 
+## Documentation quality (CI)
+
+```bash
+pip install -r requirements-docs.txt
+npm install   # markdownlint-cli2 in devDependencies
+npm run docs:lint
+npm run docs:build
+npm run docs:serve   # http://127.0.0.1:8000
+```
+
+| Check | Command |
+|-------|---------|
+| Markdown style | `npm run docs:lint` (markdownlint-cli2) |
+| Broken links | `lychee --config .lychee.toml README.md docs/` |
+| Site build | `npm run docs:build` (`mkdocs build --strict`) |
+
+CI runs all three on every push. Published to **GitHub Pages** on `main` via `.github/workflows/docs-publish.yml`.
+
+**Editor setup:** open the repo in Cursor/VS Code and install recommended extensions (`.vscode/extensions.json`).
+
+---
+
 ## Quick smoke (recommended after changes)
 
 ```bash

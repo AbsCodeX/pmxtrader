@@ -1,177 +1,209 @@
 # pmxtrader
 
-Prediction market trading platform with PMXT, multi-agent workflows, and terminal-first tooling.
+[![CI](https://github.com/AbsCodeX/pmxtrader/actions/workflows/ci.yml/badge.svg)](https://github.com/AbsCodeX/pmxtrader/actions/workflows/ci.yml)
+[![Docs](https://github.com/AbsCodeX/pmxtrader/actions/workflows/docs-publish.yml/badge.svg)](https://github.com/AbsCodeX/pmxtrader/actions/workflows/docs-publish.yml)
 
-## Overview
+Prediction market trading with **PMXT**, plain-language **`./pmx`** commands, and human-gated Scout/Trader agents.
 
-`pmxtrader` wraps [PMXT](https://www.pmxt.dev/) with plain-language `./pmx` commands for **Kalshi** and **Polymarket US (retail)**, Scout/Trader agents, and Hermes integration. Real-money trading uses venue API keys in `pmxt/.env` — never committed.
+> **Browse docs:** [abscodex.github.io/pmxtrader](https://abscodex.github.io/pmxtrader/) · **Repo map:** [`docs/README.md`](docs/README.md)
+
+---
+
+## What this is
+
+| Layer | Role |
+|-------|------|
+| **pmxtrader** | CLI, dashboard, cockpit, agents, safety guards |
+| **PMXT** (`pmxt/`) | Sidecar + exchange adapters (Kalshi, Polymarket US, …) |
+| **Venues** | Real-money APIs when you `./pmx go-live` |
+
+Supported shortcuts today: **Kalshi** (`./pmx`) and **Polymarket US** (`./pmx poly`).
+
+```mermaid
+flowchart LR
+  subgraph You
+    CLI[./pmx]
+    WEB[dashboard]
+    TUI[cockpit]
+    AI[scout / trader]
+  end
+  subgraph pmxtrader
+    SCR[scripts/]
+    BR[apps/bridge/]
+  end
+  subgraph PMXT
+    SC[sidecar :3847]
+    VEN[Kalshi · Poly US]
+  end
+  CLI --> SCR --> SC --> VEN
+  WEB --> SCR
+  TUI --> SCR
+  AI --> CLI
+```
+
+---
+
+## Three ways to use it
+
+| Surface | Command | Best for | Live orders? |
+|---------|---------|----------|--------------|
+| **Terminal** | `./pmx …` | Trading, scripts, agents | Yes (after go-live) |
+| **Web** | `./pmx dashboard` | Link analyze, command center | **No** |
+| **Cockpit** | `./pmx cockpit` | Live tiles, safety tab | Yes (with confirm) |
+
+Secrets stay in **`pmxt/.env`** — never committed.
+
+---
 
 ## Quick start
 
-### Option A — direnv + global commands (recommended)
-
-```bash
-./scripts/setup-direnv.sh       # once: direnv hook + pmx / pmxt-* in ~/.zshrc
-# restart terminal, then from anywhere:
-pmx cockpit                     # GoAccess-style terminal dashboard — see docs/cockpit.md
-pmx dashboard                   # browser command center
-pmxt-terminal                   # opens macOS Terminal + session → cockpit
-pmx balance
-```
-
-Inside the repo (direnv also loads aliases like `money`, `halt`):
-
-```bash
-pmxt-start                      # bootstrap sidecar + status in this shell
-pmx dashboard                   # same as from anywhere
-open index.html                 # offline shortcuts (redirects to dashboard/)
-pmx help
-```
-
-Manual setup (if you skip the installer):
-
-```bash
-brew install direnv
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-echo 'export PMXTRADER_ROOT=~/pmxtrader' >> ~/.zshrc
-echo 'source ~/pmxtrader/scripts/pmx-global.zsh' >> ~/.zshrc
-cd ~/pmxtrader && direnv allow
-```
-
-### First-time build
+### 1 — One-time setup
 
 ```bash
 git submodule update --init     # optional: pmxt-mcp, molt-pmxt
-./scripts/setup-dev.sh          # CLI, build PMXT
+./scripts/setup-dev.sh          # build PMXT, install CLI
+# copy pmxt/.env.example → pmxt/.env and add keys (see table below)
+./scripts/setup-direnv.sh       # optional: pmx from anywhere
 ```
 
-### Credentials (`pmxt/.env`)
-
-| Venue | Vars | Setup guide |
-|-------|------|-------------|
-| Kalshi | `KALSHI_API_KEY`, `KALSHI_PRIVATE_KEY` | `pmxt/core/docs/SETUP_KALSHI.md` |
-| Polymarket US | `POLYMARKET_US_KEY_ID`, `POLYMARKET_US_SECRET_KEY` | `pmxt/core/docs/SETUP_POLYMARKET_US.md` |
-| LLM agents | `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | `docs/providers.md` |
-| Prediction Hunt (optional) | `PREDICTION_HUNT_API_KEY` | `docs/kalshi-integration.md` |
-| Safety (optional) | `PMX_READ_ONLY`, `PMX_DRY_RUN`, `PMX_MAX_TRADE_CONTRACTS` | `docs/environment.md` |
-
-Full env reference: **[`docs/environment.md`](docs/environment.md)** · Template: `pmxt/.env.example`
-
-After editing `.env`, restart sidecar: `./pmx warm` or `./scripts/pmxt-server.sh restart`.
-
-### Daily trading commands
+### 2 — Every session (safe by default)
 
 ```bash
-# Kalshi
-./pmx balance
-./pmx link 'https://kalshi.com/markets/...' USA 1
-./pmx trade MARKET OUTCOME 1
-
-# Polymarket US
-./pmx poly balance
-./pmx poly quote MARKET-SLUG long
-./pmx poly trade MARKET-SLUG long 1
-./pmx poly sell MARKET-SLUG long 100
-./pmx poly close MARKET-SLUG long
-./pmx poly watch book MARKET-SLUG long --max-messages 10
+source scripts/pmxt-env.sh      # or: direnv allow
+./pmx session                   # sidecar + read-only ON
+./pmx preflight                 # GO/NO-GO checklist
 ```
 
-Full reference: **[`docs/commands.md`](docs/commands.md)**
+| Preflight result | Meaning |
+|------------------|---------|
+| **NO-GO** + read-only FAIL | **Expected** — safe default |
+| **GO** | Ready for live (after `./pmx go-live`) |
+
+### 3 — Practice without live orders
+
+```bash
+./pmx preview trade MARKET OUT 1
+./pmx preview poly trade SLUG long 1
+./pmx panic --dry-run
+./pmx dashboard
+```
+
+### 4 — Live trading (when intentional)
+
+```bash
+./pmx go-live                   # clears read-only + kill switch
+./pmx preflight                 # must show GO
+./pmx preview trade …           # optional dry-run first
+./pmx trade MARKET OUT 1        # type YES at prompt
+```
+
+```mermaid
+flowchart TD
+  S[./pmx session] --> P[./pmx preflight]
+  P -->|NO-GO OK| V[preview / research / dashboard]
+  P -->|want live| G[./pmx go-live]
+  G --> P2[./pmx preflight GO]
+  P2 --> T[./pmx trade + YES]
+```
+
+---
+
+## Credentials (`pmxt/.env`)
+
+| Venue | Variables | Setup |
+|-------|-----------|-------|
+| Kalshi | `KALSHI_API_KEY`, `KALSHI_PRIVATE_KEY` | [`pmxt/core/docs/SETUP_KALSHI.md`](pmxt/core/docs/SETUP_KALSHI.md) |
+| Polymarket US | `POLYMARKET_US_KEY_ID`, `POLYMARKET_US_SECRET_KEY` | [`pmxt/core/docs/SETUP_POLYMARKET_US.md`](pmxt/core/docs/SETUP_POLYMARKET_US.md) |
+| LLM agents | `XAI_*`, `ANTHROPIC_*`, `OPENAI_*` | [`docs/providers.md`](docs/providers.md) |
+| Safety (auto-set) | `PMX_READ_ONLY`, `PMX_MAX_TRADE_CONTRACTS` | [`docs/environment.md`](docs/environment.md) |
+
+After editing `.env`: `./pmx warm`
+
+---
+
+## Daily commands
+
+| Goal | Kalshi | Polymarket US |
+|------|--------|---------------|
+| Balance | `./pmx balance` | `./pmx poly balance` |
+| Quote | `./pmx quote EVENT OUT` | `./pmx poly quote SLUG long` |
+| Analyze URL | `./pmx link URL OUT 1` | `./pmx poly link URL long` |
+| Trade | `./pmx trade MKT OUT 1` | `./pmx poly trade SLUG long 1` |
+| Dry-run | `./pmx preview trade …` | `./pmx preview poly trade …` |
+
+Full reference: [`docs/commands.md`](docs/commands.md)
+
+---
 
 ## Multi-agent workflow
 
-Separate **research** (Scout) from **execution** (Trader). Human approves every live order.
+Research and execution stay separate. **You** approve every live order.
+
+```mermaid
+flowchart LR
+  SC[Scout<br/>./pmx scout] --> B[briefs/active/*.md]
+  B --> H[Human<br/>approved: true]
+  H --> TR[Trader<br/>./pmx trader]
+  TR --> Y[You run<br/>./pmx trade]
+```
 
 ```bash
-./scripts/setup-hermes.sh           # once — sync keys, Hermes skills, bundles
-./scripts/check-providers.sh
+./scripts/setup-hermes.sh
 ./scripts/new-brief.sh my-market
-./pmx scout grok                    # research → briefs/active/*.md
-# Set approved: true in brief frontmatter
+./pmx scout grok
+# edit brief: approved: true
 ./pmx trader openai briefs/active/DATE-my-market.md
-# Human confirms, then runs ./pmx trade or ./pmx poly trade
+# you run ./pmx trade or ./pmx poly trade
 ```
 
-| Doc | Contents |
-|-----|----------|
-| [`docs/commands.md`](docs/commands.md) | Complete `./pmx` reference + agent tool routing |
-| [`docs/multi-agent.md`](docs/multi-agent.md) | Scout / Trader roles |
-| [`docs/providers.md`](docs/providers.md) | LLM routing (grok, claude, openai) |
-| [`docs/kalshi-integration.md`](docs/kalshi-integration.md) | Kalshi ↔ scripts |
-| [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md) | Poly US keys, MCP, `./pmx poly` |
-| [`hermes/README.md`](hermes/README.md) | Hermes setup, MCP policy, bundles |
-| [`AGENTS.md`](AGENTS.md) | Cursor Cloud + dev environment notes |
+Details: [`docs/multi-agent.md`](docs/multi-agent.md)
 
-## Hermes (Grok / Claude / OpenAI agents)
+---
 
-```bash
-./scripts/setup-hermes.sh           # Grok-safe: terminal CLI, Poly US docs MCP
-./pmx scout grok                    # or: hermes chat --cli -t no_mcp → /pmxtrader-scout
-./pmx trader openai briefs/active/BRIEF.md
-```
+## Safety (short list)
 
-- **PMXT trading MCP:** off by default (Grok schema errors). Scout/Trader use **terminal** `./pmx`.
-- **Polymarket US docs MCP:** on by default (read-only API research).
-- Skills installed to `~/.hermes/skills/prediction-markets/` via `./scripts/install-hermes-skills.sh`.
+| Control | Command / default |
+|---------|-------------------|
+| Pre-live check | `./pmx preflight` |
+| Read-only default | ON until `./pmx go-live` |
+| Max size | 10 contracts (`PMX_MAX_TRADE_CONTRACTS`) |
+| Kill switch | `./pmx stop on "reason"` |
+| Panic flatten | `./pmx panic` (Kalshi + Poly US) |
+| Preview panic | `./pmx panic --dry-run` |
+| Env dry-run | `PMX_DRY_RUN=1` or `--dry-run` on trade scripts |
+| Trade confirm | Type **YES** (or `--yes`) |
 
-## Project structure
+Web dashboard **cannot** place live orders. Full risks: [`docs/known-risks.md`](docs/known-risks.md)
 
-| Directory | Purpose |
-|-----------|---------|
-| `pmx`, `scripts/` | CLI shim, shell entry points, servers |
-| `apps/bridge/` | Shared Python (commands, parse, trade safety) |
-| `apps/cockpit/` | Textual TUI — see `docs/cockpit.md` |
-| `dashboard/` | Web command center (not `apps/dashboard/`) |
-| `pmxt/` | PMXT engine (sidecar, exchanges) |
-| `briefs/` | Trade brief templates + active briefs |
-| `config/` | `agents.json`, `providers.json` |
-| `hermes/skills/` | Hermes agent skills |
-| `apps/agents/` | Scout/Trader prompts |
-| `docs/` | Guides — see table below |
-| `tests/` | Python test suite |
+---
 
-Full layout: [`docs/project-structure.md`](docs/project-structure.md)
+## Project layout
 
-## Documentation
+| Path | What |
+|------|------|
+| `pmx`, `scripts/` | CLI entry points |
+| `apps/bridge/` | Shared Python (safety, parse) |
+| `apps/cockpit/` | Textual TUI |
+| `dashboard/` | Web UI (not `apps/dashboard/`) |
+| `pmxt/` | PMXT engine |
+| `config/` | Agent policy (no secrets) |
+| `docs/` | Guides — **[index](docs/README.md)** |
+| `tests/` | Python tests (114+) |
 
-| Doc | Contents |
-|-----|----------|
-| [`docs/commands.md`](docs/commands.md) | Complete `./pmx` reference |
-| [`docs/environment.md`](docs/environment.md) | All env vars (venues, safety, dashboard) |
-| [`docs/testing.md`](docs/testing.md) | Test and lint commands |
-| [`docs/known-risks.md`](docs/known-risks.md) | Real money, agents, limitations |
-| [`docs/official-links.md`](docs/official-links.md) | PMXT, venue, and API URLs |
-| [`docs/multi-agent.md`](docs/multi-agent.md) | Scout / Trader roles |
-| [`docs/providers.md`](docs/providers.md) | LLM routing |
-| [`docs/kalshi-integration.md`](docs/kalshi-integration.md) | Kalshi ↔ scripts |
-| [`docs/polymarket-us-integration.md`](docs/polymarket-us-integration.md) | Poly US keys, `./pmx poly` |
-| [`AGENTS.md`](AGENTS.md) | Cursor Cloud + PMXT engine notes |
+Diagram: [`docs/project-structure.md`](docs/project-structure.md)
+
+---
 
 ## Testing
 
 ```bash
-python3 -m pip install -r requirements-cockpit.txt pytest ruff mypy
-python3 -m pytest tests/ -q
+.venv-cockpit/bin/python -m pytest tests/ -q
 ./scripts/smoke-functionality.sh
-python3 -m ruff check .
 ```
 
-CI runs the same on every push. Details: [`docs/testing.md`](docs/testing.md)
+Details: [`docs/testing.md`](docs/testing.md) · [`docs/official-links.md`](docs/official-links.md) · Reports: [`LIVE_READINESS_REPORT.md`](LIVE_READINESS_REPORT.md), [`DRY_RUN_TEST_REPORT.md`](DRY_RUN_TEST_REPORT.md)
 
-## Safety
-
-- **Pre-live checklist:** `./pmx preflight` (alias `./pmx check`) — sidecar, kill switch, read-only, keys, GO/NO-GO
-- **Go live:** `./pmx go-live` — clears read-only default and disengages kill switch
-- Kill switch: `./pmx stop on "reason"` · `./pmx resume` · `./pmx panic`
-- Read-only: default on session start (`PMX_READ_ONLY=1`); cleared by `./pmx go-live`
-- **Preview (dry-run):** `./pmx preview trade MKT OUT 1` · `./pmx preview poly trade SLUG long 1`
-- Panic scope: `./pmx panic status` · preview: `./pmx panic --dry-run` or `./pmx stop dry`
-- Max size: `PMX_MAX_TRADE_CONTRACTS` (default 10)
-- Web dashboard **cannot** place live orders; cockpit requires confirm
-- Pre-commit secret scanner · strict `.gitignore` for `.env`
-- Trader requires `approved: true` in brief before preparing orders
-
-Risks and limits: [`docs/known-risks.md`](docs/known-risks.md) · Safety audit: `reviews/2026-06-19/trading-safety-review.md`
+---
 
 ## License
 

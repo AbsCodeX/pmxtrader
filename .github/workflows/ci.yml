@@ -29,6 +29,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff mypy pytest pip-audit
           pip install -r requirements-cockpit.txt
+          pip install -r requirements-docs.txt
+
+      - name: Install markdownlint
+        run: npm install --no-save markdownlint-cli2
+
+      - name: Markdown lint
+        run: npx markdownlint-cli2
+
+      - name: Link check (lychee)
+        uses: lycheeorg/lychee-action@v2
+        with:
+          args: --config .lychee.toml README.md AGENTS.md LIVE_READINESS_REPORT.md DRY_RUN_TEST_REPORT.md docs/
+          fail: true
+
+      - name: Build docs site
+        run: bash scripts/docs-build.sh
 
       - name: npm audit (root)
         run: npm audit --audit-level=high

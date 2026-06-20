@@ -1,0 +1,3 @@
+# Documentation site + CI doc checks (install: pip install -r requirements-docs.txt)
+mkdocs-material>=9.5,<10
+pymdown-extensions>=10.8,<11
