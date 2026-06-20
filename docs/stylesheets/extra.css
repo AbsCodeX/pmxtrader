@@ -1,7 +1,7 @@
 /* pmxtrader docs — Mac / iOS Human Interface styling */
 
 :root {
-  --ios-bg: #f2f2f7;
+  --ios-bg: #f7f7f8;
   --ios-bg-secondary: #ffffff;
   --ios-bg-elevated: #ffffff;
   --ios-blue: #007aff;
@@ -10,25 +10,26 @@
   --ios-green: #34c759;
   --ios-orange: #ff9500;
   --ios-red: #ff3b30;
-  --ios-label: #1c1c1e;
-  --ios-secondary: #3c3c43;
-  --ios-tertiary: #8e8e93;
-  --ios-quaternary: #c7c7cc;
-  --ios-separator: rgba(60, 60, 67, 0.16);
-  --ios-fill: rgba(120, 120, 128, 0.16);
+  --ios-label: #0d0d0d;
+  --ios-secondary: #444654;
+  --ios-tertiary: #6e6e80;
+  --ios-quaternary: #acacbe;
+  --ios-separator: rgba(0, 0, 0, 0.08);
+  --ios-fill: rgba(0, 0, 0, 0.04);
   --ios-radius: 12px;
   --ios-radius-lg: 16px;
   --ios-radius-xl: 20px;
   --ios-shadow-sm: 0 0.5px 1px rgba(0, 0, 0, 0.04);
   --ios-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
-  --ios-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-    "Helvetica Neue", "Segoe UI", sans-serif;
+  --ios-font: "Söhne", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --ios-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --ios-touch: 44px;
   --ios-safe-top: env(safe-area-inset-top, 0px);
   --ios-safe-bottom: env(safe-area-inset-bottom, 0px);
   --ios-safe-left: env(safe-area-inset-left, 0px);
   --ios-safe-right: env(safe-area-inset-right, 0px);
+  --pmx-sidebar-width: 16.75rem;
 }
 
 [data-md-color-scheme="default"] {
@@ -50,14 +51,14 @@
 }
 
 [data-md-color-scheme="slate"] {
-  --ios-bg: #000000;
-  --ios-bg-secondary: #1c1c1e;
-  --ios-bg-elevated: #1c1c1e;
-  --ios-label: #f2f2f7;
-  --ios-secondary: #ebebf5;
-  --ios-tertiary: #8e8e93;
-  --ios-separator: rgba(84, 84, 88, 0.65);
-  --ios-fill: rgba(120, 120, 128, 0.36);
+  --ios-bg: #0d0d0d;
+  --ios-bg-secondary: #171717;
+  --ios-bg-elevated: #212121;
+  --ios-label: #ececf1;
+  --ios-secondary: #c5c5d2;
+  --ios-tertiary: #8e8ea0;
+  --ios-separator: rgba(255, 255, 255, 0.1);
+  --ios-fill: rgba(255, 255, 255, 0.06);
   --md-primary-fg-color: #0a84ff;
   --md-accent-fg-color: #0a84ff;
   --md-default-bg-color: #000000;
@@ -128,24 +129,24 @@ body,
   background: transparent;
 }
 
-/* Frosted navigation bar (iOS / macOS) */
+/* Header — flat OpenAI-style bar */
 .md-header {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 0.55px solid var(--ios-separator);
+  background: var(--ios-bg-secondary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--ios-separator);
   box-shadow: none;
   color: var(--ios-label);
   height: auto;
-  min-height: 3rem;
+  min-height: 3.25rem;
   padding-left: max(0.4rem, var(--ios-safe-left));
   padding-right: max(0.4rem, var(--ios-safe-right));
 }
 
 [data-md-color-scheme="slate"] .md-header {
-  background: rgba(28, 28, 30, 0.78);
-  border-bottom-color: rgba(84, 84, 88, 0.65);
-  color: #f2f2f7;
+  background: var(--ios-bg-secondary);
+  border-bottom-color: var(--ios-separator);
+  color: var(--ios-label);
 }
 
 .md-header__inner {
@@ -197,65 +198,53 @@ body,
   font-family: var(--ios-font);
 }
 
-/* Tab bar — segmented / macOS toolbar feel */
+/* Tab bar removed — full nav lives in the left sidebar */
 .md-tabs {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 0.55px solid var(--ios-separator);
-  box-shadow: none;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  display: none;
 }
 
-[data-md-color-scheme="slate"] .md-tabs {
-  background: rgba(28, 28, 30, 0.88);
+/* Left sidebar — OpenAI-style docs navigation */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary {
+    width: var(--pmx-sidebar-width);
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    width: var(--pmx-sidebar-width);
+  }
 }
 
-.md-tabs__list {
-  gap: 0.15rem;
-  padding: 0 0.35rem;
-}
-
-.md-tabs__item {
-  height: 2.35rem;
-}
-
-.md-tabs__link {
-  border-radius: 8px 8px 0 0;
-  font-size: 0.88rem;
-  font-weight: 590;
-  letter-spacing: -0.012em;
-  margin-top: 0.35rem;
-  opacity: 0.68;
-  padding: 0.45rem 0.85rem;
-  transition: color 0.15s ease, opacity 0.15s ease;
-}
-
-.md-tabs__link--active,
-.md-tabs__link:hover {
-  opacity: 1;
-}
-
-.md-tabs__link--active {
-  background: rgba(0, 122, 255, 0.08);
-  color: var(--ios-blue);
-}
-
-.is-ios .md-tabs__link {
-  min-height: var(--ios-touch);
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-/* macOS sidebar */
 .md-sidebar--primary {
-  background: var(--ios-bg);
-  border-right: 0.55px solid var(--ios-separator);
+  background: var(--ios-bg-secondary);
+  border-right: 1px solid var(--ios-separator);
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+  padding: 0.75rem 0 1.5rem;
 }
 
 .is-macos .md-sidebar--primary .md-sidebar__scrollwrap {
-  padding-top: 0.35rem;
+  padding-top: 0.75rem;
+}
+
+.md-nav--primary > .md-nav__list {
+  padding: 0 0.65rem;
+}
+
+.md-nav__item--section > .md-nav__link {
+  color: var(--ios-tertiary);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  margin-top: 0.85rem;
+  min-height: auto;
+  padding: 0.35rem 0.55rem 0.25rem;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.md-nav__item--section:first-child > .md-nav__link {
+  margin-top: 0.15rem;
 }
 
 .md-nav__title {
@@ -266,29 +255,48 @@ body,
   color: var(--ios-tertiary);
 }
 
+@media screen and (min-width: 76.25em) {
+  .md-nav__title {
+    display: none;
+  }
+}
+
 .md-nav__link {
-  border-radius: 8px;
-  font-size: 0.92rem;
+  border-radius: 6px;
+  color: var(--ios-secondary);
+  font-size: 0.875rem;
   font-weight: 500;
-  margin: 1px 0.45rem;
-  min-height: 2rem;
-  padding: 0.42rem 0.72rem;
-  transition: background 0.12s ease;
+  line-height: 1.35;
+  margin: 0;
+  min-height: 2.1rem;
+  padding: 0.45rem 0.65rem;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .is-ios .md-nav__link {
   min-height: var(--ios-touch);
-  padding: 0.55rem 0.85rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .md-nav__link--active {
-  background: var(--ios-blue-soft);
-  color: var(--ios-blue);
-  font-weight: 650;
+  background: var(--ios-fill);
+  box-shadow: inset 2px 0 0 var(--ios-label);
+  color: var(--ios-label);
+  font-weight: 600;
 }
 
 .md-nav__link:hover {
   background: var(--ios-fill);
+  color: var(--ios-label);
+}
+
+.md-nav .md-nav .md-nav__link {
+  font-size: 0.84rem;
+  padding-left: 0.85rem;
+}
+
+.md-nav .md-nav .md-nav__link--active {
+  box-shadow: inset 2px 0 0 var(--ios-label);
 }
 
 /* Breadcrumb path bar (macOS) */
@@ -304,6 +312,7 @@ body,
 
 /* Main reading column — consistent measure on all screens */
 .md-content__inner {
+  background: var(--ios-bg-secondary);
   margin-inline: auto;
   max-width: min(48rem, 100%);
   padding-bottom: 2.5rem;
@@ -312,6 +321,7 @@ body,
 }
 
 .md-content {
+  background: var(--ios-bg);
   margin-inline: auto;
 }
 
@@ -680,13 +690,14 @@ body,
   color: #c93400;
 }
 
-.pmx-checklist {
+.md-typeset .pmx-checklist {
   background: var(--ios-bg-elevated);
   border: none;
   border-radius: var(--ios-radius-lg);
   box-shadow: var(--ios-shadow-sm);
   margin: 1rem 0 1.25rem;
   overflow: hidden;
+  width: 100%;
 }
 
 .pmx-checklist__head {
@@ -700,32 +711,43 @@ body,
   text-transform: uppercase;
 }
 
-.pmx-checklist ol {
+.md-typeset .pmx-checklist ol {
   counter-reset: pmx-step;
+  display: block;
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
 }
 
-.pmx-checklist li {
-  align-items: center;
+.md-typeset .pmx-checklist ol > li {
+  align-items: flex-start;
   border-bottom: 0.55px solid var(--ios-separator);
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: 2rem 1fr;
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  margin-bottom: 0;
+  margin-left: 0;
   min-height: var(--ios-touch);
   padding: 0.72rem 1rem;
 }
 
-.is-macos .pmx-checklist li {
+[dir="rtl"] .md-typeset .pmx-checklist ol > li {
+  margin-right: 0;
+}
+
+.is-macos .md-typeset .pmx-checklist ol > li {
   min-height: 2.5rem;
 }
 
-.pmx-checklist li:last-child {
+.md-typeset .pmx-checklist ol > li:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
-.pmx-checklist li::before {
+.md-typeset .pmx-checklist ol > li::before {
   align-items: center;
   background: var(--ios-blue-soft);
   border-radius: 999px;
@@ -733,11 +755,19 @@ body,
   content: counter(pmx-step);
   counter-increment: pmx-step;
   display: inline-flex;
+  flex-shrink: 0;
   font-size: 0.78rem;
   font-weight: 750;
   height: 1.6rem;
   justify-content: center;
+  margin-top: 0.08rem;
   width: 1.6rem;
+}
+
+.md-typeset .pmx-checklist ol > li > p {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
 }
 
 .pmx-checklist code {
@@ -846,10 +876,6 @@ body,
 
   .md-content__inner {
     padding-inline: max(1rem, var(--ios-safe-left)) max(1rem, var(--ios-safe-right));
-  }
-
-  .md-tabs__list {
-    padding-inline: max(0.35rem, var(--ios-safe-left));
   }
 
   .md-header__title {
