@@ -58,6 +58,8 @@ Shared
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
+  telegram | tg                         Hermes Telegram bot (mobile control)
+  activate-live [--bot]                 Go-live + preflight (+ start bot)
   monitor EVENT [--label USA]           Poll prices → briefs/alerts/
 
 Live session
@@ -328,6 +330,12 @@ except Exception as e:
       fi
     done
     exec "$ROOT/scripts/agent-run.sh" trader "$provider" "$@"
+    ;;
+  telegram|tg)
+    exec "$ROOT/scripts/telegram-bot.sh" "$@"
+    ;;
+  activate-live|activatelive)
+    exec "$ROOT/scripts/activate-live-trading.sh" "$@"
     ;;
   trade)
     exec "$ROOT/scripts/kalshi-quickstart.sh" trade "$@"

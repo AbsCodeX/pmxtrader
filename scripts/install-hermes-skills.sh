@@ -23,10 +23,11 @@ echo "=== Install pmxtrader Hermes skills ==="
 link_skill pmxtrader-scout
 link_skill pmxtrader-trader
 link_skill pmxtrader-commands
+link_skill pmxtrader-telegram
 link_skill multi-agent-handoff
 
 echo
-echo "Skills: pmxtrader-scout, pmxtrader-trader, pmxtrader-commands, multi-agent-handoff"
+echo "Skills: pmxtrader-scout, pmxtrader-trader, pmxtrader-commands, pmxtrader-telegram, multi-agent-handoff"
 echo "Run: hermes skills list | rg pmxtrader"
 echo "Commands: docs/commands.md"
 echo "Scout: ./pmx scout grok   Trader: ./pmx trader openai briefs/active/BRIEF.md"

@@ -147,8 +147,14 @@
   },
   "workflow": [
     "Scout produces brief in briefs/active/",
-    "Human reviews and sets approved: true in brief frontmatter",
+    "Human reviews and sets approved: true in brief frontmatter (or Telegram Approve button)",
     "Trader reads only approved briefs; outputs copy-paste pmxt commands",
-    "Human runs order or explicitly tells Trader to run kalshi-quickstart.sh trade"
-  ]
+    "Human runs order via terminal YES, or Telegram Queue + Execute YES after ./pmx go-live"
+  ],
+  "telegram": {
+    "purpose": "Mobile Hermes control — Scout/Trader modes, brief approval, interactive live confirm",
+    "docs": "docs/telegram-integration.md",
+    "start": "./pmx telegram",
+    "activate": "./pmx activate-live"
+  }
 }

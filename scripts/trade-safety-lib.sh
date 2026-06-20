@@ -94,6 +94,23 @@ trade_safety_confirm_live() {
   fi
   local root
   root="$(_trade_safety_root)"
+  if [[ "${PMX_TELEGRAM_CONFIRM:-}" == "1" && -n "${PMX_TELEGRAM_TRADE_TOKEN:-}" && -n "${PMX_TELEGRAM_CHAT_ID:-}" ]]; then
+    if PYTHONPATH="$root${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+import sys
+sys.path.insert(0, sys.argv[1])
+from apps.bridge.telegram_trade import consume_telegram_trade_token
+r = consume_telegram_trade_token(
+    sys.argv[2],
+    chat_id=sys.argv[3],
+)
+if not r.ok:
+    print(r.error, file=sys.stderr)
+    raise SystemExit(1)
+" "$root" "$PMX_TELEGRAM_TRADE_TOKEN" "$PMX_TELEGRAM_CHAT_ID"; then
+      return 0
+    fi
+    return 1
+  fi
   if ! PYTHONPATH="$root${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
 import sys
 sys.path.insert(0, sys.argv[1])

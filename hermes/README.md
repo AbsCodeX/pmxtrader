@@ -25,6 +25,7 @@ This will:
 | `pmxtrader-commands` | Both | Full `./pmx` reference + tool routing |
 | `pmxtrader-scout` | Scout | Research lane — no orders |
 | `pmxtrader-trader` | Trader | Execution lane — approved brief only |
+| `pmxtrader-telegram` | Telegram | Mobile plain-language + button flows |
 | `multi-agent-handoff` | Both | Brief workflow + approval gate |
 
 Source: `hermes/skills/` · Install: `./scripts/install-hermes-skills.sh`
@@ -67,6 +68,19 @@ hermes chat --cli -t no_mcp
 # or:
 /pmxtrader-trader
 ```
+
+## Telegram bot (`./pmx telegram`)
+
+Mobile Hermes control with inline buttons (brief approve, queue trade, Execute YES).
+
+```bash
+# pmxt/.env: TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_CHAT_IDS
+./scripts/setup-hermes.sh
+pip install -r requirements-telegram.txt
+./pmx activate-live --bot
+```
+
+Full guide: **`docs/telegram-integration.md`**
 
 ## MCP policy
 
