@@ -431,29 +431,38 @@ body,
 
 /* ── Setup steps ── */
 
-.pmx-steps {
+.md-typeset ol.pmx-steps {
+  counter-reset: pmx-setup;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.pmx-step {
+.md-typeset ol.pmx-steps > li.pmx-step {
+  align-items: flex-start;
   border-top: 1px solid var(--doc-border);
   display: flex;
+  flex-direction: row;
   gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  margin-bottom: 0;
+  margin-left: 0;
   padding: 0.9rem 0;
 }
 
-.pmx-step:last-child {
+.md-typeset ol.pmx-steps > li.pmx-step:last-child {
   padding-bottom: 0;
 }
 
-.pmx-step__num {
+.md-typeset ol.pmx-steps > li.pmx-step::before {
   align-items: center;
   background: transparent;
   border: 1px solid var(--doc-border);
   border-radius: 4px;
   color: var(--doc-muted);
+  content: counter(pmx-setup);
+  counter-increment: pmx-setup;
   display: inline-flex;
   flex-shrink: 0;
   font-size: 0.7rem;
@@ -462,6 +471,11 @@ body,
   justify-content: center;
   margin-top: 0.1rem;
   width: 1.35rem;
+}
+
+.pmx-step__body {
+  flex: 1;
+  min-width: 0;
 }
 
 .pmx-step__body h3 {
@@ -582,11 +596,6 @@ body,
   letter-spacing: 0.03em;
   margin: 0 0 0.55rem;
   text-transform: uppercase;
-}
-
-.pmx-step__body {
-  flex: 1;
-  min-width: 0;
 }
 
 .pmx-faq summary::-webkit-details-marker {

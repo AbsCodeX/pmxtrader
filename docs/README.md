@@ -88,7 +88,6 @@ hide:
 
     <ol class="pmx-steps">
       <li class="pmx-step">
-        <div class="pmx-step__num" aria-hidden="true">1</div>
         <div class="pmx-step__body">
           <h3>Clone the repository</h3>
           <pre><code class="language-bash">git clone https://github.com/AbsCodeX/pmxtrader.git
@@ -97,7 +96,6 @@ git submodule update --init   # optional: pmxt-mcp, molt-pmxt</code></pre>
         </div>
       </li>
       <li class="pmx-step">
-        <div class="pmx-step__num" aria-hidden="true">2</div>
         <div class="pmx-step__body">
           <h3>Install dependencies</h3>
           <pre><code class="language-bash">./scripts/setup-dev.sh
@@ -105,7 +103,6 @@ pip install -r requirements-docs.txt   # optional: docs preview</code></pre>
         </div>
       </li>
       <li class="pmx-step">
-        <div class="pmx-step__num" aria-hidden="true">3</div>
         <div class="pmx-step__body">
           <h3>Create environment file</h3>
           <pre><code class="language-bash">cp pmxt/.env.example pmxt/.env
@@ -114,7 +111,6 @@ pip install -r requirements-docs.txt   # optional: docs preview</code></pre>
         </div>
       </li>
       <li class="pmx-step">
-        <div class="pmx-step__num" aria-hidden="true">4</div>
         <div class="pmx-step__body">
           <h3>Start a session</h3>
           <pre><code class="language-bash">source scripts/pmxt-env.sh
@@ -124,7 +120,6 @@ pip install -r requirements-docs.txt   # optional: docs preview</code></pre>
         </div>
       </li>
       <li class="pmx-step">
-        <div class="pmx-step__num" aria-hidden="true">5</div>
         <div class="pmx-step__body">
           <h3>Run tests</h3>
           <pre><code class="language-bash">python3 -m pytest tests/ -q
