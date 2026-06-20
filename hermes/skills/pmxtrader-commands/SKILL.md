@@ -11,7 +11,11 @@ description: >-
 
 **Always:** `cd ~/pmxtrader` (or `$PMXTRADER_ROOT`). Use Hermes **terminal** tool — PMXT trading MCP is disabled (Grok-safe).
 
-**Sidecar:** `./pmx warm` or `./scripts/pmxt-server.sh restart` after env changes.
+**Credentials:** Kalshi + Polymarket US keys live in **`pmxt/.env`** (NOT `~/.hermes/.env`). Balance reads need keys + warm sidecar — read-only mode does NOT block balance.
+
+**Diagnose:** `./pmx agent doctor` or `./pmx doctor` — credential + sidecar JSON. If keys OK but balance fails: `./scripts/pmxt-server.sh restart`.
+
+**Sidecar:** `./pmx session` or `./pmx warm` after env changes (auto-restarts stale sidecar).
 
 **Real money:** Check `./pmx status` (kill switch OFF). Never run trade/sell/close without explicit human confirmation.
 
@@ -42,7 +46,8 @@ Bootstraps sidecar, warms venues, prints status + cheat sheet.
 | Kalshi buy | `./pmx trade MARKET OUTCOME size` |
 | Poly US buy/sell/exit | `./pmx poly trade/sell/close SLUG long ...` |
 | Live Poly book | `./pmx poly watch book SLUG long --max-messages 10` |
-| Balances both venues | `./pmx status` |
+| Balances both venues | `./pmx status` · `./pmx balance` · `./pmx poly balance` |
+| Agent diagnostics | `./pmx agent doctor` |
 
 ## Kalshi
 
@@ -75,7 +80,9 @@ Bootstraps sidecar, warms venues, prints status + cheat sheet.
 ./pmx poly cancel-all
 ```
 
-Keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` · `long`=YES, `short`=NO
+Keys: `POLYMARKET_US_KEY_ID` / `POLYMARKET_US_SECRET_KEY` in **`pmxt/.env`** · `long`=YES, `short`=NO
+
+Kalshi keys: `KALSHI_API_KEY` / `KALSHI_PRIVATE_KEY` in **`pmxt/.env`**
 
 ## Safety
 

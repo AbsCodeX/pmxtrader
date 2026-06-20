@@ -51,17 +51,23 @@ Polymarket US (poly)
 
 Shared
   status                                Kill switch + sidecar + venue health
+  doctor                                Credential + sidecar diagnostics (Hermes)
   preflight | check                     Pre-live GO/NO-GO checklist
   preview trade … | preview poly …      Dry-run order (no execution)
   event EVENT                           Raw event JSON
   compare slate SPORT | compare url URL Prediction Hunt odds
   agent snapshot | agent portfolio | agent discover URL  Trading agent capabilities (JSON)
+  agent doctor [--json]                 Credential + sidecar status for Hermes
   agent propose | propose --fair P --ask A ...   Trade proposal (edge, Kelly, risk, YES/NO)
+  risk check --fair F --ask A [--bankroll B]   Edge + Kelly + risk checks (JSON)
+  risk status                                  Daily loss ledger status
+  approve --proposal FILE | --fair F ...       Human YES approval packet (no execution)
+  alert scan [--threshold 0.05] [--once]       Watchlist price shift alerts
   scan poly-global QUERY [--book]           Global Poly Gamma/CLOB search (research)
   scan poly-us QUERY                        Paginated Polymarket US search
   scan verify-us SLUG                       Check US retail slug exists
   scan kalshi-btc [--horizon 15m|1h|all]    Short-term BTC markets on Kalshi
-  watchlist list|add|remove|filter|scan     Curated markets + volume/liquidity filters
+  watchlist list|add|remove|filter|scan|alert  Curated markets + price alerts
   propose --fair P [--ask A] [--url URL] ...   Formatted trade proposal (JSON or --markdown)
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
@@ -113,6 +119,7 @@ normalize_verb() {
     balance|money|cash|bal|wallet) printf '%s\n' balance ;;
     positions|pos|position|holdings|holds) printf '%s\n' positions ;;
     status|health|state) printf '%s\n' status ;;
+    doctor|diag|diagnose) printf '%s\n' doctor ;;
     preflight|check) printf '%s\n' preflight ;;
     preview|dry-run|dryrun) printf '%s\n' preview ;;
     quote|price|eval|snapshot) printf '%s\n' quote ;;
@@ -121,7 +128,10 @@ normalize_verb() {
     watch|book|stream|orderbook) printf '%s\n' watch ;;
     trades|trade-tape|tape) printf '%s\n' trades ;;
     fills|fill|my-fills|myfills|my-fills) printf '%s\n' fills ;;
-    monitor|poll|alert) printf '%s\n' monitor ;;
+    monitor|poll) printf '%s\n' monitor ;;
+    alert|alerts|price-alert) printf '%s\n' alert ;;
+    risk) printf '%s\n' risk ;;
+    approve|approval) printf '%s\n' approve ;;
     warm|ready|prime) printf '%s\n' warm ;;
     session|launch|boot|pmxt-start|pmxtstart) printf '%s\n' session ;;
     terminal|pmxt-terminal|pmxtterminal) printf '%s\n' terminal ;;
@@ -201,6 +211,9 @@ except Exception as e:
   print('  (balance unavailable)')
 " || true
     fi
+    ;;
+  doctor)
+    PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m apps.bridge.trading_agent doctor "$@"
     ;;
   preflight|check)
     exec "$ROOT/scripts/pmx-preflight.sh"
@@ -323,7 +336,10 @@ except Exception as e:
     shift || true
     case "$sub" in
       snapshot|portfolio|discover)
-        exec python3 -m apps.bridge.trading_agent "$sub" "$@"
+        PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m apps.bridge.trading_agent "$sub" "$@"
+        ;;
+      doctor)
+        PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m apps.bridge.trading_agent doctor "$@"
         ;;
       propose|proposal)
         shift || true
@@ -338,7 +354,31 @@ except Exception as e:
   watchlist)
     sub="${1:-list}"
     shift || true
+    if [[ "$sub" == "alert" ]]; then
+      exec python3 -m apps.bridge.price_alert "$@"
+    fi
     exec python3 -m apps.bridge.watchlist "$sub" "$@"
+    ;;
+  risk)
+    sub="${1:-status}"
+    shift || true
+    exec python3 -m apps.bridge.risk_engine "$sub" "$@"
+    ;;
+  approve|approval)
+    exec python3 -m apps.bridge.approval "$@"
+    ;;
+  alert)
+    sub="${1:-scan}"
+    shift || true
+    case "$sub" in
+      scan)
+        exec python3 -m apps.bridge.price_alert "$@"
+        ;;
+      *)
+        echo "Usage: pmx alert scan [--threshold 0.05] [--once] [--append]" >&2
+        exit 1
+        ;;
+    esac
     ;;
   propose|proposal)
     exec python3 -m apps.bridge.trade_proposal "$@"

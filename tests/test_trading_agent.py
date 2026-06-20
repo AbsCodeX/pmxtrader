@@ -2,6 +2,8 @@
 
 from apps.bridge.parse import parse_positions_json, parse_quote_fields, parse_rules_note
 from apps.bridge.trading_agent import (
+    PortfolioSnapshot,
+    agent_snapshot_json,
     detect_mispricing,
     estimate_fair_value,
     score_confidence,
@@ -58,3 +60,31 @@ def test_score_confidence_bands():
     low = score_confidence()
     high = score_confidence(book_liquid=True, rules_clear=True, cross_venue_agrees=True, edge_size=0.10)
     assert float(high.data["score"]) > float(low.data["score"])
+
+
+def test_agent_snapshot_includes_credential_status(monkeypatch):
+    monkeypatch.setattr(
+        "apps.bridge.trading_agent.fetch_portfolio",
+        lambda **kwargs: PortfolioSnapshot(
+            kill_switch="OFF",
+            kalshi_cash=None,
+            poly_cash=None,
+            kalshi_positions=[],
+            poly_positions=[],
+            open_count=0,
+            unrealized_pnl=None,
+            notional_exposure=None,
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.bridge.trading_agent.sidecar_status",
+        lambda root, probe_balances=False: {"healthy": True, "venues": {}},
+    )
+    monkeypatch.setattr(
+        "apps.bridge.trading_agent.credential_status",
+        lambda root: {"kalshi": {"configured": True}, "polymarket_us": {"configured": True}},
+    )
+    snap = agent_snapshot_json()
+    assert "credential_status" in snap
+    assert "sidecar_status" in snap
+    assert any("pmxt/.env" in note for note in snap["hermes_notes"])

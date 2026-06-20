@@ -8,10 +8,14 @@ from pathlib import Path
 
 from apps.bridge.trade_audit import append_trade_log, parse_order_id
 from apps.bridge.trade_safety import (
+    TradeGuardResult,
+    agent_doctor_json,
     check_live_trade_allowed,
     check_sidecar_health,
     check_trade_amount,
     confirm_trade_allowed,
+    credential_status,
+    format_agent_doctor_report,
     format_dry_run_order,
     format_panic_scope,
     format_preflight_report,
@@ -22,9 +26,11 @@ from apps.bridge.trade_safety import (
     max_trade_contracts,
     panic_venues,
     preflight_enabled,
+    probe_exchange_balance,
     read_sidecar_port,
     run_preflight,
     safety_snapshot,
+    sidecar_status,
     trade_confirm_required,
 )
 
@@ -205,6 +211,87 @@ def test_has_kalshi_keys(tmp_path: Path):
     env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
     assert has_kalshi_keys(tmp_path)
     assert not has_poly_us_keys(tmp_path)
+
+
+def test_has_kalshi_keys_multiline_private_key(tmp_path: Path):
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    pem_header = "-----BEGIN RSA " + "PRIVATE KEY-----"
+    env.write_text(
+        f'KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY="{pem_header}\nline2\n-----END RSA PRIVATE KEY-----"\n',
+        encoding="utf-8",
+    )
+    assert has_kalshi_keys(tmp_path)
+
+
+def test_credential_status_no_secrets(tmp_path: Path):
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text(
+        "KALSHI_API_KEY=test-key\nKALSHI_PRIVATE_KEY=test-pem\n",
+        encoding="utf-8",
+    )
+    status = credential_status(tmp_path)
+    assert status["kalshi"]["configured"] is True
+    dumped = json.dumps(status)
+    assert "test-key" not in dumped
+    assert "test-pem" not in dumped
+    assert "pmxt/.env" in status["hermes_note"]
+
+
+def test_sidecar_status_without_probe(tmp_path: Path, monkeypatch):
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    data = sidecar_status(tmp_path, probe_balances=False)
+    assert data["healthy"] is True
+    assert data["venues"] == {}
+
+
+def test_probe_exchange_balance_auth_error():
+    def fake_runner(argv):
+        return 1, "", "Initialize KalshiExchange with credentials (apiKey and privateKey)."
+
+    r = probe_exchange_balance("kalshi", runner=fake_runner)
+    assert not r.ok
+    assert "restart" in r.error
+
+
+def test_agent_doctor_json_structure(tmp_path: Path, monkeypatch):
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.probe_exchange_balance",
+        lambda exchange, **kwargs: TradeGuardResult(True, "balance OK"),
+    )
+    data = agent_doctor_json(tmp_path)
+    assert "credential_status" in data
+    assert "sidecar_status" in data
+    text = format_agent_doctor_report(data)
+    assert "Kalshi:" in text
+    assert "test-key" not in text
+
+
+def test_check_providers_script_mentions_venue_keys():
+    text = Path("scripts/check-providers.sh").read_text(encoding="utf-8")
+    assert "KALSHI_API_KEY" in text
+    assert "POLYMARKET_US_KEY_ID" in text
+    assert "NOT synced" in text or "not synced" in text.lower() or "stay in pmxt/.env" in text
+
+
+def test_pmx_sh_has_doctor_command():
+    text = Path("scripts/pmx.sh").read_text(encoding="utf-8")
+    assert "doctor" in text
+    assert "agent doctor" in text
 
 
 def test_has_poly_us_keys(tmp_path: Path):

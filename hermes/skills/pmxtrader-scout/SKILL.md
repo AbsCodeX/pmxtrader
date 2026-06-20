@@ -16,7 +16,8 @@ Research markets. Compare venues. Write trade briefs in `briefs/active/`. Leave 
 
 ```bash
 cd ~/pmxtrader
-./pmx scan poly-global "fed" --limit 10 --book   # Gamma/CLOB (global research)
+./pmx agent doctor              # credentials + sidecar (run first if balance fails)
+./pmx session                   # sidecar + warm (loads pmxt/.env)
 ./pmx scan poly-us "nfl" --limit 10              # US retail search
 ./pmx scan verify-us MARKET-SLUG                 # confirm before ./pmx poly trade
 ./pmx scan kalshi-btc --horizon all --limit 10   # BTC 15m + hourly Kalshi
@@ -26,8 +27,13 @@ cd ~/pmxtrader
 ./pmx watchlist remove ID|INDEX
 ./pmx watchlist filter --min-volume N --min-liquidity N
 ./pmx watchlist scan                             # live check vs filters (JSON)
+./pmx watchlist alert --threshold 0.05 --once    # price shift alerts
 ./pmx propose --fair 0.62 --ask 0.50 --event EVENT --outcome YES --use-portfolio
 ./pmx propose --url 'MARKET_URL' --fair 0.62 --markdown
+./pmx risk check --fair 0.62 --ask 0.50 --bankroll 500
+./pmx risk status
+./pmx approve --fair 0.62 --ask 0.50 --event EVENT --confirm YES --write
+./pmx alert scan --threshold 0.05 --once
 ./pmx agent snapshot              # portfolio + capability manifest (JSON)
 ./pmx agent discover 'MARKET_URL' # discovery + orderbook + rules snippet
 ./pmx agent portfolio             # balances, positions, P&L, exposure

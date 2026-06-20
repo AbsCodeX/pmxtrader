@@ -26,7 +26,8 @@ from apps.bridge.parse import (
     parse_rules_note,
     parse_status,
 )
-from apps.cockpit.bridge.pmx import analyze_link, run_pmx
+from apps.bridge.trade_safety import agent_doctor_json, credential_status, format_agent_doctor_report, sidecar_status
+from apps.cockpit.bridge.pmx import ROOT, analyze_link, run_pmx
 
 CAPABILITIES = (
     "market_discovery",
@@ -321,7 +322,7 @@ def fetch_portfolio(*, include_positions: bool = True) -> PortfolioSnapshot:
     )
 
 
-def agent_snapshot_json() -> dict[str, Any]:
+def agent_snapshot_json(*, probe_balances: bool = False) -> dict[str, Any]:
     """Full capability snapshot for Hermes / scripts."""
     portfolio = fetch_portfolio()
     sources = check_data_sources()
@@ -329,9 +330,13 @@ def agent_snapshot_json() -> dict[str, Any]:
         "capabilities": list(CAPABILITIES),
         "hermes_notes": [
             "Use terminal ./pmx — PMXT MCP off by default on Grok",
+            "Venue keys in pmxt/.env (NOT ~/.hermes/.env) — run ./pmx agent doctor if balance fails",
+            "Read-only (PMX_READ_ONLY) blocks trades only — ./pmx balance still needs venue keys + warm sidecar",
             "./pmx poly markets often returns [] — use poly link/quote with known slugs",
-            "Human confirms all live orders",
+            "Human confirms all live orders; ./pmx go-live required before trades",
         ],
+        "credential_status": credential_status(ROOT),
+        "sidecar_status": sidecar_status(ROOT, probe_balances=probe_balances),
         "portfolio": asdict(portfolio),
         "data_sources_checklist": sources.data.get("checklist", []),
     }
@@ -389,10 +394,31 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("portfolio", help="Balances and positions JSON")
 
+    p_doc = sub.add_parser("doctor", help="Credential + sidecar diagnostics (JSON or text)")
+    p_doc.add_argument("--json", action="store_true", help="Emit JSON only")
+    p_doc.add_argument("--probe", action="store_true", help="Probe live balance endpoints (default for doctor)")
+
     args = parser.parse_args(argv)
     if args.cmd == "snapshot":
-        _print_json(agent_snapshot_json())
+        _print_json(agent_snapshot_json(probe_balances=False))
         return 0
+    if args.cmd == "doctor":
+        data = agent_doctor_json(ROOT, probe_balances=True)
+        if args.json:
+            _print_json(data)
+        else:
+            print(format_agent_doctor_report(data))
+        creds = data.get("credential_status", {})
+        sidecar = data.get("sidecar_status", {})
+        if not creds.get("env_file_exists"):
+            return 1
+        if not sidecar.get("healthy"):
+            return 1
+        venues = sidecar.get("venues") or {}
+        configured = [row for row in venues.values() if isinstance(row, dict) and row.get("configured")]
+        if not configured:
+            return 1
+        return 0 if all(row.get("balance_ok") for row in configured) else 1
     if args.cmd == "portfolio":
         _print_json(asdict(fetch_portfolio()))
         return 0

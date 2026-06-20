@@ -19,6 +19,7 @@ description: >-
 
 ```bash
 cd ~/pmxtrader
+./pmx agent doctor              # if balance fails — keys are in pmxt/.env, not ~/.hermes/.env
 ./pmx status
 ./pmx warm
 

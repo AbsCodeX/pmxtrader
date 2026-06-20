@@ -47,6 +47,7 @@ echo "OK: PMXT API key from ~/.pmxt/cli-auth.json"
 
 echo
 echo "Syncing LLM keys from pmxt/.env → ~/.hermes/.env ..."
+echo "(Venue keys stay in pmxt/.env — Hermes uses terminal ./pmx + sidecar)"
 python3 "$ROOT/scripts/sync-hermes-env.py" "$HERMES_ENV" "$PMXT_DIR/.env" "$PMXT_API_KEY"
 echo
 "$ROOT/scripts/check-providers.sh"

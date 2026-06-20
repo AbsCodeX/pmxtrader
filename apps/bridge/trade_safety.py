@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+
+from apps.bridge.dotenv import load_dotenv
 
 
 @dataclass(frozen=True)
@@ -160,17 +165,10 @@ def _env_has_vars(env_path: Path, names: tuple[str, ...]) -> bool:
     if not env_path.is_file():
         return False
     try:
-        lines = env_path.read_text(encoding="utf-8").splitlines()
+        pairs = load_dotenv(env_path)
     except OSError:
         return False
-    values: dict[str, str] = {}
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, _, val = stripped.partition("=")
-        values[key.strip()] = val.strip().strip('"').strip("'")
-    return all(values.get(name, "").strip() for name in names)
+    return all(pairs.get(name, "").strip() for name in names)
 
 
 def has_kalshi_keys(root: Path) -> bool:
@@ -298,6 +296,165 @@ def run_preflight(root: Path) -> PreflightReport:
     blocking_ok = all(c.ok for c in checks if c.blocking)
     report = PreflightReport(checks=checks, go=blocking_ok, panic_venues=panic_venues(root))
     return report
+
+
+def credential_status(root: Path) -> dict[str, Any]:
+    """Venue key presence in pmxt/.env (never returns secret values)."""
+    env_path = _env_file(root)
+    kalshi = has_kalshi_keys(root)
+    poly = has_poly_us_keys(root)
+    return {
+        "env_file": str(env_path),
+        "env_file_exists": env_path.is_file(),
+        "kalshi": {
+            "configured": kalshi,
+            "vars": list(_KALSHI_ENV_VARS),
+        },
+        "polymarket_us": {
+            "configured": poly,
+            "vars": list(_POLY_US_ENV_VARS),
+        },
+        "hermes_note": (
+            "Venue keys live in pmxt/.env only — NOT synced to ~/.hermes/.env. "
+            "Hermes agents: cd $PMXTRADER_ROOT && ./pmx balance (or ./pmx agent doctor)."
+        ),
+    }
+
+
+def _pmxt_cli_argv(exchange: str) -> list[str]:
+    cli_bin = os.environ.get("PMXT_CLI_BIN", "").strip()
+    if cli_bin == "node":
+        script = os.environ.get("PMXT_CLI_SCRIPT", "").strip()
+        if script:
+            return ["node", script, exchange, "balance", "--local", "--json"]
+    pmxt = shutil.which("pmxt") or cli_bin or "pmxt"
+    return [pmxt, exchange, "balance", "--local", "--json"]
+
+
+def probe_exchange_balance(
+    exchange: str,
+    *,
+    timeout: float = 20.0,
+    runner: Any | None = None,
+) -> TradeGuardResult:
+    """Return OK when the local sidecar can authenticate balance for exchange."""
+    argv = _pmxt_cli_argv(exchange)
+    if runner is not None:
+        code, stdout, stderr = runner(argv)
+    else:
+        try:
+            proc = subprocess.run(
+                argv,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=os.environ.copy(),
+            )
+            code, stdout, stderr = proc.returncode, proc.stdout or "", proc.stderr or ""
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return TradeGuardResult(False, str(exc))
+    combined = f"{stdout}\n{stderr}".strip()
+    if code == 0 and stdout.strip().startswith("["):
+        return TradeGuardResult(True, "balance OK")
+    lowered = combined.lower()
+    if "authentication" in lowered or "credentials" in lowered or "initialize" in lowered:
+        return TradeGuardResult(
+            False,
+            "sidecar missing venue credentials — run: ./scripts/pmxt-server.sh restart",
+        )
+    if code != 0:
+        detail = combined.splitlines()[0] if combined else f"exit {code}"
+        return TradeGuardResult(False, detail[:240])
+    return TradeGuardResult(False, "unexpected balance response")
+
+
+def sidecar_status(root: Path, *, probe_balances: bool = True) -> dict[str, Any]:
+    """Sidecar health plus optional per-venue balance probes."""
+    health = check_sidecar_health()
+    port = read_sidecar_port()
+    venues: dict[str, Any] = {}
+    if probe_balances:
+        for label, exchange, configured in (
+            ("kalshi", "kalshi", has_kalshi_keys(root)),
+            ("polymarket_us", "polymarket_us", has_poly_us_keys(root)),
+        ):
+            if not configured:
+                venues[label] = {
+                    "configured": False,
+                    "balance_ok": False,
+                    "detail": "keys not in pmxt/.env",
+                }
+                continue
+            probe = probe_exchange_balance(exchange)
+            venues[label] = {
+                "configured": True,
+                "balance_ok": probe.ok,
+                "detail": probe.error if not probe.ok else "balance OK",
+            }
+    return {
+        "healthy": health.ok,
+        "health_detail": health.error if not health.ok else f"Sidecar OK at http://127.0.0.1:{port}/health",
+        "port": port,
+        "venues": venues,
+        "fix_stale_credentials": "./scripts/pmxt-server.sh restart   # reload pmxt/.env into sidecar",
+    }
+
+
+def agent_doctor_json(root: Path, *, probe_balances: bool = True) -> dict[str, Any]:
+    """Diagnostic snapshot for Hermes agents (no secret values)."""
+    snap = safety_snapshot(root)
+    creds = credential_status(root)
+    sidecar = sidecar_status(root, probe_balances=probe_balances)
+    return {
+        "pmxtrader_root": str(root),
+        "session": {
+            "kill_switch": snap.kill_switch,
+            "read_only": snap.read_only,
+            "live_mode": snap.live_mode,
+            "max_trade_contracts": snap.max_trade_contracts,
+            "go_live": "./pmx go-live",
+            "warm_sidecar": "./pmx warm",
+        },
+        "credential_status": creds,
+        "sidecar_status": sidecar,
+        "llm_keys_check": "./scripts/check-providers.sh",
+        "hermes_setup": "./scripts/setup-hermes.sh",
+    }
+
+
+def format_agent_doctor_report(data: dict[str, Any]) -> str:
+    creds = data.get("credential_status", {})
+    sidecar = data.get("sidecar_status", {})
+    session = data.get("session", {})
+    lines = [
+        "=== pmxtrader agent doctor ===",
+        "",
+        f"Root: {data.get('pmxtrader_root', '?')}",
+        f"Env file: {creds.get('env_file', '?')} ({'exists' if creds.get('env_file_exists') else 'MISSING'})",
+        "",
+        "Venue credentials (pmxt/.env — not ~/.hermes/.env):",
+        f"  Kalshi:         {'OK' if creds.get('kalshi', {}).get('configured') else 'MISSING'}",
+        f"  Polymarket US:  {'OK' if creds.get('polymarket_us', {}).get('configured') else 'MISSING'}",
+        "",
+        f"Sidecar: {'OK' if sidecar.get('healthy') else 'FAIL'} — {sidecar.get('health_detail', '')}",
+    ]
+    for label, row in (sidecar.get("venues") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        mark = "OK" if row.get("balance_ok") else "FAIL"
+        lines.append(f"  {label} balance: [{mark}] {row.get('detail', '')}")
+    lines.extend(
+        [
+            "",
+            f"Kill switch: {session.get('kill_switch', '?')}",
+            f"Read-only:   {'ON' if session.get('read_only') else 'OFF'} (balance reads work in read-only)",
+            f"Live mode:   {'ON' if session.get('live_mode') else 'OFF'} — trades need ./pmx go-live + human confirm",
+            "",
+            "If keys are OK but balance fails: ./scripts/pmxt-server.sh restart",
+            "Hermes LLM keys: ./scripts/setup-hermes.sh  then  ./scripts/check-providers.sh",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def format_preflight_report(report: PreflightReport, *, root: Path) -> str:

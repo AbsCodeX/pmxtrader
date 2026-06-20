@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Sync pmxtrader keys into ~/.hermes/.env without printing secrets."""
+"""Sync pmxtrader keys into ~/.hermes/.env without printing secrets.
+
+LLM keys only (XAI, Anthropic, OpenAI, Prediction Hunt) plus PMXT_API_KEY.
+Venue credentials (Kalshi, Polymarket US) stay in pmxt/.env — Hermes agents
+load them via ./pmx / sidecar, not ~/.hermes/.env.
+"""
 from __future__ import annotations
 
 import re
