@@ -28,11 +28,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from apps.bridge.dashboard_security import minimal_subprocess_env  # noqa: E402
 from apps.bridge.pmxt_cli import pmxt_argv  # noqa: E402
 
 ENV_FILE = ROOT / "pmxt" / ".env"
 API_BASE = os.environ.get("KALSHI_BASE_URL", "https://external-api.kalshi.com").rstrip("/")
 API_PREFIX = "/trade-api/v2"
+# Match PMXT Kalshi adapter throttle (100ms) — panic bypasses sidecar so we space requests here.
+REQUEST_INTERVAL_SEC = 0.1
+_RETRYABLE_HTTP = frozenset({429, 503})
 
 
 def load_env() -> None:
@@ -101,31 +105,49 @@ def auth_headers(method: str, path: str) -> dict[str, str]:
     }
 
 
-def api_request(method: str, path: str, *, query: dict[str, Any] | None = None, body: dict | None = None) -> Any:
+def api_request(
+    method: str,
+    path: str,
+    *,
+    query: dict[str, Any] | None = None,
+    body: dict | None = None,
+    allow_retry: bool = False,
+) -> Any:
     full_path = API_PREFIX + path
     url = API_BASE + full_path
     if query:
         url += "?" + urlencode({k: v for k, v in query.items() if v is not None})
     data = json.dumps(body).encode() if body is not None else None
-    req = Request(url, data=data, method=method.upper(), headers=auth_headers(method, full_path))
-    try:
-        with urlopen(req, timeout=30) as resp:
-            raw = resp.read().decode()
-            return json.loads(raw) if raw else {}
-    except HTTPError as exc:
-        detail = exc.read().decode(errors="replace")
-        raise RuntimeError(f"Kalshi API {method} {path} failed ({exc.code}): {detail}") from exc
+    attempts = 2 if allow_retry else 1
+    last_exc: RuntimeError | None = None
+    for attempt in range(attempts):
+        req = Request(url, data=data, method=method.upper(), headers=auth_headers(method, full_path))
+        try:
+            with urlopen(req, timeout=30) as resp:
+                raw = resp.read().decode()
+                return json.loads(raw) if raw else {}
+        except HTTPError as exc:
+            detail = exc.read().decode(errors="replace")
+            last_exc = RuntimeError(f"Kalshi API {method} {path} failed ({exc.code}): {detail}")
+            if allow_retry and exc.code in _RETRYABLE_HTTP and attempt + 1 < attempts:
+                time.sleep(REQUEST_INTERVAL_SEC * 10)
+                continue
+            raise last_exc from exc
+    if last_exc:
+        raise last_exc
+    raise RuntimeError(f"Kalshi API {method} {path} failed")
 
 
 def pmxt_json(args: list[str]) -> Any:
     argv = pmxt_argv([*args, "--json"], root=ROOT)
+    subprocess_env = minimal_subprocess_env(ROOT)
     result = subprocess.run(
         argv,
         capture_output=True,
         text=True,
         check=False,
         cwd=str(ROOT),
-        env={**os.environ, "PMXTRADER_ROOT": str(ROOT), "PMXT_DIR": str(ROOT / "pmxt")},
+        env=subprocess_env,
     )
     if result.returncode != 0:
         err = (result.stderr or result.stdout or "").strip()
@@ -165,7 +187,7 @@ def close_order_for_position(ticker: str, position: Decimal) -> dict[str, Any]:
 
 
 def fetch_positions() -> list[dict[str, Any]]:
-    data = api_request("GET", "/portfolio/positions")
+    data = api_request("GET", "/portfolio/positions", allow_retry=True)
     rows = data.get("market_positions") or []
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -200,6 +222,8 @@ def cancel_open_orders(*, dry_run: bool) -> list[dict[str, Any]]:
             entry["status"] = "error"
             entry["error"] = str(exc)
         results.append(entry)
+        if not dry_run:
+            time.sleep(REQUEST_INTERVAL_SEC)
     return results
 
 
@@ -226,6 +250,8 @@ def close_positions(*, dry_run: bool) -> list[dict[str, Any]]:
             entry["status"] = "error"
             entry["error"] = str(exc)
         results.append(entry)
+        if not dry_run:
+            time.sleep(REQUEST_INTERVAL_SEC)
     return results
 
 

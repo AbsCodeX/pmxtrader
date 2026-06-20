@@ -62,7 +62,8 @@ has_kalshi_env() {
 has_poly_us_env() {
   local env_file="${PMXT_DIR:?}/.env"
   [[ -f "$env_file" ]] || return 1
-  grep -qE '^POLYMARKET_US_API_KEY=.+[^[:space:]]' "$env_file" 2>/dev/null
+  grep -qE '^POLYMARKET_US_KEY_ID=.+[^[:space:]]' "$env_file" 2>/dev/null \
+    && grep -qE '^POLYMARKET_US_SECRET_KEY=.+[^[:space:]]' "$env_file" 2>/dev/null
 }
 
 export -f has_kalshi_env has_poly_us_env 2>/dev/null || true

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
 from apps.bridge.commands import classify_command, extract_pmx_commands, is_palette_allowed
+from apps.bridge.dashboard_security import minimal_subprocess_env
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS_DIR = (ROOT / "scripts").resolve()
@@ -29,10 +29,7 @@ __all__ = [
 
 
 def env() -> dict[str, str]:
-    e = os.environ.copy()
-    e["PMXTRADER_ROOT"] = str(ROOT)
-    e["PMXT_DIR"] = str(ROOT / "pmxt")
-    return e
+    return minimal_subprocess_env(ROOT)
 
 
 def run_argv(argv: list[str], timeout: int = 120) -> dict:

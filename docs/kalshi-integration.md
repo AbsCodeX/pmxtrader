@@ -122,6 +122,19 @@ File sentinel at repo root (`KILL_SWITCH`, gitignored). Works even if agents han
 
 `kalshi-quickstart.sh trade` refuses when engaged. Override path: `KILL_SWITCH_FILE`.
 
+### Emergency exit (direct Kalshi REST)
+
+`./scripts/kalshi-emergency-exit.py` (invoked by `./scripts/kill-switch.sh stop --cash-out`) uses **two paths**:
+
+| Step | Path | Why |
+|------|------|-----|
+| Cancel resting orders | PMXT `kalshi order:cancel --local` | Same as normal tooling |
+| Close open positions | **Direct** `POST /trade-api/v2/portfolio/orders` | PMXT `createOrder` cannot map reduce-only market closes with correct action/side for both YES and NO exposure |
+
+Direct REST bypasses the PMXT sidecar throttler. The script spaces requests by **100ms** (matching PMXT’s Kalshi adapter) and retries **GET positions once** on HTTP 429/503. **POST close orders are not auto-retried** (duplicate-fill risk).
+
+Base URL: `KALSHI_BASE_URL` or `https://external-api.kalshi.com` (see `pmxt/core/src/exchanges/kalshi/config.ts`).
+
 ## Cross-venue without PH paid tier
 
 | Method | Cost | Limit |

@@ -52,10 +52,39 @@ require_prediction_hunt_key() {
 ph_api_get() {
   local endpoint="$1"
   shift
-  curl -fsS \
-    -H "X-API-Key: ${PREDICTION_HUNT_API_KEY}" \
-    "${PREDICTION_HUNT_API_URL%/}/${endpoint}" \
-    "$@"
+  local url="${PREDICTION_HUNT_API_URL%/}/${endpoint}"
+  local attempt=1
+  local max_attempts=3
+  local delay=1
+  local tmp code
+
+  while [[ "$attempt" -le "$max_attempts" ]]; do
+    tmp="$(mktemp "${TMPDIR:-/tmp}/pmxt-ph.XXXXXX")"
+    code="$(
+      curl -sS -w "%{http_code}" -o "$tmp" \
+        -H "X-API-Key: ${PREDICTION_HUNT_API_KEY}" \
+        "$url" \
+        "$@" || echo "000"
+    )"
+    if [[ "$code" =~ ^2 ]]; then
+      cat "$tmp"
+      rm -f "$tmp"
+      return 0
+    fi
+    rm -f "$tmp"
+    if [[ "$code" == "429" || "$code" =~ ^5 ]]; then
+      if [[ "$attempt" -lt "$max_attempts" ]]; then
+        echo "Prediction Hunt HTTP $code — retry in ${delay}s (attempt ${attempt}/${max_attempts})" >&2
+        sleep "$delay"
+        delay=$((delay * 2))
+        attempt=$((attempt + 1))
+        continue
+      fi
+    fi
+    echo "Prediction Hunt API error HTTP ${code} for ${endpoint}" >&2
+    return 1
+  done
+  return 1
 }
 
 ph_pretty_json() {

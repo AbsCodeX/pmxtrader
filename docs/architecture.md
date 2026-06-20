@@ -43,3 +43,25 @@ Multi-agent workflow: `docs/multi-agent.md` · `config/agents.json` · `briefs/`
 - Secrets are never committed to the repository
 - Pre-commit hook scans for common secret patterns
 - GitHub Actions runs additional secret scanning on every push
+
+## Network and API transparency
+
+Most pmxtrader commands do **not** call venue APIs directly from Python/shell. The usual chain is:
+
+```
+./pmx / cockpit / dashboard  →  subprocess  →  pmxt CLI  →  local sidecar (:3847)  →  Kalshi / Polymarket US
+```
+
+| Integration | How you see network activity |
+|-------------|------------------------------|
+| Terminal `./pmx` | stdout/stderr from CLI |
+| PMXT sidecar | `x-pmxt-verbose: true` header → request logs in sidecar |
+| Web dashboard | Subprocess output only (no raw venue HTTP) |
+| Cockpit TUI | Same as dashboard — activity log shows command + output |
+| Prediction Hunt | `ph-sports-compare.sh` — curl with bounded retry |
+| Hermes / LLM | Opaque inside `hermes` binary; stderr only |
+| Panic flatten | `kalshi-emergency-exit.py` — direct Kalshi REST for position closes (documented in `docs/kalshi-integration.md`) |
+
+Subprocess environment: dashboard and cockpit use `minimal_subprocess_env()` (`apps/bridge/dashboard_security.py`) — scripts load credentials from `pmxt/.env` themselves.
+
+API integration audit: `reviews/2026-06-19/api-integration-review.md` · Linear [ABI-43](https://linear.app/pmxt/issue/ABI-43/api-integration-review-2026-06-19).

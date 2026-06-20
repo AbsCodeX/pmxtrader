@@ -23,8 +23,10 @@ Kalshi provides two independent environments:
 
 | Environment | Base URL | Purpose |
 |---|---|---|
-| **Production** | `api.elections.kalshi.com` | Live trading with real money |
-| **Demo** | `demo-api.elections.kalshi.com` | Safe paper-trading for testing |
+| **Production** | `https://external-api.kalshi.com` | Live trading with real money |
+| **Demo** | `https://external-api.demo.kalshi.co` | Safe paper-trading for testing |
+
+Override with `KALSHI_BASE_URL` / `KALSHI_DEMO_BASE_URL` if Kalshi changes hosts again. PMXT reads these in `pmxt/core/src/exchanges/kalshi/config.ts`.
 
 The credentials for each environment are separate — generate them from the corresponding Kalshi dashboard (production or demo).
 

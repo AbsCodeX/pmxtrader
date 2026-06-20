@@ -6,6 +6,8 @@ Findings file: `reviews/2026-06-19/cockpit-scripts-dashboard-review.md`
 
 All 37 sub-issues (ABI-6–ABI-42) resolved in Batches A–D (commits through `a2d7ad30`).
 
+**Related:** [ABI-43](https://linear.app/pmxt/issue/ABI-43) API / Integration review (Batch E, ABI-44–ABI-50) — see `reviews/2026-06-19/api-integration-review.md`.
+
 ---
 
 ## Sub-issues (37)

@@ -233,6 +233,9 @@ def print_table(snapshot: dict[str, Any]) -> None:
                     f"    -> {match.get('venue')}: bid={match.get('yesBid')} "
                     f"ask={match.get('yesAsk')} last={match.get('price')}"
                 )
+    cv_err = snapshot.get("crossVenueError")
+    if cv_err:
+        print(f"Cross-venue: FAILED ({cv_err})")
 
 
 def main() -> int:
