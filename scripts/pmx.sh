@@ -56,6 +56,9 @@ Shared
   event EVENT                           Raw event JSON
   compare slate SPORT | compare url URL Prediction Hunt odds
   agent snapshot | agent portfolio | agent discover URL  Trading agent capabilities (JSON)
+  scan poly-global QUERY [--book]           Global Poly Gamma/CLOB search (research)
+  scan poly-us QUERY                        Paginated Polymarket US search
+  scan verify-us SLUG                       Check US retail slug exists
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
@@ -122,6 +125,7 @@ normalize_verb() {
     cockpit|tui|ui|terminal-ui) printf '%s\n' cockpit ;;
     compare|ph|odds|hunt) printf '%s\n' compare ;;
     agent|capabilities|cap) printf '%s\n' agent ;;
+    scan|scanner) printf '%s\n' scan ;;
     brief|plan|idea) printf '%s\n' brief ;;
     scout|research|look) printf '%s\n' scout ;;
     trader|execute|exec|trade-mode) printf '%s\n' trader ;;
@@ -317,6 +321,30 @@ except Exception as e:
         ;;
       *)
         echo "Usage: pmx agent snapshot|portfolio|discover URL" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  scan)
+    sub="${1:-}"
+    shift || true
+    case "$sub" in
+      poly-global|global|gamma)
+        query="${1:?Usage: pmx scan poly-global QUERY [--book] [--limit N]}"
+        shift || true
+        exec python3 -m apps.bridge.poly_scanner poly-global "$query" "$@"
+        ;;
+      poly-us|us)
+        query="${1:?Usage: pmx scan poly-us QUERY [--limit N]}"
+        shift || true
+        exec python3 -m apps.bridge.poly_scanner poly-us "$query" "$@"
+        ;;
+      verify-us|verify)
+        slug="${1:?Usage: pmx scan verify-us SLUG}"
+        exec python3 -m apps.bridge.poly_scanner verify-us "$slug"
+        ;;
+      *)
+        echo "Usage: pmx scan poly-global QUERY | poly-us QUERY | verify-us SLUG" >&2
         exit 1
         ;;
     esac

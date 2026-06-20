@@ -22,6 +22,9 @@ Run before approval (Hermes uses terminal — no PMXT MCP on Grok):
 
 ```bash
 ./pmx agent discover 'MARKET_URL'
+./pmx scan poly-global "QUERY" --limit 10
+./pmx scan poly-us "QUERY" --limit 10
+./pmx scan verify-us SLUG
 ./pmx agent portfolio
 ./pmx agent snapshot
 ```

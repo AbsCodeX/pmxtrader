@@ -129,6 +129,101 @@ export class PolymarketUSExchange extends PredictionMarketExchange {
         return id;
     }
 
+    /** Page size when scanning the US catalog for text queries. */
+    private static readonly SEARCH_PAGE_SIZE = 250;
+    private static readonly SEARCH_MAX_PAGES = 20;
+
+    private matchesQuery(text: string, q: string): boolean {
+        return text.toLowerCase().includes(q);
+    }
+
+    private marketMatchesQuery(market: UnifiedMarket, q: string): boolean {
+        const slug = market.slug || market.marketId || '';
+        return (
+            this.matchesQuery(market.title || '', q) ||
+            this.matchesQuery(market.description || '', q) ||
+            this.matchesQuery(String(slug), q)
+        );
+    }
+
+    /**
+     * Paginate events + markets when filtering by query — a single page often
+     * misses matches (see pmxtrader docs/issue-log.md).
+     */
+    private async searchMarketsPaginated(query: string, limit: number): Promise<UnifiedMarket[]> {
+        const q = query.toLowerCase();
+        const seen = new Set<string>();
+        const matches: UnifiedMarket[] = [];
+
+        for (let page = 0; page < PolymarketUSExchange.SEARCH_MAX_PAGES; page++) {
+            const resp = await this.client.events.list({
+                active: true,
+                limit: PolymarketUSExchange.SEARCH_PAGE_SIZE,
+                offset: page * PolymarketUSExchange.SEARCH_PAGE_SIZE,
+            });
+            const events = resp.events ?? [];
+            if (!events.length) {
+                break;
+            }
+            for (const raw of events) {
+                const title = (raw as { title?: string }).title ?? '';
+                const description = (raw as { description?: string }).description ?? '';
+                const eventHit =
+                    this.matchesQuery(title, q) || this.matchesQuery(description, q);
+                const nested = this.normalizer.normalizeMarketsFromEvent(raw);
+                for (const market of nested) {
+                    if (!eventHit && !this.marketMatchesQuery(market, q)) {
+                        continue;
+                    }
+                    const key = market.slug || market.marketId;
+                    if (!key || seen.has(String(key))) {
+                        continue;
+                    }
+                    seen.add(String(key));
+                    matches.push(market);
+                    if (matches.length >= limit) {
+                        return matches;
+                    }
+                }
+            }
+            if (events.length < PolymarketUSExchange.SEARCH_PAGE_SIZE) {
+                break;
+            }
+        }
+
+        for (let page = 0; page < PolymarketUSExchange.SEARCH_MAX_PAGES; page++) {
+            const resp = await this.client.markets.list({
+                active: true,
+                limit: PolymarketUSExchange.SEARCH_PAGE_SIZE,
+                offset: page * PolymarketUSExchange.SEARCH_PAGE_SIZE,
+            });
+            const batch = resp.markets ?? [];
+            if (!batch.length) {
+                break;
+            }
+            for (const raw of batch) {
+                const market = this.normalizer.normalizeMarket(raw);
+                if (!this.marketMatchesQuery(market, q)) {
+                    continue;
+                }
+                const key = market.slug || market.marketId;
+                if (!key || seen.has(String(key))) {
+                    continue;
+                }
+                seen.add(String(key));
+                matches.push(market);
+                if (matches.length >= limit) {
+                    return matches;
+                }
+            }
+            if (batch.length < PolymarketUSExchange.SEARCH_PAGE_SIZE) {
+                break;
+            }
+        }
+
+        return matches;
+    }
+
     // -------------------------------------------------------------------------
     // Markets / Events
     // -------------------------------------------------------------------------
@@ -155,6 +250,11 @@ export class PolymarketUSExchange extends PredictionMarketExchange {
                     : [];
             }
 
+            if (params?.query) {
+                const limit = params.limit ?? 25;
+                return this.searchMarketsPaginated(params.query, limit);
+            }
+
             const resp = await this.client.markets.list({
                 active: true,
                 limit: params?.limit ?? 250,
@@ -163,17 +263,7 @@ export class PolymarketUSExchange extends PredictionMarketExchange {
             if (!resp.markets) {
                 throw new Error('PolymarketUS markets.list response missing required "markets" field');
             }
-            let markets = resp.markets.map(m => this.normalizer.normalizeMarket(m));
-
-            if (params?.query) {
-                const q = params.query.toLowerCase();
-                markets = markets.filter(m =>
-                    m.title.toLowerCase().includes(q) ||
-                    (m.description || '').toLowerCase().includes(q),
-                );
-            }
-
-            return markets;
+            return resp.markets.map(m => this.normalizer.normalizeMarket(m));
         });
     }
 
@@ -209,6 +299,40 @@ export class PolymarketUSExchange extends PredictionMarketExchange {
                 }
             }
 
+            if (params?.query) {
+                const q = params.query.toLowerCase();
+                const limit = params.limit ?? 100;
+                const matches: UnifiedEvent[] = [];
+                for (let page = 0; page < PolymarketUSExchange.SEARCH_MAX_PAGES; page++) {
+                    const resp = await this.client.events.list({
+                        active: true,
+                        limit: PolymarketUSExchange.SEARCH_PAGE_SIZE,
+                        offset: page * PolymarketUSExchange.SEARCH_PAGE_SIZE,
+                        ...(seriesIdFilter !== undefined ? { seriesId: seriesIdFilter } : {}),
+                    });
+                    const batch = resp.events ?? [];
+                    if (!batch.length) {
+                        break;
+                    }
+                    for (const raw of batch) {
+                        const event = this.normalizer.normalizeEvent(raw);
+                        if (
+                            this.matchesQuery(event.title || '', q) ||
+                            this.matchesQuery(event.description || '', q)
+                        ) {
+                            matches.push(event);
+                            if (matches.length >= limit) {
+                                return matches;
+                            }
+                        }
+                    }
+                    if (batch.length < PolymarketUSExchange.SEARCH_PAGE_SIZE) {
+                        break;
+                    }
+                }
+                return matches;
+            }
+
             const resp = await this.client.events.list({
                 active: true,
                 limit: params?.limit ?? 100,
@@ -218,17 +342,7 @@ export class PolymarketUSExchange extends PredictionMarketExchange {
             if (!resp.events) {
                 throw new Error('PolymarketUS events.list response missing required "events" field');
             }
-            let events = resp.events.map(e => this.normalizer.normalizeEvent(e));
-
-            if (params?.query) {
-                const q = params.query.toLowerCase();
-                events = events.filter(e =>
-                    e.title.toLowerCase().includes(q) ||
-                    (e.description || '').toLowerCase().includes(q),
-                );
-            }
-
-            return events;
+            return resp.events.map(e => this.normalizer.normalizeEvent(e));
         });
     }
 

@@ -16,6 +16,9 @@ Research markets. Compare venues. Write trade briefs in `briefs/active/`. Leave 
 
 ```bash
 cd ~/pmxtrader
+./pmx scan poly-global "fed" --limit 10 --book   # Gamma/CLOB (global research)
+./pmx scan poly-us "nfl" --limit 10              # US retail search
+./pmx scan verify-us MARKET-SLUG                 # confirm before ./pmx poly trade
 ./pmx agent snapshot              # portfolio + capability manifest (JSON)
 ./pmx agent discover 'MARKET_URL' # discovery + orderbook + rules snippet
 ./pmx agent portfolio             # balances, positions, P&L, exposure
@@ -38,6 +41,8 @@ Market discovery · Rules · Order book · Fair value · Mispricing · Data sour
 Trade rec · Confidence · Reasoning · Positions · P&L · Exposure
 
 Template: `briefs/TEMPLATE.md` · Reference: `docs/trading-agent-capabilities.md`
+
+**Poly discovery:** `./pmx poly markets` only searches one US page — use `./pmx scan poly-global` (ideas) or `./pmx scan poly-us` (tradable catalog).
 
 ## MCP — Scout only
 

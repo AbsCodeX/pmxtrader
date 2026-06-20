@@ -18,8 +18,10 @@
 - Automated broad market scanning via `poly markets` is currently not functional.
 - Workaround needed: Use known slugs, `poly watch book`, or manual watch lists.
 
-**Status**: Open  
-**Workaround**: Maintain a curated watch list of high-priority markets and scan them individually using `poly quote` or `poly watch book`.
+**Status**: Mitigated  
+**Workaround**: `./pmx scan poly-global QUERY` for broad discovery (Gamma/CLOB); `./pmx scan poly-us QUERY` for US retail (paginated search in pmxt); `./pmx poly link/quote` with known slugs for execution.
+
+**Resolution (2026-06):** Added `apps/bridge/poly_scanner.py` + `./pmx scan`; fixed `polymarket_us` query to paginate events/markets instead of filtering one page.
 
 **Logged by**: Hermes (Scout)
 
