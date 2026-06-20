@@ -7,6 +7,7 @@ from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge.live import fetch_poly_markets
 from apps.cockpit.widgets.output_log import OutputLog
+from apps.cockpit.widgets.rich_escape import escape_rich
 
 
 class MarketsPane(Vertical):
@@ -46,15 +47,27 @@ class MarketsPane(Vertical):
             lines = ["[bold]Market[/bold]          [bold]Slug[/bold]                    [bold]Vol[/bold]   [bold]Price[/bold]"]
             for m in rows:
                 lines.append(
-                    f"{m.get('title','')[:28]:28}  {m.get('slug','')[:26]:26}  {m.get('volume',''):8}  {m.get('price','')}"
+                    f"{escape_rich(m.get('title', '')[:28]):28}  "
+                    f"{escape_rich(m.get('slug', '')[:26]):26}  "
+                    f"{escape_rich(str(m.get('volume', ''))):8}  "
+                    f"{escape_rich(str(m.get('price', '')))}"
                 )
             lines.append("\n[dim]Analyze: ./pmx poly quote SLUG long[/dim]")
             return "\n".join(lines)
         return "No markets returned — check sidecar and Poly US keys."
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "markets" or event.state != WorkerState.SUCCESS:
+        if event.worker.group != "markets":
             return
         log = self.query_one("#markets-out", OutputLog)
+        if event.state == WorkerState.ERROR:
+            log.clear()
+            log.write("[red]Failed to load markets[/red]")
+            if event.worker.error:
+                log.write_safe(str(event.worker.error))
+            self.app.notify("Failed to load markets", severity="error")
+            return
+        if event.state != WorkerState.SUCCESS:
+            return
         log.clear()
         log.write(event.worker.result)

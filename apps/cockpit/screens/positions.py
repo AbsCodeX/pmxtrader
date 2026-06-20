@@ -34,8 +34,17 @@ class PositionsPane(Vertical):
         self.run_worker(fetch_positions_text, thread=True, exclusive=True, group="positions")
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        if event.worker.group != "positions" or event.state != WorkerState.SUCCESS:
+        if event.worker.group != "positions":
             return
         log = self.query_one("#pos-log", OutputLog)
+        if event.state == WorkerState.ERROR:
+            log.clear()
+            log.write("[red]Failed to load positions[/red]")
+            if event.worker.error:
+                log.write_safe(str(event.worker.error))
+            self.app.notify("Failed to load positions", severity="error")
+            return
+        if event.state != WorkerState.SUCCESS:
+            return
         log.clear()
-        log.write(event.worker.result)
+        log.write_safe(event.worker.result)

@@ -54,6 +54,9 @@ PALETTE_COMMANDS: frozenset[str] = frozenset({
     "poly markets",
 })
 
+# Script shortcuts shown in palette; cockpit confirms before running
+PALETTE_SCRIPT_COMMANDS: frozenset[str] = frozenset({"dashboard"})
+
 
 def normalize_pmx_line(line: str) -> str:
     line = line.strip()
@@ -85,6 +88,8 @@ def is_palette_allowed(cmd: str) -> bool:
     if not normalized:
         return False
     if normalized in PALETTE_COMMANDS:
+        return True
+    if normalized in PALETTE_SCRIPT_COMMANDS:
         return True
     if normalized.startswith("poly markets"):
         return True

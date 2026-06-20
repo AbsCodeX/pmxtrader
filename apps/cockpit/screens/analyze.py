@@ -50,7 +50,14 @@ class AnalyzePane(Vertical):
             return
         outcome = self.query_one("#analyze-outcome", Input).value.strip() or "USA"
         side = str(self.query_one("#analyze-side", Select).value or "long")
-        size = float(self.query_one("#analyze-size", Input).value.strip() or "1")
+        raw_size = self.query_one("#analyze-size", Input).value.strip() or "1"
+        try:
+            size = float(raw_size)
+            if size <= 0:
+                raise ValueError("size must be positive")
+        except ValueError:
+            self.app.notify("Invalid size — use a positive number (e.g. 1)", severity="warning")
+            return
         log = self.query_one("#analyze-log", OutputLog)
         log.clear()
         log.write("[dim]Analyzing (up to 30s)…[/dim]")

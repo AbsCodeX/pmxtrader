@@ -24,6 +24,7 @@ from apps.cockpit.screens.markets import MarketsPane
 from apps.cockpit.screens.positions import PositionsPane
 from apps.cockpit.screens.safety import SafetyPane
 from apps.cockpit.widgets.activity_log import ActivityLog
+from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal
 from apps.cockpit.widgets.nav import NAV_ITEMS, NavSidebar
 from apps.cockpit.widgets.ticker_bar import TickerBar
 
@@ -36,6 +37,7 @@ COMMANDS = [
     ("poly orders", "Open Poly orders"),
     ("warm", "Warm sidecar"),
     ("help", "Full command list"),
+    ("dashboard", "Start web dashboard (background)"),
 ]
 
 SCREEN_IDS = [item[0] for item in NAV_ITEMS]
@@ -94,13 +96,24 @@ class CommandPalette(ModalScreen[None]):
     def _run(self, cmd: str) -> None:
         self.dismiss(None)
         if cmd == "dashboard":
-            pmx.run_script("pmxt-dashboard.sh", "start-bg")
+            self.app.push_screen(
+                ConfirmCommandModal(
+                    "./scripts/pmxt-dashboard.sh start-bg",
+                    "Start web dashboard in background?",
+                ),
+                self._on_dashboard_confirmed,
+            )
             return
         if not pmx.is_palette_allowed(cmd):
             self.app.notify("Not allowed in palette — use Terminal or Safety tab", severity="warning")
             return
         parts = cmd.split()
         self.app.run_palette_command(parts)
+
+    def _on_dashboard_confirmed(self, ok: bool) -> None:
+        if ok:
+            pmx.run_script("pmxt-dashboard.sh", "start-bg")
+            self.app.notify("Dashboard starting in background")
 
 
 class CockpitApp(App):
@@ -177,12 +190,21 @@ class CockpitApp(App):
                     self.log(f"home render failed: {exc}")
             return
 
-        if event.worker.group == "palette" and event.state == WorkerState.SUCCESS:
+        if event.worker.group == "palette":
+            if event.state == WorkerState.ERROR:
+                self.notify("Command failed", severity="error")
+                return
+            if event.state != WorkerState.SUCCESS:
+                return
             r = event.worker.result
             cmd = r.get("_label", r.get("command", "./pmx"))
             out = r.get("stdout") or r.get("stderr") or ""
             self.log_activity(cmd, out, ok=r.get("ok"))
-            self.notify(out[:80] or "done")
+            if r.get("ok"):
+                self.notify("Command completed")
+            else:
+                self.notify("Command failed", severity="warning")
+            return
 
     def update_live_bar(self, snap: LiveSnapshot) -> None:
         try:

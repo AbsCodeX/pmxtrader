@@ -6,6 +6,7 @@ from textual.widgets import Button, DataTable, Static
 from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge import diagnostics as diag
+from apps.cockpit.widgets.rich_escape import escape_rich
 
 
 class DiagnosticsPane(Vertical):
@@ -43,11 +44,11 @@ class DiagnosticsPane(Vertical):
             return
         checks = event.worker.result
         table = self.query_one("#diag-table", DataTable)
-        table.clear()
+        table.clear(columns=False)
         ok_count = sum(1 for c in checks if c.ok)
         for c in checks:
             status = "[green]PASS[/green]" if c.ok else "[red]FAIL[/red]"
-            table.add_row(c.name, status, c.detail)
+            table.add_row(c.name, status, escape_rich(c.detail))
         color = "green" if ok_count == len(checks) else "yellow"
         self.query_one("#diag-summary", Static).update(
             f"[{color}]{ok_count}/{len(checks)} checks passed[/]"

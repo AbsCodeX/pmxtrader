@@ -7,6 +7,7 @@ from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge import ai, pmx
 from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal
+from apps.cockpit.widgets.rich_escape import escape_rich
 
 
 class ChatPane(Vertical):
@@ -38,7 +39,7 @@ class ChatPane(Vertical):
     def compose(self) -> ComposeResult:
         yield Static(
             "[bold]AI assistant[/bold] — ask about markets, links, volume, commands. "
-            "Only safe read-only commands run automatically.",
+            "Suggested commands require confirmation before running.",
             classes="hint",
             markup=True,
         )
@@ -77,7 +78,7 @@ class ChatPane(Vertical):
             return
         inp.value = ""
         log = self.query_one("#chat-log", RichLog)
-        log.write(f"[bold cyan]You:[/bold cyan] {msg}")
+        log.write(f"[bold cyan]You:[/bold cyan] {escape_rich(msg)}")
         provider = self.query_one("#chat-provider", Select).value or "grok"
         self.run_worker(lambda: ai.chat_turn(msg, str(provider)), thread=True, exclusive=True, group="chat")
 
@@ -91,11 +92,13 @@ class ChatPane(Vertical):
             result = event.worker.result
             log = self.query_one("#chat-log", RichLog)
             text = result.get("text", "")
-            log.write(f"[bold green]AI:[/bold green] {text}\n")
+            log.write(f"[bold green]AI:[/bold green] ", markup=True)
+            log.write(text, markup=False)
+            log.write("")
             cmds = pmx.extract_pmx_commands(text)
             if cmds:
                 self.query_one("#suggested-cmd", Static).update(
-                    f"Suggested: [cyan]{cmds[0]}[/cyan] — press [bold]Ctrl+Enter[/bold] to run (safe only)"
+                    f"Suggested: [cyan]{escape_rich(cmds[0])}[/cyan] — press [bold]Ctrl+Enter[/bold] to confirm"
                 )
                 self._pending_cmd = cmds[0]
             else:
@@ -106,7 +109,10 @@ class ChatPane(Vertical):
             r = event.worker.result
             out = r.get("stdout") or r.get("stderr") or r.get("error") or ""
             cmd = r.get("command", "pmx")
-            self.query_one("#chat-log", RichLog).write(f"[dim]$ {cmd}[/dim]\n{out}\n")
+            log = self.query_one("#chat-log", RichLog)
+            log.write(f"[dim]$ {escape_rich(cmd)}[/dim]")
+            log.write(out, markup=False)
+            log.write("")
 
     _pending_cmd: str | None = None
 
@@ -118,24 +124,26 @@ class ChatPane(Vertical):
 
     def _run_command(self, cmd: str) -> None:
         kind = pmx.classify_command(cmd)
-        if kind == "safe":
-            self._exec(cmd)
-        elif kind in ("trade", "mutating"):
-
-            def on_confirm(run: bool) -> None:
-                if run:
-                    self._exec(cmd)
-
-            self.app.push_screen(
-                ConfirmCommandModal(cmd, "Dangerous command — confirm to run."),
-                on_confirm,
-            )
+        if kind in ("trade", "mutating"):
+            warning = "Dangerous command — confirm to run."
+        elif kind == "safe":
+            warning = "Run AI-suggested command?"
         else:
             self.app.notify(
                 f"Blocked: {cmd}\nUse Safety tab or Terminal for this command.",
                 severity="warning",
                 timeout=8,
             )
+            return
+
+        def on_confirm(run: bool) -> None:
+            if run:
+                self._exec(cmd)
+
+        self.app.push_screen(
+            ConfirmCommandModal(cmd, warning),
+            on_confirm,
+        )
 
     def _exec(self, cmd: str) -> None:
         parts = cmd.replace("./pmx ", "").split()

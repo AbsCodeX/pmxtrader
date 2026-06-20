@@ -24,4 +24,4 @@ class ActivityLog(RichLog):
         self.write(access_line(cmd, output, ok=ok))
         if output.strip() and len(output.splitlines()) > 1:
             for line in output.strip().splitlines()[1:4]:
-                self.write(f"  [dim]{line[:100]}[/dim]")
+                self.write(f"  {line[:100]}", markup=False)

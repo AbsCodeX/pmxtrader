@@ -32,6 +32,7 @@ def test_classify_unknown_scout():
 def test_palette_allowlist():
     assert is_palette_allowed("status")
     assert is_palette_allowed("poly markets soccer")
+    assert is_palette_allowed("dashboard")
     assert not is_palette_allowed("panic")
     assert not is_palette_allowed("scout grok")
 
