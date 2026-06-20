@@ -60,8 +60,10 @@ def run_all() -> list[Check]:
     skills = Path.home() / ".hermes" / "skills" / "prediction-markets" / "pmxtrader-commands"
     checks.append(Check("Hermes pmxtrader skills", skills.is_symlink() or skills.is_dir(), str(skills)))
 
-    dash = ROOT / "index.html"
-    checks.append(Check("Web dashboard (index.html)", dash.is_file(), "./pmx dashboard"))
+    dash = ROOT / "dashboard" / "index.html"
+    dash_css = ROOT / "dashboard" / "css" / "app.css"
+    dash_ok = dash.is_file() and dash_css.is_file()
+    checks.append(Check("Web dashboard assets", dash_ok, "./pmx dashboard"))
 
     return checks
 

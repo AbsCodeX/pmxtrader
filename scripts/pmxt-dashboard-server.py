@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Local pmxtrader dashboard server — serves index.html + safe ./pmx command runner."""
+"""Local pmxtrader dashboard server — serves dashboard/ static assets + safe ./pmx API."""
 
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import secrets
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -29,7 +30,8 @@ PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
 HOST = resolve_bind_host()
 DASHBOARD_TOKEN = os.environ.get("PMXT_DASHBOARD_TOKEN") or secrets.token_urlsafe(24)
 TOKEN_FILE = ROOT / ".pmxt-dashboard.token"
-INDEX_HTML = ROOT / "index.html"
+DASHBOARD_DIR = (ROOT / "dashboard").resolve()
+INDEX_HTML = DASHBOARD_DIR / "index.html"
 _SUBPROCESS_ENV = minimal_subprocess_env(ROOT)
 
 
@@ -139,14 +141,39 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _serve_static(self, url_path: str) -> None:
+        rel = unquote(url_path.lstrip("/"))
+        if not rel or ".." in rel.split("/"):
+            self.send_error(403)
+            return
+        target = (DASHBOARD_DIR / rel).resolve()
+        if not str(target).startswith(str(DASHBOARD_DIR)) or not target.is_file():
+            self.send_error(404)
+            return
+        mime, _ = mimetypes.guess_type(str(target))
+        content_type = mime or "application/octet-stream"
+        if content_type.startswith("text/") and "charset" not in content_type:
+            content_type += "; charset=utf-8"
+        data = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        send_security_headers(self)
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_OPTIONS(self) -> None:
         self.send_response(405)
         self.end_headers()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path in ("/", "/index.html"):
+        path = parsed.path
+        if path in ("/", "/index.html"):
             self._send_index()
+            return
+        if path.startswith(("/css/", "/js/")):
+            self._serve_static(path)
             return
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})

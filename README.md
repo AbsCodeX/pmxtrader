@@ -24,7 +24,7 @@ Inside the repo (direnv also loads aliases like `money`, `halt`):
 ```bash
 pmxt-start                      # bootstrap sidecar + status in this shell
 pmx dashboard                   # same as from anywhere
-open index.html                 # shortcuts only (offline copy mode)
+open index.html                 # offline shortcuts (redirects to dashboard/)
 pmx help
 ```
 

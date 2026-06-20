@@ -42,7 +42,7 @@ Balance sparklines accumulate in `~/.pmxt-cockpit/balance-history.json`.
 ## Web dashboard (`pmx dashboard`)
 
 - Binds **127.0.0.1** only by default (set `PMXT_DASHBOARD_INSECURE_BIND=1` to bind elsewhere)
-- Session token injected into served `index.html` only — **not** returned by `/api/health`
+- Session token injected into served `dashboard/index.html` only — **not** returned by `/api/health`
 - Token also written to `.pmxt-dashboard.token` with mode **600**
 - POST `/api/run` and `/api/analyze` require header `X-Pmxtrader-Token`
 - Subprocesses get a **minimal env** (no full parent shell secrets)

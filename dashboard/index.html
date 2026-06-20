@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>pmxtrader — command center</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<header>
+    <div>
+      <h1>pmx<span>trader</span></h1>
+      <div class="sub">Command center — shortcuts, link analysis, mini terminal</div>
+    </div>
+    <div class="header-actions">
+      <span id="conn-badge" class="badge offline"><span class="dot"></span> offline</span>
+      <button class="ghost" id="theme-toggle" title="Toggle dark mode">Dark</button>
+      <button class="accent" id="btn-dashboard">Open live dashboard</button>
+    </div>
+  </header>
+
+  <div id="status-bar" aria-live="polite"></div>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <h3>New session</h3>
+        <p>Open macOS Terminal with sidecar warmed and balances shown.</p>
+        <div class="btn-row">
+          <button class="accent" data-copy="pmxt-terminal">pmxt-terminal</button>
+          <button data-copy="pmxt-start">pmxt-start</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Account health</h3>
+        <p>Kill switch + Kalshi + Poly US balances.</p>
+        <div class="btn-row">
+          <button class="primary" data-run="status">Run status</button>
+          <button data-run="balance">Kalshi balance</button>
+          <button data-run="poly-balance">Poly balance</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Research</h3>
+        <p>Paste a market link below or run Scout in Terminal.</p>
+        <div class="btn-row">
+          <button class="primary" id="btn-goto-analyze">Analyze a link</button>
+          <button data-copy="./pmx scout grok">Scout (grok)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Safety</h3>
+        <p>Real trades run in Terminal only — not this web UI.</p>
+        <div class="btn-row">
+          <button data-copy='./pmx stop on "reason"'>Stop trading</button>
+          <button class="danger" data-copy="./pmx panic">Panic (Terminal)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="analyze" id="link-analyzer">
+      <div class="analyze-head">
+        <div>
+          <h2>Link analyzer</h2>
+          <div class="sub" style="margin-top:.25rem">Kalshi or Polymarket US URL → quote, book, fill estimate</div>
+        </div>
+        <span id="venue-tag" class="venue-tag">paste URL</span>
+      </div>
+      <div class="analyze-body">
+        <div class="analyze-row">
+          <div class="field url-field">
+            <label for="link-url">Market URL</label>
+            <input id="link-url" type="url" placeholder="https://kalshi.com/markets/… or https://polymarket.us/market/…" />
+          </div>
+          <div class="field" style="align-self:end">
+            <label>&nbsp;</label>
+            <button id="btn-paste-url" title="Paste from clipboard">Paste</button>
+          </div>
+          <div class="field" id="field-outcome">
+            <label for="link-outcome">Outcome (Kalshi)</label>
+            <input id="link-outcome" type="text" value="USA" placeholder="USA, Tie…" />
+          </div>
+          <div class="field" id="field-side" style="display:none">
+            <label for="link-side">Side (Poly US)</label>
+            <select id="link-side">
+              <option value="long">long (yes)</option>
+              <option value="short">short (no)</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:5rem">
+            <label for="link-size">Size</label>
+            <input id="link-size" type="number" min="1" step="1" value="1" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="accent" id="btn-analyze">Analyze link</button>
+          <button id="btn-analyze-copy" disabled>Copy terminal cmd</button>
+          <button id="btn-analyze-clear">Clear</button>
+        </div>
+        <div id="analyze-out" class="empty">Paste a link and click Analyze. Requires live dashboard server (<code>./pmx dashboard</code>) and warmed sidecar.</div>
+      </div>
+    </section>
+
+    <div class="note" id="offline-note">
+      <strong>Offline mode.</strong>
+      <span id="offline-detail">Start the dashboard server for live commands and link analysis:</span>
+      <code>./pmx dashboard</code>
+      — copy-paste shortcuts still work here.
+    </div>
+
+    <div class="section-label">Command reference</div>
+    <input class="search" id="search" type="search" placeholder="Search commands…" />
+
+    <div class="tabs" id="tabs"></div>
+    <div id="panels"></div>
+
+    <div class="section-label">Mini terminal</div>
+    <div class="terminal-wrap">
+      <div class="terminal-head">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <span>Safe commands only — status, balance, quote · paste URLs to analyze</span>
+        <button id="term-clear" style="font-size:.72rem">Clear</button>
+      </div>
+      <div id="term-out">Welcome to pmxtrader.
+Try: status · balance · poly balance · quote EVENT USA 1
+Paste a full http(s) URL here to analyze it.
+Trades: use pmxt-terminal — blocked here on purpose.
+</div>
+      <div class="term-input-row">
+        <span class="prompt">$</span>
+        <input id="term-in" type="text" placeholder="status or paste a market URL" autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+  </main>
+
+  <script src="js/app.js" defer></script>
+</body>
+</html>

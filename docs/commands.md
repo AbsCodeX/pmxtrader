@@ -105,7 +105,7 @@ Setup: `pmxt/core/docs/SETUP_POLYMARKET_US.md` · Integration: `docs/polymarket-
 | `./pmx terminal` | Inside repo | Same as `pmxt-terminal` |
 | `./pmx dashboard` | Inside repo | Browser command center + live mini-terminal |
 
-Setup: `./scripts/setup-direnv.sh` · Dashboard: `./scripts/pmxt-dashboard.sh` · Offline: open `index.html`
+Setup: `./scripts/setup-direnv.sh` · Dashboard: `./scripts/pmxt-dashboard.sh` · Offline: open `dashboard/index.html` (or root `index.html` redirect)
 
 Does: ensure PMXT sidecar (loads `pmxt/.env`), warm Kalshi + Poly US balances, `./pmx status`, cheat sheet.
 

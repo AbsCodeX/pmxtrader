@@ -1,0 +1,454 @@
+const API = (location.protocol.startsWith('http') && location.port)
+      ? `${location.protocol}//${location.host}`
+      : 'http://127.0.0.1:8765';
+    const isFileProtocol = location.protocol === 'file:';
+
+    const SECTIONS = [
+      { id: 'start', label: 'Start', cmds: [
+        { c: 'pmxt-terminal', d: 'Open new macOS Terminal + session (after setup-direnv)' },
+        { c: 'pmxt-start', d: 'Bootstrap sidecar + status in current shell' },
+        { c: './pmx session', d: 'Same as pmxt-start' },
+        { c: './pmx dashboard', d: 'Open this page with live API + link analyzer' },
+        { c: './scripts/setup-direnv.sh', d: 'One-time: direnv + pmxt-terminal in ~/.zshrc' },
+        { c: './pmx warm', d: 'Warm PMXT sidecar after .env change' },
+        { c: './scripts/pmxt-server.sh restart', d: 'Restart sidecar with pmxt/.env' },
+      ]},
+      { id: 'analyze', label: 'Analyze', cmds: [
+        { c: "./pmx link 'KALSHI_URL' USA 1", d: 'Kalshi URL → event resolve + quote + fill estimate' },
+        { c: "./pmx poly link 'https://polymarket.us/market/SLUG' long", d: 'Poly US URL → slug + orderbook quote' },
+        { c: './pmx compare url URL', d: 'Cross-venue odds (Scout)' },
+        { c: './pmx scout grok', d: 'Deep research after link snapshot' },
+      ]},
+      { id: 'kalshi', label: 'Kalshi', cmds: [
+        { c: './pmx balance', d: 'Available cash', run: 'balance' },
+        { c: './pmx positions', d: 'Open holdings', run: 'positions' },
+        { c: "./pmx link 'KALSHI_URL' USA 1", d: 'URL → full eval snapshot' },
+        { c: './pmx quote EVENT OUTCOME 1', d: 'Price + book + fill estimate' },
+        { c: './pmx event EVENT', d: 'Raw event JSON' },
+        { c: './pmx trade MARKET OUTCOME 1', d: 'Market buy — Terminal only, kill switch OFF', tag: 'trade' },
+        { c: './pmx watch OUTCOME_ID', d: 'Stream orderbook' },
+        { c: './pmx compare url URL', d: 'Cross-venue odds (Scout)' },
+      ]},
+      { id: 'poly', label: 'Poly US', cmds: [
+        { c: './pmx poly balance', d: 'US cash', run: 'poly-balance' },
+        { c: './pmx poly positions', d: 'Holdings', run: 'poly-positions' },
+        { c: './pmx poly quote SLUG long', d: 'Market + orderbook' },
+        { c: "./pmx poly link 'https://polymarket.us/market/SLUG' long", d: 'Quote from URL' },
+        { c: './pmx poly trade SLUG long 1', d: 'Market buy — Terminal only', tag: 'trade' },
+        { c: './pmx poly sell SLUG long 100', d: 'Market sell — Terminal only', tag: 'trade' },
+        { c: './pmx poly close SLUG long', d: 'Flatten position — Terminal only', tag: 'trade' },
+        { c: './pmx poly watch book SLUG long --max-messages 10', d: 'Live book (active markets)' },
+        { c: './pmx poly history --limit 20', d: 'Your fill history' },
+        { c: './pmx poly orders', d: 'Open orders', run: 'poly-orders' },
+        { c: './pmx poly cancel-all', d: 'Cancel all resting orders' },
+      ]},
+      { id: 'agents', label: 'Agents', cmds: [
+        { c: './pmx scout grok', d: 'Scout — fast research (Hermes/xAI)' },
+        { c: './pmx scout claude', d: 'Scout — deep research' },
+        { c: './pmx trader openai briefs/active/BRIEF.md', d: 'Trader — approved brief only' },
+        { c: './scripts/setup-hermes.sh', d: 'Sync LLM keys + Hermes skills/bundles' },
+        { c: './scripts/check-providers.sh', d: 'Verify API keys', run: 'providers' },
+        { c: 'hermes chat --cli -t no_mcp → /pmxtrader-scout', d: 'Hermes Scout bundle' },
+      ]},
+      { id: 'safety', label: 'Safety', cmds: [
+        { c: './pmx status', d: 'Kill switch + balances', run: 'status' },
+        { c: './pmx stop on "reason"', d: 'Block new trades' },
+        { c: './pmx resume', d: 'Allow trading again' },
+        { c: './pmx stop orders', d: 'Halt + cancel resting orders' },
+        { c: './pmx panic', d: 'Emergency flatten — type PANIC in Terminal', tag: 'trade' },
+      ]},
+      { id: 'docs', label: 'Docs', cmds: [
+        { c: 'docs/commands.md', d: 'Master command reference' },
+        { c: 'docs/multi-agent.md', d: 'Scout / Trader workflow' },
+        { c: 'docs/polymarket-us-integration.md', d: 'Poly US keys + MCP' },
+        { c: 'docs/kalshi-integration.md', d: 'Kalshi ↔ scripts' },
+        { c: 'docs/providers.md', d: 'LLM routing' },
+        { c: 'hermes/README.md', d: 'Hermes setup + MCP policy' },
+        { c: 'pmxt/core/docs/SETUP_KALSHI.md', d: 'Kalshi API keys' },
+        { c: 'pmxt/core/docs/SETUP_POLYMARKET_US.md', d: 'Poly US API keys' },
+      ]},
+    ];
+
+    const tabsEl = document.getElementById('tabs');
+    const panelsEl = document.getElementById('panels');
+    const termOut = document.getElementById('term-out');
+    const termIn = document.getElementById('term-in');
+    const connBadge = document.getElementById('conn-badge');
+    const statusBar = document.getElementById('status-bar');
+    const themeToggle = document.getElementById('theme-toggle');
+    let live = false;
+    let apiToken = typeof window.__PMXT_DASHBOARD_TOKEN__ === 'string' ? window.__PMXT_DASHBOARD_TOKEN__ : '';
+    let activeTab = SECTIONS[0].id;
+    let lastAnalyzeCmd = '';
+
+    // Theme: default light (user preference), persist toggle
+    (function initTheme() {
+      const saved = localStorage.getItem('pmxt-theme');
+      const theme = saved === 'dark' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = theme;
+      themeToggle.textContent = theme === 'light' ? 'Dark' : 'Light';
+    })();
+
+    themeToggle.onclick = () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('pmxt-theme', next);
+      themeToggle.textContent = next === 'light' ? 'Dark' : 'Light';
+    };
+
+    function appendOut(text) {
+      termOut.textContent += text;
+      termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    function renderPanels(filter = '') {
+      const q = filter.toLowerCase();
+      panelsEl.innerHTML = SECTIONS.map(sec => {
+        const cmds = sec.cmds.filter(x =>
+          !q || x.c.toLowerCase().includes(q) || (x.d||'').toLowerCase().includes(q)
+        );
+        if (!cmds.length && q) return '';
+        const isActive = sec.id === activeTab;
+        return `<div class="panel ${isActive?'active':''}" data-panel="${sec.id}">
+          <div class="cmd-list">${cmds.map(x => `
+            <div class="cmd">
+              <div>
+                ${x.tag ? `<div class="tag">${x.tag}</div>` : ''}
+                <code>${x.c}</code>
+                <small>${x.d||''}</small>
+              </div>
+              <div class="btn-row">
+                <button data-copy="${x.c.replace(/"/g,'&quot;')}">Copy</button>
+                ${x.run ? `<button class="primary" data-run="${x.run}">Run</button>` : ''}
+              </div>
+            </div>`).join('')}</div>
+        </div>`;
+      }).join('');
+      if (!document.querySelector('.panel.active')) {
+        const first = document.querySelector('.panel');
+        if (first) {
+          activeTab = first.dataset.panel;
+          first.classList.add('active');
+          document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === activeTab);
+          });
+        }
+      }
+    }
+
+    function renderTabs() {
+      tabsEl.innerHTML = SECTIONS.map(sec =>
+        `<button class="tab ${sec.id===activeTab?'active':''}" data-tab="${sec.id}">${sec.label}</button>`
+      ).join('');
+    }
+
+    renderTabs();
+    renderPanels();
+
+    tabsEl.addEventListener('click', e => {
+      const btn = e.target.closest('.tab');
+      if (!btn) return;
+      activeTab = btn.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector(`[data-panel="${activeTab}"]`)?.classList.add('active');
+    });
+
+    document.getElementById('search').addEventListener('input', e => renderPanels(e.target.value));
+
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch { return false; }
+    }
+
+    document.body.addEventListener('click', async e => {
+      const copyBtn = e.target.closest('[data-copy]');
+      if (copyBtn) {
+        await copyText(copyBtn.getAttribute('data-copy'));
+        const old = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = old, 900);
+        return;
+      }
+      const runBtn = e.target.closest('[data-run]');
+      if (runBtn) runCommand(runBtn.getAttribute('data-run'));
+    });
+
+    function parseStatusSummary(stdout) {
+      if (!stdout) return '';
+      let kill = '?';
+      if (/^ENGAGED\b/m.test(stdout)) kill = 'ON';
+      else if (/^OFF\b/m.test(stdout)) kill = 'OFF';
+      else kill = stdout.match(/^(ON|OFF)\b/m)?.[1] || '?';
+      const kalshi = stdout.match(/Kalshi:[\s\S]*?available:\s*([\d.]+)/)?.[1];
+      const poly = stdout.match(/Polymarket US:[\s\S]*?available:\s*([\d.]+)/)?.[1];
+      const killStyle = kill === 'ON' ? 'color:var(--danger)' : kill === 'OFF' ? '' : 'color:var(--warn)';
+      let parts = [`Kill switch: <strong style="${killStyle}">${kill}</strong>`];
+      if (kalshi) parts.push(`Kalshi $${kalshi}`);
+      if (poly) parts.push(`Poly $${poly}`);
+      return parts.join(' · ');
+    }
+
+    function apiHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      if (apiToken) h['X-Pmxtrader-Token'] = apiToken;
+      return h;
+    }
+
+    async function refreshStatusBar() {
+      if (!live) {
+        statusBar.classList.remove('visible');
+        return;
+      }
+      try {
+        const r = await fetch(`${API}/api/run`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ command: 'status' }),
+        });
+        const data = await r.json();
+        if (data.stdout) {
+          statusBar.innerHTML = parseStatusSummary(data.stdout);
+          statusBar.classList.add('visible');
+        }
+      } catch {
+        statusBar.classList.remove('visible');
+      }
+    }
+
+    function updateOfflineNote() {
+      const note = document.getElementById('offline-note');
+      const detail = document.getElementById('offline-detail');
+      if (live) {
+        note.style.display = 'none';
+        return;
+      }
+      note.style.display = 'block';
+      if (isFileProtocol) {
+        detail.textContent = 'Opened as a local file — browsers block live API calls. Use ';
+      } else {
+        detail.textContent = 'Start the dashboard server for live commands and link analysis: ';
+      }
+    }
+
+    async function checkLive() {
+      try {
+        const r = await fetch(`${API}/api/health`, { signal: AbortSignal.timeout(800) });
+        const wasLive = live;
+        live = r.ok;
+        if (live && !wasLive) refreshStatusBar();
+        if (!live) statusBar.classList.remove('visible');
+      } catch {
+        live = false;
+        statusBar.classList.remove('visible');
+      }
+      connBadge.className = 'badge ' + (live ? 'live' : 'offline');
+      connBadge.innerHTML = `<span class="dot"></span> ${live ? 'live API' : 'offline'}`;
+      updateOfflineNote();
+      const btnDash = document.getElementById('btn-dashboard');
+      if (location.protocol.startsWith('http')) {
+        btnDash.textContent = live ? 'Connected' : 'Retry connection';
+      }
+    }
+
+    async function runCommand(cmd) {
+      appendOut(`\n$ ${cmd}\n`);
+      if (!live) {
+        appendOut('[offline] Run: ./pmx dashboard\n');
+        return;
+      }
+      try {
+        const r = await fetch(`${API}/api/run`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ command: cmd }),
+        });
+        const data = await r.json();
+        if (data.command) appendOut(`→ ${data.command}\n`);
+        if (data.stdout) appendOut(data.stdout + (data.stdout.endsWith('\n') ? '' : '\n'));
+        if (data.stderr) appendOut(data.stderr);
+        if (data.error) appendOut(`ERROR: ${data.error}\n`);
+        if (!data.ok && !data.error && !data.stdout) appendOut(`exit ${data.exitCode}\n`);
+        if (cmd === 'status' && data.stdout) {
+          statusBar.innerHTML = parseStatusSummary(data.stdout);
+          statusBar.classList.add('visible');
+        }
+      } catch (err) {
+        appendOut(`ERROR: ${err.message}\n`);
+      }
+    }
+
+    termIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const v = termIn.value.trim();
+        if (v) {
+          if (v.startsWith('http://') || v.startsWith('https://')) {
+            linkUrl.value = v;
+            updateVenueUI();
+            document.getElementById('link-analyzer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            analyzeLink();
+          } else {
+            runCommand(v);
+          }
+        }
+        termIn.value = '';
+      }
+    });
+
+    document.getElementById('term-clear').onclick = () => {
+      termOut.textContent = 'Terminal cleared.\n';
+    };
+
+    document.getElementById('btn-dashboard').onclick = () => {
+      if (location.protocol.startsWith('http')) {
+        checkLive();
+        if (!live) window.location.reload();
+        return;
+      }
+      window.open('http://127.0.0.1:8765/', '_blank');
+    };
+
+    document.getElementById('btn-goto-analyze').onclick = () => {
+      document.getElementById('link-analyzer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      linkUrl.focus();
+    };
+
+    const linkUrl = document.getElementById('link-url');
+    const linkOutcome = document.getElementById('link-outcome');
+    const linkSide = document.getElementById('link-side');
+    const linkSize = document.getElementById('link-size');
+    const analyzeOut = document.getElementById('analyze-out');
+    const venueTag = document.getElementById('venue-tag');
+    const fieldOutcome = document.getElementById('field-outcome');
+    const fieldSide = document.getElementById('field-side');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    const btnAnalyzeCopy = document.getElementById('btn-analyze-copy');
+
+    function detectVenue(url) {
+      const u = url.toLowerCase();
+      if (u.includes('kalshi')) return 'kalshi';
+      if (u.includes('polymarket')) return 'poly';
+      return null;
+    }
+
+    function updateVenueUI() {
+      const v = detectVenue(linkUrl.value.trim());
+      venueTag.className = 'venue-tag' + (v ? ' ' + v : '');
+      if (v === 'kalshi') {
+        venueTag.textContent = 'Kalshi';
+        fieldOutcome.style.display = '';
+        fieldSide.style.display = 'none';
+        linkSize.parentElement.style.display = '';
+      } else if (v === 'poly') {
+        venueTag.textContent = 'Poly US';
+        fieldOutcome.style.display = 'none';
+        fieldSide.style.display = '';
+        linkSize.parentElement.style.display = 'none';
+      } else {
+        venueTag.textContent = 'paste URL';
+        fieldOutcome.style.display = '';
+        fieldSide.style.display = 'none';
+        linkSize.parentElement.style.display = '';
+      }
+    }
+
+    function buildAnalyzeCmd() {
+      const url = linkUrl.value.trim();
+      if (!url) return '';
+      const v = detectVenue(url);
+      const q = url.includes("'") ? `"${url}"` : `'${url}'`;
+      if (v === 'poly') return `./pmx poly link ${q} ${linkSide.value}`;
+      const out = linkOutcome.value.trim() || 'USA';
+      return `./pmx link ${q} ${out} ${linkSize.value || '1'}`;
+    }
+
+    function setAnalyzeOutput(text, opts = {}) {
+      analyzeOut.textContent = text;
+      analyzeOut.classList.toggle('empty', !!opts.empty);
+      analyzeOut.classList.toggle('error', !!opts.error);
+    }
+
+    async function analyzeLink() {
+      const url = linkUrl.value.trim();
+      if (!url) {
+        setAnalyzeOutput('Paste a Kalshi or Polymarket US URL first.', { empty: true });
+        return;
+      }
+      lastAnalyzeCmd = buildAnalyzeCmd();
+      btnAnalyzeCopy.disabled = !lastAnalyzeCmd;
+      setAnalyzeOutput('Analyzing… (may take up to ~30s while sidecar fetches data)', {});
+      btnAnalyze.disabled = true;
+
+      if (!live) {
+        setAnalyzeOutput(
+          `[offline] Start dashboard first:\n  ./pmx dashboard\n\nOr copy to Terminal:\n  ${lastAnalyzeCmd}`,
+          { error: true }
+        );
+        btnAnalyze.disabled = false;
+        return;
+      }
+
+      try {
+        const payload = {
+          url,
+          outcome: linkOutcome.value.trim() || 'USA',
+          side: linkSide.value,
+          size: linkSize.value || 1,
+        };
+        const r = await fetch(`${API}/api/analyze`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json();
+        let text = '';
+        if (data.venue) text += `[${data.venue === 'kalshi' ? 'Kalshi' : 'Poly US'}] ${data.url || url}\n\n`;
+        if (data.command) text += `$ ${data.command}\n\n`;
+        if (data.stdout) text += data.stdout;
+        if (data.stderr) text += (text && !text.endsWith('\n') ? '\n' : '') + data.stderr;
+        if (data.error) text += `\nERROR: ${data.error}\n`;
+        if (!text.trim()) text = `No output (exit ${data.exitCode ?? '?'})\n`;
+        if (lastAnalyzeCmd) text += `\n---\nTerminal cmd:\n  ${lastAnalyzeCmd}\n`;
+        setAnalyzeOutput(text, { error: !data.ok });
+        appendOut(`\n[analyze] ${url}\n${(data.stdout || data.error || '').slice(0, 600)}\n`);
+      } catch (err) {
+        setAnalyzeOutput(`ERROR: ${err.message}`, { error: true });
+      } finally {
+        btnAnalyze.disabled = false;
+      }
+    }
+
+    document.getElementById('btn-paste-url').onclick = async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t) {
+          linkUrl.value = t.trim();
+          updateVenueUI();
+          linkUrl.focus();
+        }
+      } catch {
+        linkUrl.focus();
+      }
+    };
+
+    linkUrl.addEventListener('input', updateVenueUI);
+    linkUrl.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeLink(); });
+    btnAnalyze.onclick = analyzeLink;
+    btnAnalyzeCopy.onclick = async () => {
+      if (!lastAnalyzeCmd) return;
+      await copyText(lastAnalyzeCmd);
+      btnAnalyzeCopy.textContent = 'Copied!';
+      setTimeout(() => { btnAnalyzeCopy.textContent = 'Copy terminal cmd'; }, 900);
+    };
+    document.getElementById('btn-analyze-clear').onclick = () => {
+      linkUrl.value = '';
+      setAnalyzeOutput('Paste a link and click Analyze. Requires live dashboard server (./pmx dashboard) and warmed sidecar.', { empty: true });
+      lastAnalyzeCmd = '';
+      btnAnalyzeCopy.disabled = true;
+      updateVenueUI();
+    };
+    updateVenueUI();
+
+    checkLive();
+    setInterval(checkLive, 8000);
