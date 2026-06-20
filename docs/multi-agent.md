@@ -2,7 +2,7 @@
 description: Scout and Trader roles, brief handoff, and Hermes bundle setup.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Multi-agent workflow
 
@@ -10,11 +10,6 @@ description: Scout and Trader roles, brief handoff, and Hermes bundle setup.
 Research and execution stay in separate sessions. Scout writes briefs; you approve them;
 Trader prepares <code>./pmx</code> commands — you run live orders in Terminal.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue">Scout → brief → Trader</span>
-  <span class="pmx-pill pmx-pill--green">Human approves every order</span>
-</div>
 
 </div>
 

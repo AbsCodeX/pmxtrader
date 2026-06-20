@@ -2,7 +2,7 @@
 description: LLM provider keys, Hermes sync, model routing, and budget guidance.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # LLM providers
 
@@ -10,11 +10,6 @@ description: LLM provider keys, Hermes sync, model routing, and budget guidance.
 Wire xAI, Anthropic, and OpenAI credentials into Scout and Trader agents via Hermes.
 Market prices come from <code>./pmx quote</code> — not from the LLM.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill">Keys in <code>pmxt/.env</code></span>
-  <span class="pmx-pill pmx-pill--blue">Synced by <code>setup-hermes.sh</code></span>
-</div>
 
 </div>
 

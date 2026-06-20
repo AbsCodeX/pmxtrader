@@ -2,7 +2,7 @@
 description: Textual cockpit TUI — balances, markets, diagnostics, and safety controls.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Cockpit TUI
 
@@ -10,12 +10,6 @@ description: Textual cockpit TUI — balances, markets, diagnostics, and safety 
 Terminal dashboard for live balances, market data, diagnostics, and safety actions.
 Mutating commands require explicit confirmation; trades and panic run only from the Safety tab.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue"><code>./pmx cockpit</code></span>
-  <span class="pmx-pill">12s live poll</span>
-  <span class="pmx-pill pmx-pill--green">Confirm modals on risk</span>
-</div>
 
 </div>
 

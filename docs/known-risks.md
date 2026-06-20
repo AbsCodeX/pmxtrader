@@ -2,7 +2,7 @@
 description: Real-money risks, execution surfaces, safety controls, and accepted gaps.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Known risks
 
@@ -10,12 +10,6 @@ description: Real-money risks, execution surfaces, safety controls, and accepted
 Read this before live trading or deploying agents. pmxtrader defaults to read-only sessions;
 real orders require an explicit <code>./pmx go-live</code> and operator confirmation.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--orange">Real money at venues</span>
-  <span class="pmx-pill pmx-pill--green">Layered safety controls</span>
-  <span class="pmx-pill">Reviewed 2026-06-20</span>
-</div>
 
 </div>
 

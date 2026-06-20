@@ -2,7 +2,7 @@
 description: Full ./pmx command reference for Kalshi, Polymarket US, safety, and agents.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Command reference
 
@@ -10,11 +10,6 @@ description: Full ./pmx command reference for Kalshi, Polymarket US, safety, and
 Plain-language shortcuts via <code>./pmx</code> (<code>scripts/pmx.sh</code>). Run from the repository root after
 <code>source scripts/pmxt-env.sh</code> or <code>./pmx session</code>.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue">Kalshi · Poly US</span>
-  <span class="pmx-pill pmx-pill--green">preflight → preview → go-live</span>
-</div>
 
 </div>
 

@@ -2,17 +2,13 @@
 description: Python, npm, and vendored PMXT dependency inventory.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Dependencies
 
 <p class="pmx-page-lead">
 Pinned manifests for pmxtrader-owned code. The vendored <code>pmxt/</code> subtree maintains its own lockfile and audit policy.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill">Reviewed 2026-06-19</span>
-</div>
 
 </div>
 

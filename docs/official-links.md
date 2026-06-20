@@ -2,17 +2,13 @@
 description: Curated URLs for PMXT, venues, research APIs, and developer portals.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Official links
 
 <p class="pmx-page-lead">
 Curated URLs for venues, PMXT, and developer portals referenced across pmxtrader documentation.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill">Reviewed 2026-06-19</span>
-</div>
 
 </div>
 

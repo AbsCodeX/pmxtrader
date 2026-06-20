@@ -1,10 +1,8 @@
 ---
 description: Operator guide — sessions, safety, commands, cockpit, and agent workflow.
-hide:
-  - toc
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Operations
 
@@ -13,17 +11,11 @@ Run pmxtrader safely: bootstrap sessions, verify preflight, preview orders, and 
 Kalshi and Polymarket US share the same safety stack.
 </p>
 
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--green">Read-only default</span>
-  <span class="pmx-pill pmx-pill--blue">Terminal-first execution</span>
-  <span class="pmx-pill">Last reviewed 2026-06-20</span>
-</div>
-
 </div>
 
 ## Session checklist
 
-<div class="pmx-checklist pmx-glass" markdown="1">
+<div class="pmx-checklist" markdown="1">
 
 <div class="pmx-checklist__head">Standard operator flow</div>
 

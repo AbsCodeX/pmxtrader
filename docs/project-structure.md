@@ -2,7 +2,7 @@
 description: Repository layout, entry points, and folder responsibilities.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Project structure
 
@@ -10,10 +10,6 @@ description: Repository layout, entry points, and folder responsibilities.
 pmxtrader is a thin orchestration layer around vendored <code>pmxt/</code>. Application code lives under
 <code>apps/</code>, <code>dashboard/</code>, and <code>scripts/</code>.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill">Reviewed 2026-06-20</span>
-</div>
 
 </div>
 

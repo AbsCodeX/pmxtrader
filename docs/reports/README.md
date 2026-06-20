@@ -2,7 +2,7 @@
 description: Published readiness and verification reports (copied from repo root at build time).
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Reports
 

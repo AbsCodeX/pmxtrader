@@ -2,18 +2,13 @@
 description: pytest, CI, lint, docs quality checks, and PMXT engine tests.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Testing & CI
 
 <p class="pmx-page-lead">
 pmxtrader CI runs offline — no live venue keys required. Docs, Python tests, lint, and type checks run on every push.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--green">pytest · ruff · mypy</span>
-  <span class="pmx-pill">Reviewed 2026-06-20</span>
-</div>
 
 </div>
 

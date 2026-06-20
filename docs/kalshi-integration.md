@@ -2,18 +2,13 @@
 description: Kalshi API mapping, scripts, streaming, and execution paths.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Kalshi integration
 
 <p class="pmx-page-lead">
 Maps official Kalshi API capabilities to pmxtrader scripts. Free streaming and evaluation — no paid Prediction Hunt required.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue"><code>./pmx</code> shortcuts</span>
-  <span class="pmx-pill"><a href="commands.md">Command reference</a></span>
-</div>
 
 </div>
 

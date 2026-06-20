@@ -35,12 +35,13 @@ theme:
   features:
     - navigation.sections
     - navigation.expand
-    - navigation.footer
-    - navigation.prev_next
+    - navigation.prune
+    - navigation.tracking
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.tabs.link
+    - toc.follow
 
 plugins:
   - search

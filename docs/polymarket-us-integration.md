@@ -2,18 +2,13 @@
 description: Polymarket US retail API, MCP docs, and ./pmx poly commands.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Polymarket US integration
 
 <p class="pmx-page-lead">
 Maps Polymarket US documentation to pmxtrader tooling. Docs MCP for research; execution via <code>./pmx poly</code>.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue"><code>./pmx poly</code></span>
-  <span class="pmx-pill"><a href="commands.md#polymarket-us-pmx-poly">Poly commands</a></span>
-</div>
 
 </div>
 

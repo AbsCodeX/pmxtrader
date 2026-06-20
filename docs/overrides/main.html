@@ -14,15 +14,15 @@
   {{ super() }}
   <meta name="author" content="Abigail">
   <meta name="description" content="{{ config.site_description }}">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#ffffff">
   <meta name="color-scheme" content="light dark">
   <meta name="format-detection" content="telephone=no">
 {% endblock %}
 
 {% block header %}
-  <div class="pmx-shell-header">
+  <div class="pmx-docs-chrome">
     {% include "partials/pmx-topnav.html" %}
-    <div class="pmx-shell-header__toolbar">
+    <div class="pmx-docs-chrome__tools">
       {{ super() }}
     </div>
   </div>
@@ -34,6 +34,12 @@
       {{ page.content }}
     </article>
   {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  {% if not page.is_homepage %}
     {{ super() }}
   {% endif %}
 {% endblock %}

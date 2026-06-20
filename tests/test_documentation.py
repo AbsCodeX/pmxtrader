@@ -119,3 +119,17 @@ def test_readme_doc_links_resolve():
         rel = match.group(1).split("#")[0]
         if rel.endswith(".md"):
             assert (ROOT / rel).is_file(), rel
+
+
+def test_docs_theme_css_tokens():
+    css = (ROOT / "docs/stylesheets/extra.css").read_text(encoding="utf-8")
+    for token in ("--oa-text", "--oa-font", "--oa-mono", "pmx-docs-chrome", "pmx-topbar"):
+        assert token in css, token
+
+
+def test_inner_docs_no_legacy_glass_heroes():
+    for path in (ROOT / "docs").rglob("*.md"):
+        if path.name == "README.md" and path.parent.name == "docs":
+            continue
+        text = path.read_text(encoding="utf-8")
+        assert "pmx-glass" not in text, path.relative_to(ROOT)

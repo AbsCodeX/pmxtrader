@@ -2,7 +2,7 @@
 description: Architectural and process decision log.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Decision log
 

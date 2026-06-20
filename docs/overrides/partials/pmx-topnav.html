@@ -1,33 +1,26 @@
-{# Site header — brand, in-page anchors, and doc toolbar (search + theme) #}
+{# OpenAI-style docs top bar — wordmark + toolbar slot (search / theme / GitHub) #}
 {% set base = config.site_url | default('/') %}
-<header class="pmx-site-header" role="banner">
-  <div class="pmx-site-header__inner">
-    <a class="pmx-brand" href="{{ base }}" aria-label="pmxtrader home">
-      pmxtrader
-    </a>
+<header class="pmx-topbar" role="banner">
+  <div class="pmx-topbar__inner">
+    <div class="pmx-topbar__brand">
+      <a class="pmx-wordmark" href="{{ base }}" aria-label="pmxtrader home">pmxtrader</a>
+      <span class="pmx-topbar__slash" aria-hidden="true">/</span>
+      <span class="pmx-topbar__context">Docs</span>
+    </div>
     <button
       type="button"
-      class="pmx-site-header__toggle"
+      class="pmx-topbar__menu"
       aria-expanded="false"
-      aria-controls="pmx-site-nav"
-      aria-label="Open section menu"
+      aria-controls="__drawer"
+      aria-label="Open navigation"
     >
-      <span class="pmx-site-header__toggle-bar"></span>
-      <span class="pmx-site-header__toggle-bar"></span>
+      <span></span><span></span>
     </button>
-    <nav id="pmx-site-nav" class="pmx-site-nav" aria-label="Page sections">
-      <a class="pmx-site-nav__link" href="{{ base }}#overview">Overview</a>
-      <a class="pmx-site-nav__link" href="{{ base }}#features">Features</a>
-      <a class="pmx-site-nav__link" href="{{ base }}#setup">Setup</a>
-      <a class="pmx-site-nav__link" href="{{ base }}#usage">Usage</a>
-      <a class="pmx-site-nav__link" href="{{ base }}#testing">Testing</a>
-      <a class="pmx-site-nav__link" href="{{ base }}#qa-checklist">QA</a>
-      <a
-        class="pmx-btn pmx-btn--ghost pmx-site-nav__github"
-        href="{{ config.repo_url | default('https://github.com/AbsCodeX/pmxtrader') }}"
-        target="_blank"
-        rel="noopener"
-      >GitHub</a>
-    </nav>
+    <a
+      class="pmx-topbar__github"
+      href="{{ config.repo_url | default('https://github.com/AbsCodeX/pmxtrader') }}"
+      target="_blank"
+      rel="noopener"
+    >GitHub</a>
   </div>
 </header>

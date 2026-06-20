@@ -2,18 +2,13 @@
 description: System architecture, request flow, security layers, and audit trail.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Architecture
 
 <p class="pmx-page-lead">
 How pmxtrader orchestrates PMXT: every entry point shares the same chain from UI through scripts to venue APIs.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--blue">UI → scripts → sidecar → venues</span>
-  <span class="pmx-pill">Reviewed 2026-06-20</span>
-</div>
 
 </div>
 

@@ -2,7 +2,7 @@
 description: Environment variables, credentials, safety defaults, and sidecar configuration.
 ---
 
-<div class="pmx-page-hero pmx-glass" markdown="1">
+<div class="pmx-page-hero" markdown="1">
 
 # Environment & safety
 
@@ -10,12 +10,6 @@ description: Environment variables, credentials, safety defaults, and sidecar co
 Secrets live in <code>pmxt/.env</code>. Policy and model defaults live in <code>config/</code>.
 Shell safety defaults are applied whenever <code>scripts/pmxt-env.sh</code> is sourced.
 </p>
-
-<div class="pmx-pill-row">
-  <span class="pmx-pill pmx-pill--orange">Never commit <code>pmxt/.env</code></span>
-  <span class="pmx-pill">Template: <code>pmxt/.env.example</code></span>
-  <span class="pmx-pill">Reviewed 2026-06-20</span>
-</div>
 
 </div>
 
