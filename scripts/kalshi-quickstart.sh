@@ -110,6 +110,7 @@ case "$cmd" in
       amount=1
       DRY_RUN=1
     fi
+    trade_safety_preflight_trade || exit 1
     trade_safety_require_live || exit 1
     trade_safety_check_amount "$amount" || exit 1
     if trade_safety_is_dry_run; then

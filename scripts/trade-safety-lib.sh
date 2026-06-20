@@ -12,6 +12,9 @@ _trade_safety_root() {
 }
 
 trade_safety_require_live() {
+  if trade_safety_is_dry_run; then
+    return 0
+  fi
   # shellcheck source=kill-switch-lib.sh
   source "$(_trade_safety_root)/scripts/kill-switch-lib.sh"
   kill_switch_require_clear || return 1
@@ -20,6 +23,35 @@ trade_safety_require_live() {
     echo "Run: ./pmx go-live   (or ./pmx resume)" >&2
     return 1
   fi
+  return 0
+}
+
+trade_safety_sidecar_ready() {
+  if trade_safety_is_dry_run; then
+    return 0
+  fi
+  local root
+  root="$(_trade_safety_root)"
+  if ! PYTHONPATH="$root${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+import sys
+sys.path.insert(0, sys.argv[1])
+from apps.bridge.trade_safety import check_sidecar_health, preflight_enabled
+if not preflight_enabled():
+    raise SystemExit(0)
+r = check_sidecar_health()
+if not r.ok:
+    print(r.error, file=sys.stderr)
+    print('Run: ./pmx warm   (or ./pmx session)', file=sys.stderr)
+    print('To skip: PMX_PREFLIGHT=0 ./pmx trade ...', file=sys.stderr)
+    raise SystemExit(1)
+" "$root"; then
+    return 1
+  fi
+  return 0
+}
+
+trade_safety_preflight_trade() {
+  trade_safety_sidecar_ready || return 1
   return 0
 }
 

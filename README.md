@@ -160,10 +160,13 @@ CI runs the same on every push. Details: [`docs/testing.md`](docs/testing.md)
 
 ## Safety
 
+- **Pre-live checklist:** `./pmx preflight` (alias `./pmx check`) — sidecar, kill switch, read-only, keys, GO/NO-GO
+- **Go live:** `./pmx go-live` — clears read-only default and disengages kill switch
 - Kill switch: `./pmx stop on "reason"` · `./pmx resume` · `./pmx panic`
-- Read-only: `export PMX_READ_ONLY=1` (blocks live trades)
-- Dry-run: `./pmx trade MKT OUT 1 --dry-run` or `export PMX_DRY_RUN=1`
-- Max size: `export PMX_MAX_TRADE_CONTRACTS=10`
+- Read-only: default on session start (`PMX_READ_ONLY=1`); cleared by `./pmx go-live`
+- **Preview (dry-run):** `./pmx preview trade MKT OUT 1` · `./pmx preview poly trade SLUG long 1`
+- Panic scope: `./pmx panic status` · preview: `./pmx panic --dry-run` or `./pmx stop dry`
+- Max size: `PMX_MAX_TRADE_CONTRACTS` (default 10)
 - Web dashboard **cannot** place live orders; cockpit requires confirm
 - Pre-commit secret scanner · strict `.gitignore` for `.env`
 - Trader requires `approved: true` in brief before preparing orders

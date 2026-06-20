@@ -95,6 +95,17 @@ case "$cmd" in
 
     if [[ "$DRY_RUN" -eq 1 ]]; then
       echo "[dry-run] Would engage kill switch"
+      PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from apps.bridge.trade_safety import format_panic_scope
+print(format_panic_scope(Path(sys.argv[1])))
+" "$ROOT"
+      echo "[dry-run] Would cancel resting orders on configured venues"
+      if [[ "$CASH_OUT" -eq 1 ]]; then
+        echo "[dry-run] Would market-close all open positions (reduce-only)"
+      fi
     else
       kill_switch_engage "emergency stop $(date -u +%Y-%m-%dT%H:%M:%SZ)"
       echo "Kill switch ON"

@@ -14,6 +14,7 @@ class SafetyPane(Vertical):
     DEFAULT_CSS = """
     SafetyPane { padding: 1 0; }
     .warn { color: $warning; margin: 1 0; }
+    #preview-input { width: 1fr; }
     """
 
     def compose(self) -> ComposeResult:
@@ -26,7 +27,15 @@ class SafetyPane(Vertical):
             yield Button("Resume trading", id="btn-resume")
         with Horizontal():
             yield Button("PANIC — flatten all", variant="error", id="btn-panic")
+            yield Button("Preview panic", id="btn-panic-preview")
+            yield Button("Preflight", id="btn-preflight")
             yield Button("Status", id="btn-status")
+        with Horizontal():
+            yield Input(
+                placeholder="trade MARKET OUT 1  or  poly trade SLUG long 1",
+                id="preview-input",
+            )
+            yield Button("Preview order", id="btn-preview")
         yield OutputLog(id="safety-log", markup=True)
 
     def on_mount(self) -> None:
@@ -65,8 +74,20 @@ class SafetyPane(Vertical):
             )
         elif bid == "btn-panic":
             self.app.push_screen(PanicConfirmModal(), self._on_panic_confirmed)
+        elif bid == "btn-panic-preview":
+            self._run(["panic", "--dry-run"])
+        elif bid == "btn-preflight":
+            self._run(["preflight"])
         elif bid == "btn-status":
             self._run(["status"])
+        elif bid == "btn-preview":
+            raw = self.query_one("#preview-input", Input).value.strip()
+            if not raw:
+                self.query_one("#safety-log", OutputLog).write(
+                    "[yellow]Enter preview args, e.g. trade MKT OUT 1[/yellow]"
+                )
+                return
+            self._run(["preview", *raw.split()])
 
     def _on_panic_confirmed(self, ok: bool) -> None:
         if ok:

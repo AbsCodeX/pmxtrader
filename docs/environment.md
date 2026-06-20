@@ -60,6 +60,7 @@ These are **not** secrets. **`scripts/pmxt-env.sh` sets safe defaults** when sou
 | `PMX_READ_ONLY` | **`1` (read-only)** | Blocks all live trades (even if kill switch is OFF) |
 | `PMX_MAX_TRADE_CONTRACTS` | **`10`** | Rejects trades where size exceeds N |
 | `PMX_DRY_RUN=1` | unset | Trade scripts log intent without `order:create` |
+| `PMX_PREFLIGHT=1` | **`1` (on)** | Live trade scripts require reachable sidecar; set `0` to skip |
 | `PMX_TRADE_CONFIRM=0` | **`1` (confirm)** | Skip interactive YES prompt before live orders |
 | `KILL_SWITCH` file | absent | Repo-root sentinel — `./pmx stop on "reason"` creates it |
 | `.pmx-live` file | absent | Created by `./pmx go-live` / `./pmx resume` — clears read-only for this repo session |
@@ -68,7 +69,7 @@ These are **not** secrets. **`scripts/pmxt-env.sh` sets safe defaults** when sou
 **Fresh session:** `./pmx session` removes `.pmx-live` and returns to read-only.  
 **Manual override:** `unset PMX_READ_ONLY` or `export PMX_READ_ONLY=0` (without `.pmx-live`, next `pmxt-env` source resets to `1`).
 
-CLI equivalents: `./pmx stop` · `./pmx trade … --dry-run` · `./pmx stop dry` (panic preview) · `./pmx trade … --yes` (skip confirm)
+CLI equivalents: `./pmx preflight` · `./pmx preview trade …` · `./pmx stop` · `./pmx trade … --dry-run` · `./pmx panic --dry-run` · `./pmx trade … --yes` (skip confirm)
 
 See `reviews/2026-06-19/trading-safety-review.md`.
 

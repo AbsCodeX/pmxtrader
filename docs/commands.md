@@ -115,12 +115,18 @@ Does: ensure PMXT sidecar (loads `pmxt/.env`), warm Kalshi + Poly US balances, `
 
 | Command | Purpose |
 |---------|---------|
-| `./pmx status` | Kill switch + Kalshi + Poly US balance |
+| `./pmx status` | Kill switch + panic scope + venue balances |
+| `./pmx preflight` | Pre-live GO/NO-GO checklist (alias `./pmx check`) |
+| `./pmx preview trade MKT OUT 1` | Dry-run Kalshi order (no execution) |
+| `./pmx preview poly trade SLUG long 1` | Dry-run Poly US order |
 | `./pmx warm` | Start/warm PMXT sidecar |
+| `./pmx go-live` | Clear read-only + disengage kill switch |
 | `./pmx stop on "reason"` | Block new trades |
-| `./pmx resume` | Allow trading |
-| `./pmx stop orders` | Halt + cancel Kalshi resting orders |
+| `./pmx resume` | Same as `./pmx go-live` |
+| `./pmx stop orders` | Halt + cancel resting orders |
 | `./pmx panic` | Halt + cancel + flatten (type PANIC) |
+| `./pmx panic status` | Show which venues panic will flatten |
+| `./pmx panic --dry-run` | Preview panic scope (alias `./pmx stop dry`) |
 | `./pmx brief SLUG` | Create trade brief |
 | `./pmx scout grok` | Scout agent (research) |
 | `./pmx trader openai BRIEF.md` | Trader agent (approved brief only) |

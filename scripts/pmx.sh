@@ -50,7 +50,9 @@ Polymarket US (poly)
   poly cancel-all [SLUG]                Cancel all open orders (optional filter)
 
 Shared
-  status                                Kill switch + Kalshi/Poly US health
+  status                                Kill switch + sidecar + venue health
+  preflight | check                     Pre-live GO/NO-GO checklist
+  preview trade … | preview poly …      Dry-run order (no execution)
   event EVENT                           Raw event JSON
   compare slate SPORT | compare url URL Prediction Hunt odds
   brief SLUG                            Start a trade brief
@@ -68,7 +70,9 @@ Stop / safety
   stop | halt | pause [reason]          Block new trades (default: on)
   stop orders | cancel                  Halt + cancel resting orders
   panic | cashout | flatten             Halt + cancel + close all positions
-  stop dry                              Preview panic (no execution)
+  panic status                          Show which venues panic will flatten
+  panic --dry-run                       Preview panic (Kalshi + Poly US scope)
+  stop dry                              Same as panic --dry-run
   resume | go-live | go                 Allow trading (kill switch OFF + read-only OFF)
 
 Examples
@@ -80,8 +84,9 @@ Examples
   ./pmx poly trade chiefs-super-bowl-lx long 1
   ./pmx poly sell tec-f-wc-2026-07-19-winner-usa long 100
   ./pmx poly watch book tec-f-wc-2026-07-19-winner-usa long --max-messages 5
-  ./pmx stop on "halftime"
-  ./pmx panic
+  ./pmx preflight
+  ./pmx preview trade MARKET OUT 1
+  ./pmx panic --dry-run
   ./pmx scout grok
   ./pmx trader openai briefs/active/my-game.md
 
@@ -97,7 +102,9 @@ normalize_verb() {
     balance|money|cash|bal|wallet) printf '%s\n' balance ;;
     positions|pos|position|holdings|holds) printf '%s\n' positions ;;
     status|health|state) printf '%s\n' status ;;
-    quote|price|eval|check|snapshot) printf '%s\n' quote ;;
+    preflight|check) printf '%s\n' preflight ;;
+    preview|dry-run|dryrun) printf '%s\n' preview ;;
+    quote|price|eval|snapshot) printf '%s\n' quote ;;
     link|url|analyze|analyse) printf '%s\n' link ;;
     event|market|markets) printf '%s\n' event ;;
     watch|book|stream|orderbook) printf '%s\n' watch ;;
@@ -145,6 +152,14 @@ case "$verb" in
     fi
     echo "Max trade size: ${PMX_MAX_TRADE_CONTRACTS:-10} contracts (PMX_MAX_TRADE_CONTRACTS)"
     echo
+    PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from apps.bridge.trade_safety import format_panic_scope
+print(format_panic_scope(Path(sys.argv[1])))
+" "$ROOT"
+    echo
     echo "Kalshi:"
     pmxt_cli kalshi balance --local --json 2>/dev/null | python3 -c "
 import json,sys
@@ -171,6 +186,32 @@ except Exception as e:
   print('  (balance unavailable)')
 " || true
     fi
+    ;;
+  preflight|check)
+    exec "$ROOT/scripts/pmx-preflight.sh"
+    ;;
+  preview)
+    sub="${1:-}"
+    if [[ -z "$sub" ]]; then
+      echo "Usage: ./pmx preview trade MARKET OUTCOME [size]" >&2
+      echo "       ./pmx preview poly trade SLUG [long|short] [qty]" >&2
+      echo "Tip: run ./pmx preflight before your first live order." >&2
+      exit 1
+    fi
+    sub="$(printf '%s' "$sub" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$sub" == "poly" ]]; then
+      shift
+      poly_cmd="${1:-trade}"
+      shift || true
+      exec "$ROOT/scripts/polymarket-us-quickstart.sh" "$poly_cmd" "$@" --dry-run
+    fi
+    if [[ "$sub" != "trade" ]]; then
+      echo "Usage: ./pmx preview trade MARKET OUTCOME [size]" >&2
+      exit 1
+    fi
+    shift
+    export DRY_RUN=1
+    exec "$ROOT/scripts/kalshi-quickstart.sh" trade "$@" --dry-run
     ;;
   quote)
     event_id="${1:?Usage: pmx quote EVENT_ID [OUTCOME] [size]}"
@@ -321,7 +362,29 @@ except Exception as e:
     esac
     ;;
   panic)
-    exec "$ROOT/scripts/kill-switch.sh" stop --cash-out "$@"
+    if [[ "${1:-}" == "status" ]]; then
+      PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from apps.bridge.trade_safety import format_panic_scope
+print(format_panic_scope(Path(sys.argv[1])))
+" "$ROOT"
+      exit 0
+    fi
+    panic_args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --dry-run|--dryrun) panic_args+=(--dry-run); shift ;;
+        --yes|-y) panic_args+=(--yes); shift ;;
+        *)
+          echo "Unknown panic option: $1" >&2
+          echo "Usage: ./pmx panic [--dry-run] [--yes]  |  ./pmx panic status" >&2
+          exit 1
+          ;;
+      esac
+    done
+    exec "$ROOT/scripts/kill-switch.sh" stop --cash-out "${panic_args[@]}"
     ;;
   go-live|resume)
     exec "$ROOT/scripts/pmx-go-live.sh"

@@ -238,6 +238,7 @@ case "$cmd" in
   trade|buy)
     require_poly_us_env
     _poly_flag_dry_run "$@"
+    trade_safety_preflight_trade || exit 1
     trade_safety_require_live || exit 1
     slug="${1:?Usage: $0 trade SLUG [long|short] [qty] [limit_price] [--dry-run]}"
     side="${2:-long}"
@@ -255,6 +256,7 @@ case "$cmd" in
   sell)
     require_poly_us_env
     _poly_flag_dry_run "$@"
+    trade_safety_preflight_trade || exit 1
     trade_safety_require_live || exit 1
     slug="${1:?Usage: $0 sell SLUG [long|short] [qty] [limit_price] [--dry-run]}"
     side="${2:-long}"
@@ -272,6 +274,7 @@ case "$cmd" in
   close|flatten|exit)
     require_poly_us_env
     _poly_flag_dry_run "$@"
+    trade_safety_preflight_trade || exit 1
     trade_safety_require_live || exit 1
     slug="${1:?Usage: $0 close SLUG [long|short] [qty] [--dry-run]}"
     side="${2:-long}"
