@@ -780,3 +780,107 @@ body,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Glass surfaces (light + dark) ── */
+.pmx-glass {
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 0.55px solid var(--ios-glass-border, var(--ios-separator));
+  box-shadow: var(--ios-glass-shadow, var(--ios-shadow-sm));
+}
+
+[data-md-color-scheme="default"] {
+  --ios-glass-bg: rgba(255, 255, 255, 0.78);
+  --ios-glass-border: rgba(255, 255, 255, 0.65);
+  --ios-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+[data-md-color-scheme="slate"] {
+  --ios-glass-bg: rgba(28, 28, 30, 0.82);
+  --ios-glass-border: rgba(255, 255, 255, 0.08);
+  --ios-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.pmx-glass,
+.pmx-page-hero {
+  background: var(--ios-glass-bg);
+}
+
+/* Operations page hero */
+.pmx-page-hero {
+  border-radius: var(--ios-radius-xl);
+  margin: 0 0 1.35rem;
+  padding: 1.45rem 1.35rem 1.15rem;
+}
+
+.pmx-page-hero h1 {
+  font-size: clamp(1.65rem, 3.5vw, 2.1rem);
+  font-weight: 740;
+  letter-spacing: -0.034em;
+  line-height: 1.1;
+  margin: 0 0 0.45rem;
+}
+
+.pmx-page-lead {
+  color: var(--ios-secondary);
+  font-size: 1.02rem;
+  font-weight: 450;
+  line-height: 1.5;
+  margin: 0 0 0.85rem;
+  max-width: 44rem;
+}
+
+.pmx-page-meta {
+  color: var(--ios-tertiary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0 0 1rem;
+}
+
+/* Glass panels on inner pages */
+.md-typeset .admonition,
+.md-typeset details,
+.md-typeset .tabbed-content,
+.pmx-checklist.pmx-glass,
+.pmx-stat {
+  background: var(--ios-glass-bg);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  background: var(--ios-glass-bg);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background: rgba(44, 44, 46, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li,
+[data-md-color-scheme="slate"] .pmx-hero,
+[data-md-color-scheme="slate"] .pmx-checklist,
+[data-md-color-scheme="slate"] .pmx-stat,
+[data-md-color-scheme="slate"] .mermaid {
+  background: var(--ios-glass-bg);
+  border-color: var(--ios-glass-border);
+}
+
+[data-md-color-scheme="slate"] .pmx-checklist__head {
+  background: rgba(44, 44, 46, 0.95);
+}
+
+/* Secondary sidebar + TOC glass */
+.is-macos .md-sidebar--secondary {
+  background: transparent;
+}
+
+.is-macos .md-sidebar--secondary .md-sidebar__scrollwrap {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Operations section: hide duplicate titles when hero present */
+.md-typeset > .pmx-page-hero:first-child + h1 {
+  display: none;
+}

@@ -1,10 +1,22 @@
-# pmxtrader command reference
-
-Plain-language shortcuts via `./pmx` (`scripts/pmx.sh`). Run from repo root.
-
-> **Visual index:** [`docs/README.md`](README.md) · **Live flow:** preflight → go-live → preview → trade
-
 ---
+description: Full ./pmx command reference for Kalshi, Polymarket US, safety, and agents.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
+# Command reference
+
+<p class="pmx-page-lead">
+Plain-language shortcuts via <code>./pmx</code> (<code>scripts/pmx.sh</code>). Run from the repository root after
+<code>source scripts/pmxt-env.sh</code> or <code>./pmx session</code>.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--blue">Kalshi · Poly US</span>
+  <span class="pmx-pill pmx-pill--green">preflight → preview → go-live</span>
+</div>
+
+</div>
 
 ## On this page
 
@@ -27,14 +39,15 @@ Plain-language shortcuts via `./pmx` (`scripts/pmx.sh`). Run from repo root.
 | **Preview** | `./pmx preview trade …` | No — dry-run text |
 | **Live** | `./pmx go-live` then `./pmx trade …` | Yes — YES confirm |
 
-```mermaid
-flowchart LR
-  A[session] --> B[preflight]
-  B --> C{go-live?}
-  C -->|no| D[preview / dashboard]
-  C -->|yes| E[preflight GO]
-  E --> F[trade + YES]
-```
+??? note "Session flow diagram"
+    ```mermaid
+    flowchart LR
+      A[session] --> B[preflight]
+      B --> C{go-live?}
+      C -->|no| D[preview / dashboard]
+      C -->|yes| E[preflight GO]
+      E --> F[trade + YES]
+    ```
 
 **Sidecar:** credentials in `pmxt/.env` — restart with `./pmx warm` after edits.
 

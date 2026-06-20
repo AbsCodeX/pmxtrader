@@ -1,24 +1,38 @@
-# Known risks and limitations
-
-Last reviewed: **2026-06-19** · Index: [`docs/README.md`](README.md)
-
-Read this **before live trading** or deploying agents.
-
 ---
+description: Real-money risks, execution surfaces, safety controls, and accepted gaps.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
+# Known risks
+
+<p class="pmx-page-lead">
+Read this before live trading or deploying agents. pmxtrader defaults to read-only sessions;
+real orders require an explicit <code>./pmx go-live</code> and operator confirmation.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--orange">Real money at venues</span>
+  <span class="pmx-pill pmx-pill--green">Layered safety controls</span>
+  <span class="pmx-pill">Reviewed 2026-06-20</span>
+</div>
+
+</div>
 
 ## Decision flow
 
-```mermaid
-flowchart TD
-  Start[Start session] --> RO{Read-only ON?}
-  RO -->|default yes| Safe[Safe: preview, research, dashboard]
-  RO -->|./pmx go-live| GL[Live mode enabled]
-  GL --> PF[./pmx preflight GO?]
-  PF -->|no| Fix[Fix sidecar / keys / kill switch]
-  PF -->|yes| Prev[Optional: preview trade]
-  Prev --> Trade[./pmx trade + YES]
-  Trade --> Live[Real money at venue]
-```
+??? note "Go-live decision diagram"
+    ```mermaid
+    flowchart TD
+      Start[Start session] --> RO{Read-only ON?}
+      RO -->|default yes| Safe[Safe: preview, research, dashboard]
+      RO -->|./pmx go-live| GL[Live mode enabled]
+      GL --> PF[./pmx preflight GO?]
+      PF -->|no| Fix[Fix sidecar / keys / kill switch]
+      PF -->|yes| Prev[Optional: preview trade]
+      Prev --> Trade[./pmx trade + YES]
+      Trade --> Live[Real money at venue]
+    ```
 
 ---
 
@@ -43,23 +57,24 @@ flowchart TD
 | Scout agent | **No** | `config/agents.json` |
 | Trader agent | Prepares only | `approved: true` + human runs trade |
 
-```mermaid
-flowchart LR
-  subgraph Safe["No live orders"]
-    D[Web dashboard]
-    S[Scout agent]
-  end
-  subgraph Guarded["Live with guards"]
-    C[Cockpit + confirm]
-    T[Terminal + YES]
-  end
-  subgraph Indirect["Human executes"]
-    TR[Trader agent → you run ./pmx]
-  end
-  Safe --> Research[Research / preview]
-  Guarded --> Live[order:create]
-  Indirect --> Live
-```
+??? note "Execution surface diagram"
+    ```mermaid
+    flowchart LR
+      subgraph Safe["No live orders"]
+        D[Web dashboard]
+        S[Scout agent]
+      end
+      subgraph Guarded["Live with guards"]
+        C[Cockpit + confirm]
+        T[Terminal + YES]
+      end
+      subgraph Indirect["Human executes"]
+        TR[Trader agent → you run ./pmx]
+      end
+      Safe --> Research[Research / preview]
+      Guarded --> Live[order:create]
+      Indirect --> Live
+    ```
 
 ---
 

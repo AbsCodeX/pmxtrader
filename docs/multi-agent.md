@@ -1,37 +1,58 @@
-# Multi-agent system
+---
+description: Scout and Trader roles, brief handoff, and Hermes bundle setup.
+---
 
-pmxtrader splits **research** (Scout) from **execution** (Trader) so no single agent loads every tool and slows live trades.
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
+# Multi-agent workflow
+
+<p class="pmx-page-lead">
+Research and execution stay in separate sessions. Scout writes briefs; you approve them;
+Trader prepares <code>./pmx</code> commands — you run live orders in Terminal.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--blue">Scout → brief → Trader</span>
+  <span class="pmx-pill pmx-pill--green">Human approves every order</span>
+</div>
+
+</div>
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  subgraph research [Scout session]
-    S[Scout agent]
-    PH[./pmx compare]
-    PMXTread[./pmx quote / poly quote]
-    DOCS[Poly US docs MCP]
-  end
-  subgraph handoff [Handoff]
-    B[briefs/active/*.md]
-    H[Human approved: true]
-  end
-  subgraph execute [Trader session]
-    T[Trader agent]
-    CLI[./pmx trade / poly trade]
-  end
-  S --> B --> H --> T --> CLI
-```
+??? note "Handoff diagram"
+    ```mermaid
+    flowchart LR
+      subgraph research [Scout session]
+        S[Scout agent]
+        PH[./pmx compare]
+        PMXTread[./pmx quote / poly quote]
+        DOCS[Poly US docs MCP]
+      end
+      subgraph handoff [Handoff]
+        B[briefs/active/*.md]
+        H[Human approved: true]
+      end
+      subgraph execute [Trader session]
+        T[Trader agent]
+        CLI[./pmx trade / poly trade]
+      end
+      S --> B --> H --> T --> CLI
+    ```
+
+---
 
 ## Roles
 
-See `config/agents.json`, `apps/agents/README.md`, and **`docs/commands.md`** (tool routing).
+Policy: `config/agents.json` · Skills: `apps/agents/README.md` · Tool routing: [Command reference](commands.md#which-tool-to-use-agents)
 
 | Role | Venues | Tools |
 |------|--------|-------|
 | **Scout** | Kalshi + Poly US research | `./pmx link`, `./pmx poly quote`, `./pmx compare`, Poly US docs MCP |
 | **Trader** | Kalshi or Poly US from brief | `./pmx trade` or `./pmx poly trade/sell/close` |
 | **Human** | Both | Approve brief, confirm every order |
+
+---
 
 ## Hermes setup
 
@@ -40,24 +61,30 @@ See `config/agents.json`, `apps/agents/README.md`, and **`docs/commands.md`** (t
 ./scripts/install-hermes-skills.sh   # included in setup
 ```
 
-Skills: `pmxtrader-scout`, `pmxtrader-trader`, `pmxtrader-commands`, `multi-agent-handoff`  
-Bundles: `/pmxtrader-scout`, `/pmxtrader-trader`  
-Policy: terminal `./pmx` only (`-t no_mcp`); Poly US docs MCP on; PMXT trading MCP off (Grok-safe)
+| Item | Value |
+|------|-------|
+| Skills | `pmxtrader-scout`, `pmxtrader-trader`, `pmxtrader-commands`, `multi-agent-handoff` |
+| Bundles | `/pmxtrader-scout`, `/pmxtrader-trader` |
+| Policy | Terminal `./pmx` only (`-t no_mcp`); Poly US docs MCP on; PMXT trading MCP off |
 
-See `hermes/README.md`
+Details: [hermes/README.md](https://github.com/AbsCodeX/pmxtrader/blob/main/hermes/README.md)
+
+---
 
 ## Provider matrix
 
 | Provider | Scout | Trader | Notes |
 |----------|-------|--------|-------|
-| **Grok/xAI** | ✅ fast scan | ❌ | `./pmx scout grok` |
-| **Claude API** | ✅ deep research | ⚠️ brief-only | `./pmx scout claude` |
-| **OpenAI API** | ✅ cheap scans | ✅ command prep | `./pmx trader openai BRIEF.md` |
-| **Cursor** | ✅ rules + skills | ✅ | `./pmx scout cursor` |
-| **Hermes** | ✅ terminal CLI | ✅ terminal CLI | `./scripts/agent-run.sh scout hermes` |
+| Grok/xAI | Yes | No | `./pmx scout grok` |
+| Claude API | Yes | Brief-only | `./pmx scout claude` |
+| OpenAI API | Yes | Yes | `./pmx trader openai BRIEF.md` |
+| Cursor | Yes | Yes | `./pmx scout cursor` |
+| Hermes | Yes | Yes | `./scripts/agent-run.sh scout hermes` |
 
-Keys in `pmxt/.env` → `./scripts/setup-hermes.sh` → `./scripts/check-providers.sh`  
-Full routing: `docs/providers.md`
+Keys: `pmxt/.env` → `./scripts/setup-hermes.sh` → `./scripts/check-providers.sh`  
+Routing details: [LLM providers](providers.md)
+
+---
 
 ## Daily workflow
 
@@ -70,12 +97,18 @@ source scripts/pmxt-env.sh
 # Human confirms and runs ./pmx trade or ./pmx poly trade
 ```
 
-## What not to do
+---
 
-- One chat with PMXT MCP + PH + execution (use separate Scout/Trader sessions)
-- Trader re-running `./pmx compare` or Poly US docs MCP
-- Auto `./pmx trade` or `./pmx poly trade` without human confirmation
+## Discipline
 
-## Future: Monitor role
+| Do not | Why |
+|--------|-----|
+| Combine PMXT MCP + PH + execution in one chat | Slow, unsafe tool overlap |
+| Let Trader re-run `./pmx compare` or docs MCP | Trader lane is execution prep only |
+| Auto-run `./pmx trade` without confirmation | Real money; human gate is intentional |
+
+---
+
+## Roadmap: Monitor role
 
 PH WebSocket daemon → `briefs/alerts.json` → Scout reads alerts. See `apps/agents/monitor/README.md`.

@@ -1,10 +1,23 @@
-# Environment variables
-
-Last reviewed: **2026-06-19** · Index: [`README.md`](README.md)
-
-Secrets → **`pmxt/.env`** · Policy → **`config/`** · Template → **`pmxt/.env.example`**
-
 ---
+description: Environment variables, credentials, safety defaults, and sidecar configuration.
+---
+
+<div class="pmx-page-hero pmx-glass" markdown="1">
+
+# Environment & safety
+
+<p class="pmx-page-lead">
+Secrets live in <code>pmxt/.env</code>. Policy and model defaults live in <code>config/</code>.
+Shell safety defaults are applied whenever <code>scripts/pmxt-env.sh</code> is sourced.
+</p>
+
+<div class="pmx-pill-row">
+  <span class="pmx-pill pmx-pill--orange">Never commit <code>pmxt/.env</code></span>
+  <span class="pmx-pill">Template: <code>pmxt/.env.example</code></span>
+  <span class="pmx-pill">Reviewed 2026-06-20</span>
+</div>
+
+</div>
 
 ## Quick reference
 
@@ -18,15 +31,16 @@ Secrets → **`pmxt/.env`** · Policy → **`config/`** · Template → **`pmxt/
 | Dashboard | [Dashboard / cockpit](#dashboard-cockpit) | N/A |
 | Paths | [Operator / paths](#operator-paths) | N/A |
 
-```mermaid
-flowchart LR
-  ENV[pmxt/.env] --> SC[PMXT sidecar]
-  ENV --> HM[Hermes ~/.hermes/.env]
-  CFG[config/*.json] --> AG[agent policy]
-  SHELL[shell exports] --> SAFE[PMX_READ_ONLY etc.]
-  SAFE --> SCR[trade scripts]
-  SC --> VEN[Kalshi · Poly US]
-```
+??? note "Configuration flow"
+    ```mermaid
+    flowchart LR
+      ENV[pmxt/.env] --> SC[PMXT sidecar]
+      ENV --> HM[Hermes ~/.hermes/.env]
+      CFG[config/*.json] --> AG[agent policy]
+      SHELL[shell exports] --> SAFE[PMX_READ_ONLY etc.]
+      SAFE --> SCR[trade scripts]
+      SC --> VEN[Kalshi · Poly US]
+    ```
 
 ---
 
@@ -93,7 +107,7 @@ These are **not** secrets. **`scripts/pmxt-env.sh` sets safe defaults** when sou
 
 CLI equivalents: `./pmx preflight` · `./pmx preview trade …` · `./pmx stop` · `./pmx trade … --dry-run` · `./pmx panic --dry-run` · `./pmx trade … --yes` (skip confirm)
 
-See `reviews/2026-06-19/trading-safety-review.md`.
+See [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md).
 
 ---
 
