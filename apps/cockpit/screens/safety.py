@@ -12,7 +12,7 @@ from apps.cockpit.widgets.output_log import OutputLog
 
 class SafetyPane(Vertical):
     DEFAULT_CSS = """
-    SafetyPane { padding: 1 0; }
+    SafetyPane { padding: 0; }
     .warn { color: $warning; margin: 1 0; }
     #preview-input { width: 1fr; }
     """
@@ -61,7 +61,18 @@ class SafetyPane(Vertical):
         bid = event.button.id
         if bid == "btn-stop":
             reason = self.query_one("#stop-reason", Input).value.strip() or "manual"
-            self._run(["stop", "on", reason])
+
+            def on_confirm(ok: bool) -> None:
+                if ok:
+                    self._run(["stop", "on", reason])
+
+            self.app.push_screen(
+                ConfirmCommandModal(
+                    f"./pmx stop on {reason}",
+                    "Stop trading — kill switch ON. Block new orders?",
+                ),
+                on_confirm,
+            )
         elif bid == "btn-resume":
 
             def on_confirm(ok: bool) -> None:

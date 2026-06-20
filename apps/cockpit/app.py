@@ -36,6 +36,7 @@ COMMANDS = [
     ("poly markets", "Search Poly US markets"),
     ("poly orders", "Open Poly orders"),
     ("warm", "Warm sidecar"),
+    ("preflight", "GO / NO-GO checklist"),
     ("help", "Full command list"),
     ("dashboard", "Start web dashboard (background)"),
 ]
@@ -52,8 +53,9 @@ class CommandPalette(ModalScreen[None]):
         width: 72;
         height: auto;
         max-height: 70%;
-        border: solid #2563eb;
-        background: #ffffff;
+        border: solid #00d4ff;
+        background: #0a0e14;
+        color: #e0e8f0;
         padding: 1 2;
     }
     #palette-list { height: auto; max-height: 18; margin-top: 1; }
@@ -125,7 +127,7 @@ class CommandPalette(ModalScreen[None]):
 class CockpitApp(App):
     CSS_PATH = Path(__file__).parent / "theme.tcss"
     TITLE = "pmxtrader"
-    SUB_TITLE = "prediction market dashboard"
+    SUB_TITLE = "prediction market terminal"
 
     BINDINGS = [
         Binding("1", "tab('home')", "Dashboard", show=True),
@@ -163,7 +165,7 @@ class CockpitApp(App):
 
     def on_mount(self) -> None:
         self.query_one("#nav", NavSidebar).highlight("home")
-        self.set_interval(12.0, self.poll_live)
+        self.set_interval(8.0, self.poll_live)
         self.poll_live()
 
     def poll_live(self) -> None:
@@ -248,6 +250,16 @@ class CockpitApp(App):
                 self.query_one(HomePane).render_snap(self._last_snap)
             except Exception as exc:  # noqa: BLE001
                 self.log(f"home render failed: {exc}")
+
+    def open_analyze(self, url: str = "", *, run: bool = False) -> None:
+        from textual.widgets import Input
+
+        self.action_tab("analyze")
+        pane = self.query_one(AnalyzePane)
+        if url:
+            pane.query_one("#analyze-url", Input).value = url
+        if run and url:
+            pane.run_analysis()
 
     def action_palette(self) -> None:
         self.push_screen(CommandPalette())

@@ -16,10 +16,13 @@ Research markets. Compare venues. Write trade briefs in `briefs/active/`. Leave 
 
 ```bash
 cd ~/pmxtrader
+./pmx agent snapshot              # portfolio + capability manifest (JSON)
+./pmx agent discover 'MARKET_URL' # discovery + orderbook + rules snippet
+./pmx agent portfolio             # balances, positions, P&L, exposure
 ./pmx link 'KALSHI_URL' USA 1
 ./pmx poly link 'https://polymarket.us/market/SLUG' long
 ./pmx poly quote SLUG long
-./pmx poly markets nfl
+# ./pmx poly markets — often [] ; use link/quote with known slugs
 ./pmx compare url KALSHI_URL
 ./pmx compare slate nba
 ./pmx balance
@@ -29,7 +32,12 @@ cd ~/pmxtrader
 ./pmx brief SLUG
 ```
 
-Full list: skill `pmxtrader-commands` · `docs/commands.md` · `./pmx help`
+## Capability checklist (fill in brief)
+
+Market discovery · Rules · Order book · Fair value · Mispricing · Data sources ·
+Trade rec · Confidence · Reasoning · Positions · P&L · Exposure
+
+Template: `briefs/TEMPLATE.md` · Reference: `docs/trading-agent-capabilities.md`
 
 ## MCP — Scout only
 

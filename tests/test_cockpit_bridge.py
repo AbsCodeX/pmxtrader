@@ -44,3 +44,20 @@ def test_count_positions_json_list():
 def test_count_positions_skips_headers():
     body = "=== Positions ===\nTicker  Size\nFOO  1\nBAR  2\n"
     assert _count_positions(body) == 2
+
+
+def test_fetch_balances_parallel_returns_separate_venues():
+    from apps.cockpit.bridge.live import _fetch_balances_parallel
+
+    def fake_run_pmx(*args, **kwargs):
+        if args == ("balance",):
+            return {"ok": True, "stdout": '[{"available": 50.0, "total": 50.0}]'}
+        if args == ("poly", "balance"):
+            return {"ok": True, "stdout": '[{"available": 12.5, "total": 20.0}]'}
+        return {"ok": False, "stdout": ""}
+
+    with patch("apps.cockpit.bridge.live.pmx.run_pmx", side_effect=fake_run_pmx):
+        kalshi, poly = _fetch_balances_parallel()
+    assert kalshi == ("50.00", "50.00")
+    assert poly == ("12.50", "20.00")
+    assert kalshi[0] != poly[0]

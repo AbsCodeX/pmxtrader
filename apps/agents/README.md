@@ -42,6 +42,28 @@ Config: `config/agents.json` · Commands: **`docs/commands.md`**
 
 Bundles: `/pmxtrader-scout` · `/pmxtrader-trader`
 
+## Trading agent capabilities (12)
+
+Hermes uses **terminal `./pmx`** (not PMXT MCP on Grok). Structured layer:
+
+```bash
+./pmx agent snapshot
+./pmx agent discover 'MARKET_URL'
+./pmx agent portfolio
+```
+
+| Capability | Scout | Trader |
+|------------|-------|--------|
+| Market discovery | ✓ | brief |
+| Rules reading | ✓ | brief |
+| Order book | ✓ | ✓ (≤2 calls) |
+| Fair value / mispricing | ✓ | brief |
+| Data sources / news cites | ✓ | — |
+| Trade rec + confidence + reasoning | ✓ | validate |
+| Positions / P&L / exposure | ✓ | ✓ |
+
+Module: `apps/bridge/trading_agent.py` · Docs: `docs/trading-agent-capabilities.md` · Brief: `briefs/TEMPLATE.md`
+
 ## Handoff rule
 
 Scout **writes** `briefs/active/*.md`. Trader **reads only** briefs with `approved: true`. Never combine Scout + Trader tools in one session.

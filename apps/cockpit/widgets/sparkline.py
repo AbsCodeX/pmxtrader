@@ -31,9 +31,9 @@ def fmt_price_color(price: str) -> str:
     try:
         p = float(price)
         if p >= 0.7:
-            return f"[green]{price}[/green]"
+            return f"[#00ff9c]{price}[/]"
         if p <= 0.3:
-            return f"[red]{price}[/red]"
-        return f"[yellow]{price}[/yellow]"
+            return f"[#ff4466]{price}[/]"
+        return f"[#ffb000]{price}[/]"
     except (TypeError, ValueError):
         return price or "—"

@@ -9,9 +9,39 @@ market_slug:
 outcome_id:
 outcome_side: long
 scout_provider: grok
+confidence: 0.0
+fair_value_prob:
+edge_pct:
 ---
 
 # Trade brief: TITLE
+
+## Agent capability checklist
+
+Run before approval (Hermes uses terminal — no PMXT MCP on Grok):
+
+```bash
+./pmx agent discover 'MARKET_URL'
+./pmx agent portfolio
+./pmx agent snapshot
+```
+
+| Capability | Status | Notes |
+|------------|--------|-------|
+| Market discovery | ☐ | URL → event/slug via `./pmx link` |
+| Market rules | ☐ | Paste venue rules; link may include Resolution line |
+| Live order book | ☐ | bid/ask/mid from link or quote |
+| Fair value estimate | ☐ | Your prob vs ask → edge |
+| Mispricing (+EV) | ☐ | Edge ≥ category threshold? |
+| Data sources checked | ☐ | List primary sources (not LLM guesses) |
+| Trade recommendation | ☐ | Venue, side, size, price |
+| Confidence score | ☐ | 0–1 heuristic in frontmatter |
+| Trade reasoning | ☐ | Thesis below |
+| Positions | ☐ | `./pmx positions` / `poly positions` |
+| P&L | ☐ | Unrealized from position JSON if present |
+| Exposure | ☐ | Open count + notional vs max risk |
+
+**Poly US note:** `./pmx poly markets` often returns `[]` — use known slugs or `./pmx poly link`.
 
 ## Market
 
@@ -47,7 +77,9 @@ scout_provider: grok
 | Available balance | |
 | 24h price change | |
 
-**Edge (manual +EV):** your probability ___ vs ask ___ → edge per contract ___
+**Fair value:** your probability ___ · **Ask:** ___ · **Edge:** ___ (per contract)
+
+**Confidence:** ___ (0–1) — book depth, rules clarity, data freshness, cross-venue agree
 
 ## Cross-venue prices (optional — Scout only)
 
@@ -64,7 +96,7 @@ scout_provider: grok
 
 **Best venue for this trade:**
 
-## Thesis (1–3 sentences)
+## Thesis / reasoning (1–3 sentences)
 
 
 ## Trade proposal
@@ -76,6 +108,20 @@ scout_provider: grok
 - **Price:**
 - **Size (contracts):**
 - **Max risk ($):**
+
+## Portfolio context
+
+```bash
+./pmx agent portfolio
+```
+
+| Metric | Value |
+|--------|-------|
+| Kalshi cash | |
+| Poly US cash | |
+| Open positions | |
+| Unrealized P&L | |
+| Notional exposure | |
 
 ## Live monitor (optional during session)
 
@@ -113,14 +159,15 @@ scout_provider: grok
 ./pmx poly close SLUG long
 ```
 
-Full reference: `docs/commands.md`
+Full reference: `docs/commands.md` · `docs/trading-agent-capabilities.md`
 
 ## Scout notes
 
-- Data sources used:
+- Data sources used (news, official releases, compare):
 - Risks / unknowns:
 
 ## Human approval
 
 - [ ] Evaluation snapshot reviewed
+- [ ] Capability checklist complete
 - [ ] I approve this trade (`approved: true` above)

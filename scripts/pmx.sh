@@ -55,6 +55,7 @@ Shared
   preview trade … | preview poly …      Dry-run order (no execution)
   event EVENT                           Raw event JSON
   compare slate SPORT | compare url URL Prediction Hunt odds
+  agent snapshot | agent portfolio | agent discover URL  Trading agent capabilities (JSON)
   brief SLUG                            Start a trade brief
   scout [grok|claude|openai|cursor|hermes]  Scout agent (default: grok)
   trader [openai|cursor|codex|hermes] BRIEF   Trader agent (default: openai)
@@ -120,6 +121,7 @@ normalize_verb() {
     dashboard|hub|home) printf '%s\n' dashboard ;;
     cockpit|tui|ui|terminal-ui) printf '%s\n' cockpit ;;
     compare|ph|odds|hunt) printf '%s\n' compare ;;
+    agent|capabilities|cap) printf '%s\n' agent ;;
     brief|plan|idea) printf '%s\n' brief ;;
     scout|research|look) printf '%s\n' scout ;;
     trader|execute|exec|trade-mode) printf '%s\n' trader ;;
@@ -305,6 +307,19 @@ except Exception as e:
   brief)
     slug="${1:?Usage: pmx brief SLUG}"
     exec "$ROOT/scripts/new-brief.sh" "$slug"
+    ;;
+  agent)
+    sub="${1:-snapshot}"
+    shift || true
+    case "$sub" in
+      snapshot|portfolio|discover)
+        exec python3 -m apps.bridge.trading_agent "$sub" "$@"
+        ;;
+      *)
+        echo "Usage: pmx agent snapshot|portfolio|discover URL" >&2
+        exit 1
+        ;;
+    esac
     ;;
   scout)
     provider="grok"

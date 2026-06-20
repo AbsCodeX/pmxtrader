@@ -11,7 +11,7 @@ from apps.cockpit.widgets.rich_escape import escape_rich
 
 class DiagnosticsPane(Vertical):
     DEFAULT_CSS = """
-    DiagnosticsPane { padding: 1 0; }
+    DiagnosticsPane { padding: 0; }
     #diag-table { height: 1fr; }
     """
 

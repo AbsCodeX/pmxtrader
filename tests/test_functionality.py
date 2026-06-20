@@ -132,10 +132,32 @@ def test_fetch_poly_markets_parses_json():
 def test_fetch_dashboard_snapshot_parses_balances():
     from apps.cockpit.bridge.live import fetch_snapshot
 
-    status_out = "OFF (/tmp/KILL_SWITCH)\nKalshi: available: 100.50 total: 100.50\nPolymarket US: available: 25.00\n"
+    status_out = """OFF (/tmp/KILL_SWITCH)
+Panic scope:
+  Kalshi: included
+  Polymarket US: included
+
+Kalshi:
+  available: 100.50  total: 100.50
+
+Polymarket US:
+  available: 25.00  total: 30.00
+"""
+    kalshi_json = '[{"available": 100.50, "total": 100.50}]'
+    poly_json = "=== Polymarket US balance ===\n" '[{"available": 25.00, "total": 30.00}]'
+
+    def fake_run_pmx(*args, **kwargs):
+        if args == ("status",):
+            return {"ok": True, "stdout": status_out}
+        if args == ("balance",):
+            return {"ok": True, "stdout": kalshi_json}
+        if args == ("poly", "balance"):
+            return {"ok": True, "stdout": poly_json}
+        return {"ok": False, "stdout": ""}
+
     with patch(
         "apps.cockpit.bridge.live.pmx.run_pmx",
-        return_value={"ok": True, "stdout": status_out},
+        side_effect=fake_run_pmx,
     ), patch(
         "apps.cockpit.bridge.live.record",
         return_value={"kalshi": [], "poly": []},
@@ -144,6 +166,30 @@ def test_fetch_dashboard_snapshot_parses_balances():
     assert snap.kill_switch == "OFF"
     assert snap.kalshi_available == "100.50"
     assert snap.poly_available == "25.00"
+    assert snap.poly_available != snap.kalshi_available
+
+
+def test_fetch_snapshot_venue_separation_from_direct_api():
+    """Direct balance API calls must not cross-contaminate venues."""
+    from apps.cockpit.bridge.live import fetch_snapshot
+
+    def fake_run_pmx(*args, **kwargs):
+        if args == ("status",):
+            return {"ok": True, "stdout": "OFF (/tmp/KILL)\nKalshi:\n  available: 999\nPolymarket US:\n  available: 999"}
+        if args == ("balance",):
+            return {"ok": True, "stdout": '[{"available": 111.11, "total": 111.11}]'}
+        if args == ("poly", "balance"):
+            return {"ok": True, "stdout": '[{"available": 22.22, "total": 33.33}]'}
+        return {"ok": False, "stdout": ""}
+
+    with patch("apps.cockpit.bridge.live.pmx.run_pmx", side_effect=fake_run_pmx), patch(
+        "apps.cockpit.bridge.live.record",
+        return_value={"kalshi": [], "poly": []},
+    ):
+        snap = fetch_snapshot()
+    assert snap.kalshi_available == "111.11"
+    assert snap.poly_available == "22.22"
+    assert snap.poly_total == "33.33"
 
 
 def test_positions_preview_counts_lines():

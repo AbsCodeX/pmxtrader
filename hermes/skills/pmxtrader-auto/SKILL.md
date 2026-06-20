@@ -21,8 +21,9 @@ Pick **one lane per turn**. When ambiguous, use **Scout**.
 
 **Scout** — follow skill `pmxtrader-scout`:
 
-- Terminal `./pmx` / `./pmx poly` for research only
-- May: link, quote, compare, brief, balance, status
+- Terminal `./pmx` / `./pmx agent snapshot|discover|portfolio` for research
+- May: link, quote, compare, brief, balance, status, portfolio snapshot
+- Fill brief capability checklist + confidence / fair value
 - **Never:** `./pmx trade`, `./pmx poly trade/sell/close`, `order:create`
 
 **Trader** — follow skill `pmxtrader-trader`:

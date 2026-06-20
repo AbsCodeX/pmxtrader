@@ -11,7 +11,7 @@ from apps.cockpit.widgets.output_log import OutputLog
 
 class PositionsPane(Vertical):
     DEFAULT_CSS = """
-    PositionsPane { padding: 1; height: 1fr; }
+    PositionsPane { padding: 0; height: 1fr; }
     #pos-log { height: 1fr; }
     """
 

@@ -10,10 +10,13 @@ Research prediction markets on **Kalshi** and **Polymarket US (retail)**. Compar
 
 ```bash
 cd ~/pmxtrader
+./pmx agent snapshot
+./pmx agent discover 'MARKET_URL'
+./pmx agent portfolio
 ./pmx link 'KALSHI_URL' USA 1
 ./pmx poly link 'https://polymarket.us/market/SLUG' long
 ./pmx poly quote SLUG long
-./pmx poly markets [query]
+# poly markets often empty — use link/quote with known slugs
 ./pmx compare url URL
 ./pmx compare slate SPORT
 ./pmx balance
@@ -24,6 +27,9 @@ cd ~/pmxtrader
 ./pmx warm
 ./scripts/new-brief.sh SLUG
 ```
+
+**Capabilities:** discovery, rules, orderbook, fair value, mispricing, data sources,
+trade rec, confidence, reasoning, positions, P&L, exposure — see `docs/trading-agent-capabilities.md`
 
 **MCP (Scout only):**
 
@@ -42,7 +48,8 @@ Full command list: `docs/commands.md` · Hermes skill `pmxtrader-commands`
 
 Write findings to `briefs/active/*.md` using `briefs/TEMPLATE.md`.
 
-Include: venue (Kalshi or Polymarket US), market IDs/slugs, cross-venue table, thesis, proposed trade, and **draft** `./pmx` commands for the Trader.
+Include the **12-capability checklist** (discovery through exposure), venue, cross-venue table,
+thesis, fair value + confidence frontmatter, proposed trade, and **draft** `./pmx` commands for the Trader.
 
 Leave `approved: false` — only the human sets `approved: true`.
 

@@ -5,34 +5,35 @@ from textual.containers import VerticalScroll
 from textual.widgets import Label, ListItem, ListView
 
 NAV_ITEMS = [
-    ("home", "Dashboard", "1"),
-    ("chat", "AI Chat", "2"),
-    ("analyze", "Analyze", "3"),
-    ("positions", "Positions", "4"),
-    ("markets", "Markets", "5"),
-    ("diagnostics", "Diagnostics", "6"),
-    ("safety", "Safety", "7"),
+    ("home", "Desk", "1"),
+    ("chat", "AI", "2"),
+    ("analyze", "Link", "3"),
+    ("positions", "Pos", "4"),
+    ("markets", "Mkt", "5"),
+    ("diagnostics", "Diag", "6"),
+    ("safety", "Safe", "7"),
 ]
 
 
 class NavSidebar(VerticalScroll):
     DEFAULT_CSS = """
     NavSidebar {
-        width: 22;
+        width: 16;
         height: 1fr;
-        background: $panel;
-        border-right: solid $border;
-        padding: 1 0;
+        background: #050608;
+        border-right: solid #1a2332;
+        padding: 0;
     }
     ListView {
         height: auto;
     }
     ListItem {
         padding: 0 1;
+        height: 1;
     }
     ListItem.-highlight {
-        background: $accent;
-        color: $text;
+        background: #0d1a12;
+        color: #00ff9c;
     }
     """
 

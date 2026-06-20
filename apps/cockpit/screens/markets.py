@@ -12,7 +12,7 @@ from apps.cockpit.widgets.rich_escape import escape_rich
 
 class MarketsPane(Vertical):
     DEFAULT_CSS = """
-    MarketsPane { padding: 1; height: 1fr; }
+    MarketsPane { padding: 0; height: 1fr; }
     #markets-query { width: 1fr; }
     #markets-out { height: 1fr; }
     """

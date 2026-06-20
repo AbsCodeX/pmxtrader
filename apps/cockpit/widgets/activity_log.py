@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual.widgets import RichLog
 
 from apps.cockpit.widgets.access_log import access_line
@@ -10,12 +11,12 @@ class ActivityLog(RichLog):
 
     DEFAULT_CSS = """
     ActivityLog {
-        height: 8;
-        min-height: 5;
-        max-height: 12;
-        border-top: solid #30363d;
-        background: #0d1117;
-        color: #c9d1d9;
+        height: 4;
+        min-height: 3;
+        max-height: 6;
+        border-top: solid #1a2332;
+        background: #050608;
+        color: #b8c5d6;
         padding: 0 1;
     }
     """
@@ -24,4 +25,4 @@ class ActivityLog(RichLog):
         self.write(access_line(cmd, output, ok=ok))
         if output.strip() and len(output.splitlines()) > 1:
             for line in output.strip().splitlines()[1:4]:
-                self.write(f"  {line[:100]}", markup=False)
+                self.write(Text(f"  {line[:100]}"))

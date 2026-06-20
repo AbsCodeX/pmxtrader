@@ -12,7 +12,7 @@ from apps.cockpit.widgets.rich_escape import escape_rich
 
 class AnalyzePane(Vertical):
     DEFAULT_CSS = """
-    AnalyzePane { padding: 1; height: 1fr; }
+    AnalyzePane { padding: 0; height: 1fr; }
     #analyze-url { width: 1fr; }
     .row { height: auto; margin-bottom: 1; }
     #analyze-preview {

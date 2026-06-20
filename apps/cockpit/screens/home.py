@@ -9,7 +9,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, DataTable, RichLog, Static
 
 from apps.cockpit.bridge.live import LiveSnapshot
-from apps.cockpit.widgets.sparkline import bar_gauge, fmt_price_color, sparkline
+from apps.cockpit.widgets.sparkline import bar_gauge, fmt_price_color
 from apps.cockpit.widgets.stats_bar import StatsBar
 
 
@@ -29,29 +29,29 @@ def _vol_bar(volume: str, max_vol: float, width: int = 10) -> str:
 
 
 class HomePane(Vertical):
-    """Primary dashboard — GoAccess summary + modular panels, 12s refresh."""
+    """Primary dashboard — terminal modules, 8s live refresh."""
 
     DEFAULT_CSS = """
     HomePane {
         height: 1fr;
-        padding: 0 1 1;
-        background: #010409;
+        padding: 0 1;
+        background: #050608;
     }
     #dash-toolbar {
-        height: auto;
-        margin-bottom: 1;
-        color: #c9d1d9;
+        height: 1;
+        margin-bottom: 0;
+        color: #b8c5d6;
     }
     #dash-top, #dash-bottom {
         height: 1fr;
-        min-height: 10;
+        min-height: 8;
     }
     .module {
-        border: solid #30363d;
-        background: #0d1117;
+        border: solid #1a2332;
+        background: #050608;
         height: 1fr;
         width: 1fr;
-        min-height: 8;
+        min-height: 6;
     }
     #mod-markets {
         width: 2fr;
@@ -62,31 +62,30 @@ class HomePane(Vertical):
     .mod-title {
         dock: top;
         height: 1;
-        background: #161b22;
-        color: #58a6ff;
+        background: #0a0e14;
+        color: #00d4ff;
         text-align: center;
-        text-style: bold;
     }
     #mod-markets-table {
         height: 1fr;
-        min-height: 6;
-        background: #0d1117;
+        min-height: 5;
+        background: #050608;
     }
     #mod-positions-log, #mod-activity-log {
         height: 1fr;
-        background: #0d1117;
+        background: #050608;
     }
     #mod-balances-body, #mod-health-body {
         height: 1fr;
         padding: 0 1;
-        color: #c9d1d9;
+        color: #e2eaf2;
     }
     """
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="dash-toolbar"):
             yield Static(
-                "[bold #58a6ff]pmxtrader[/]  [dim]GoAccess stats · WTF modules · cointop watchlist[/dim]",
+                "[#8b9cb5]pmxtrader[/] [#eef2f8]desk[/]",
                 markup=True,
             )
             yield Button("↻", id="go-refresh", variant="primary")
@@ -122,7 +121,7 @@ class HomePane(Vertical):
         table = self.query_one("#mod-markets-table", DataTable)
         table.add_columns("Market", "Slug", "Price", "Vol", "Hits")
         act = self.query_one("#mod-activity-log", RichLog)
-        act.write("[dim]GoAccess-style live log — timestamp · status · command[/dim]")
+        act.write("[dim]access log · timestamp · status · command[/dim]")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         mapping = {
@@ -131,7 +130,7 @@ class HomePane(Vertical):
             "go-diag": "diagnostics",
         }
         if event.button.id == "go-refresh":
-            self.app.poll_live()
+            self.app.action_refresh_all()
         elif event.button.id in mapping:
             self.app.action_tab(mapping[event.button.id])
 
@@ -140,38 +139,31 @@ class HomePane(Vertical):
         row = table.get_row(event.row_key)
         if row and len(row) >= 2 and row[1]:
             slug = str(row[1])
-            msg = f"Selected: {slug}"
-            if hasattr(self.app, "log_activity"):
-                self.app.log_activity("poly quote", msg, ok=True)
-            self.app.notify(f"./pmx poly quote {slug} long")
+            url = f"https://polymarket.us/market/{slug}"
+            if hasattr(self.app, "open_analyze"):
+                self.app.open_analyze(url, run=True)
+            else:
+                self.app.notify(f"./pmx poly link '{url}' long")
 
     def render_snap(self, snap: LiveSnapshot) -> None:
         self.query_one("#stats-bar", StatsBar).apply_snapshot(snap)
 
         ks = snap.kill_switch
         if ks == "ON":
-            ks_c = "#f85149"
+            ks_c = "#ff4466"
         elif ks == "OFF":
-            ks_c = "#3fb950"
+            ks_c = "#00ff9c"
         else:
-            ks_c = "#d29922"
-        k_avail = _safe_float(snap.kalshi_available)
-        p_avail = _safe_float(snap.poly_available)
+            ks_c = "#ffb000"
 
         self.query_one("#mod-balances-body", Static).update(
-            f"[bold #58a6ff]Kalshi[/]  [{ks_c}]kill {ks}[/]\n"
-            f"  cash [#39c5cf]${snap.kalshi_available or '?'}[/]  "
-            f"total ${snap.kalshi_total or '?'}\n"
-            f"  {bar_gauge(k_avail, max(k_avail, 100))}\n"
-            f"  [#8b949e]{sparkline(snap.spark_kalshi)}[/]\n\n"
-            f"[bold #58a6ff]Poly US[/]\n"
-            f"  cash [#39c5cf]${snap.poly_available or '?'}[/]  "
-            f"total ${snap.poly_total or '?'}\n"
-            f"  {bar_gauge(p_avail, max(p_avail, 500))}\n"
-            f"  [#8b949e]{sparkline(snap.spark_poly)}[/]"
+            f"[#00ff9c]KAL[/] [#eef2f8]${snap.kalshi_available or '?'}[/]"
+            f" / ${snap.kalshi_total or '?'}  [{ks_c}]{ks}[/]\n"
+            f"[#00d4ff]POL[/] [#eef2f8]${snap.poly_available or '?'}[/]"
+            f" / ${snap.poly_total or '?'}"
         )
 
-        health = "\n".join(snap.health_lines) if snap.health_lines else "[dim]checking…[/dim]"
+        health = "\n".join(snap.health_lines) if snap.health_lines else "[#8b9cb5]checking…[/]"
         self.query_one("#mod-health-body", Static).update(health)
 
         vols: list[float] = []
@@ -188,8 +180,9 @@ class HomePane(Vertical):
             price = fmt_price_color(str(m.get("price", "—")))
             vol = m.get("volume", "")
             hits = _vol_bar(str(vol), max_vol)
-            table.add_row(m.get("title", ""), m.get("slug", ""), price, vol, hits)
+            title = str(m.get("title", ""))[:36]
+            table.add_row(title, m.get("slug", ""), price, vol, hits)
 
         pos = self.query_one("#mod-positions-log", RichLog)
         pos.clear()
-        pos.write(snap.positions_preview or "[dim]No positions[/dim]")
+        pos.write(snap.positions_preview or "[#8b9cb5]No positions[/]")

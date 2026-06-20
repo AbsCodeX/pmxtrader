@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, RichLog, Select, Static
@@ -13,7 +14,7 @@ from apps.cockpit.widgets.rich_escape import escape_rich
 class ChatPane(Vertical):
     DEFAULT_CSS = """
     ChatPane {
-        padding: 1 0;
+        padding: 0;
     }
     #chat-log {
         height: 1fr;
@@ -54,7 +55,7 @@ class ChatPane(Vertical):
         with Horizontal(id="chat-input-row"):
             yield Input(placeholder="Ask: analyze this link, top poly markets, my balance…", id="chat-input")
             yield Button("Send", variant="primary", id="chat-send")
-        yield Button("Run suggested command (Ctrl+Enter)", variant="warning", id="chat-run-suggested", disabled=True)
+        yield Button("Run ▶", variant="warning", id="chat-run-suggested", disabled=True)
         yield Static("", id="suggested-cmd")
 
     def on_mount(self) -> None:
@@ -109,8 +110,8 @@ class ChatPane(Vertical):
             result = event.worker.result
             log = self.query_one("#chat-log", RichLog)
             text = result.get("text", "")
-            log.write("[bold green]AI:[/bold green] ", markup=True)
-            log.write(text, markup=False)
+            log.write("[bold green]AI:[/bold green] ")
+            log.write(Text(text))
             log.write("")
             cmds = pmx.extract_pmx_commands(text)
             if cmds:
@@ -123,14 +124,23 @@ class ChatPane(Vertical):
                 self._clear_suggestion()
             return
 
-        if event.worker.group == "chat-exec" and event.state == WorkerState.SUCCESS:
+        if event.worker.group == "chat-exec":
+            log = self.query_one("#chat-log", RichLog)
+            if event.state == WorkerState.ERROR:
+                log.write("[red]Command failed[/red]")
+                if event.worker.error:
+                    log.write(Text(str(event.worker.error)))
+                log.write("")
+                return
+            if event.state != WorkerState.SUCCESS:
+                return
             r = event.worker.result
             out = r.get("stdout") or r.get("stderr") or r.get("error") or ""
             cmd = r.get("command", "pmx")
-            log = self.query_one("#chat-log", RichLog)
             log.write(f"[dim]$ {escape_rich(cmd)}[/dim]")
-            log.write(out, markup=False)
+            log.write(Text(out))
             log.write("")
+            return
 
     _pending_cmd: str | None = None
 

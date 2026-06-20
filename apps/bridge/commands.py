@@ -9,11 +9,13 @@ SAFE_COMMANDS: dict[str, list[str]] = {
     "help": ["./pmx", "help"],
     "status": ["./pmx", "status"],
     "warm": ["./pmx", "warm"],
+    "preflight": ["./pmx", "preflight"],
     "balance": ["./pmx", "balance"],
     "positions": ["./pmx", "positions"],
     "poly-balance": ["./pmx", "poly", "balance"],
     "poly-positions": ["./pmx", "poly", "positions"],
     "poly-orders": ["./pmx", "poly", "orders"],
+    "panic-dry-run": ["./pmx", "panic", "--dry-run"],
     "providers": ["./scripts/check-providers.sh"],
 }
 
@@ -48,6 +50,7 @@ PALETTE_COMMANDS: frozenset[str] = frozenset({
     "positions",
     "warm",
     "help",
+    "preflight",
     "poly balance",
     "poly positions",
     "poly orders",
@@ -115,6 +118,9 @@ def resolve_dashboard_command(raw: str) -> list[str] | None:
             "trade", "sell", "close", "cancel", "cancel-all"
         ):
             return None
+
+    if text.lower() in ("panic --dry-run", "panic-dry-run"):
+        return SAFE_COMMANDS["panic-dry-run"]
 
     alias = "-".join(p.lower() for p in parts[:2]) if len(parts) >= 2 and parts[0].lower() == "poly" else key
     if alias in SAFE_COMMANDS:

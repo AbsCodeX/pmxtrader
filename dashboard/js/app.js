@@ -2,24 +2,71 @@ const API = (location.protocol.startsWith('http') && location.port)
       ? `${location.protocol}//${location.host}`
       : 'http://127.0.0.1:8765';
     const isFileProtocol = location.protocol === 'file:';
+    const DOCS_SITE = 'https://abscodex.github.io/pmxtrader';
+
+    /** One-click action strip — runs safe commands directly (no duplicate card grid). */
+    const ACTION_STRIP = [
+      { run: 'status', label: 'Status', icon: '●' },
+      { run: 'warm', label: 'Warm', icon: '↻' },
+      { run: 'balance', label: 'Kalshi $', icon: 'K' },
+      { run: 'poly-balance', label: 'Poly $', icon: 'P' },
+      { run: 'positions', label: 'Kalshi pos', icon: '◫' },
+      { run: 'poly-positions', label: 'Poly pos', icon: '◧' },
+      { run: 'preflight', label: 'Preflight', icon: '✓' },
+      { run: 'panic-dry-run', label: 'Panic dry', icon: '⚠' },
+      { action: 'analyze', label: 'Analyze', icon: '🔍' },
+      { action: 'dashboard', label: 'Reload API', icon: '⎋' },
+    ];
+
+    /** Legacy reference — tab panels only (quick blocks removed to reduce bulk). */
+    const QUICK_BLOCKS = [];
+
+    const REF_DOCS = [
+      { icon: '📋', title: 'Command reference', href: `${DOCS_SITE}/commands/`, desc: 'Full ./pmx command list' },
+      { icon: '🔐', title: 'Environment & safety', href: `${DOCS_SITE}/environment/`, desc: 'Env vars, read-only, caps' },
+      { icon: '⚠️', title: 'Known risks', href: `${DOCS_SITE}/known-risks/`, desc: 'Real money, agents, surfaces' },
+      { icon: '🧪', title: 'Testing & CI', href: `${DOCS_SITE}/testing/`, desc: 'pytest, ruff, smoke scripts' },
+      { icon: '🏗', title: 'Architecture', href: `${DOCS_SITE}/architecture/`, desc: 'Bridge, sidecar, agents' },
+      { icon: '📱', title: 'Telegram + Hermes', href: `${DOCS_SITE}/telegram-integration/`, desc: 'Mobile control setup' },
+    ];
 
     const SECTIONS = [
-      { id: 'start', label: 'Start', cmds: [
+      { id: 'start', label: '🚀 Start', lead: 'Session bootstrap, warm sidecar, dashboard server.', cmds: [
         { c: 'pmxt-terminal', d: 'Open new macOS Terminal + session (after setup-direnv)' },
         { c: 'pmxt-start', d: 'Bootstrap sidecar + status in current shell' },
         { c: './pmx session', d: 'Same as pmxt-start' },
         { c: './pmx dashboard', d: 'Open this page with live API + link analyzer' },
         { c: './scripts/setup-direnv.sh', d: 'One-time: direnv + pmxt-terminal in ~/.zshrc' },
-        { c: './pmx warm', d: 'Warm PMXT sidecar after .env change' },
+        { c: './pmx warm', d: 'Warm PMXT sidecar after .env change', run: 'warm' },
         { c: './scripts/pmxt-server.sh restart', d: 'Restart sidecar with pmxt/.env' },
+        { c: './scripts/pmxt-server.sh stop', d: 'Stop sidecar process' },
       ]},
-      { id: 'analyze', label: 'Analyze', cmds: [
+      { id: 'control', label: '⏸ Pause / live', lead: 'Go-live, pause, resume — Terminal only (blocked here).', cmds: [
+        { c: './pmx go-live', d: 'Clear read-only + disengage kill switch', tag: 'terminal' },
+        { c: './pmx resume', d: 'Same as go-live', tag: 'terminal' },
+        { c: './pmx activate-live', d: 'Warm + go-live + preflight', tag: 'terminal' },
+        { c: './pmx preflight', d: 'GO / NO-GO checklist before live orders', run: 'preflight' },
+        { c: './pmx stop on "reason"', d: 'Kill switch ON — block new trades', tag: 'terminal' },
+        { c: './pmx stop', d: 'Halt with default reason', tag: 'terminal' },
+        { c: './pmx stop orders', d: 'Halt + cancel resting orders', tag: 'terminal' },
+      ]},
+      { id: 'portfolio', label: '💰 Portfolio', lead: 'Balances and open positions — safe to run live from this page.', cmds: [
+        { c: './pmx status', d: 'Kill switch + balances summary', run: 'status' },
+        { c: './pmx balance', d: 'Kalshi available cash', run: 'balance' },
+        { c: './pmx positions', d: 'Kalshi open holdings', run: 'positions' },
+        { c: './pmx poly balance', d: 'Polymarket US cash', run: 'poly-balance' },
+        { c: './pmx poly positions', d: 'Poly US holdings', run: 'poly-positions' },
+        { c: './pmx poly orders', d: 'Open Poly resting orders', run: 'poly-orders' },
+      ]},
+      { id: 'analyze', label: '🔍 Analyze', lead: 'Read-only quotes and cross-venue research.', cmds: [
         { c: "./pmx link 'KALSHI_URL' USA 1", d: 'Kalshi URL → event resolve + quote + fill estimate' },
         { c: "./pmx poly link 'https://polymarket.us/market/SLUG' long", d: 'Poly US URL → slug + orderbook quote' },
         { c: './pmx compare url URL', d: 'Cross-venue odds (Scout)' },
         { c: './pmx scout grok', d: 'Deep research after link snapshot' },
+        { c: './pmx preview trade MARKET OUT 1', d: 'Dry-run Kalshi order (no send)' },
+        { c: './pmx preview poly trade SLUG long 1', d: 'Dry-run Poly order (no send)' },
       ]},
-      { id: 'kalshi', label: 'Kalshi', cmds: [
+      { id: 'kalshi', label: '📈 Kalshi', lead: 'Kalshi quotes, watch, and live trade commands.', cmds: [
         { c: './pmx balance', d: 'Available cash', run: 'balance' },
         { c: './pmx positions', d: 'Open holdings', run: 'positions' },
         { c: "./pmx link 'KALSHI_URL' USA 1", d: 'URL → full eval snapshot' },
@@ -29,7 +76,7 @@ const API = (location.protocol.startsWith('http') && location.port)
         { c: './pmx watch OUTCOME_ID', d: 'Stream orderbook' },
         { c: './pmx compare url URL', d: 'Cross-venue odds (Scout)' },
       ]},
-      { id: 'poly', label: 'Poly US', cmds: [
+      { id: 'poly', label: '🎯 Poly US', lead: 'Polymarket US retail commands.', cmds: [
         { c: './pmx poly balance', d: 'US cash', run: 'poly-balance' },
         { c: './pmx poly positions', d: 'Holdings', run: 'poly-positions' },
         { c: './pmx poly quote SLUG long', d: 'Market + orderbook' },
@@ -40,32 +87,36 @@ const API = (location.protocol.startsWith('http') && location.port)
         { c: './pmx poly watch book SLUG long --max-messages 10', d: 'Live book (active markets)' },
         { c: './pmx poly history --limit 20', d: 'Your fill history' },
         { c: './pmx poly orders', d: 'Open orders', run: 'poly-orders' },
-        { c: './pmx poly cancel-all', d: 'Cancel all resting orders' },
+        { c: './pmx poly cancel-all', d: 'Cancel all resting orders', tag: 'terminal' },
       ]},
-      { id: 'agents', label: 'Agents', cmds: [
+      { id: 'agents', label: '🤖 Agents', lead: 'Scout / Trader lanes and Hermes bundles.', cmds: [
         { c: './pmx scout grok', d: 'Scout — fast research (Hermes/xAI)' },
         { c: './pmx scout claude', d: 'Scout — deep research' },
         { c: './pmx trader openai briefs/active/BRIEF.md', d: 'Trader — approved brief only' },
         { c: './scripts/setup-hermes.sh', d: 'Sync LLM keys + Hermes skills/bundles' },
+        { c: './pmx hermes-telegram', d: 'Wire pmxtrader into Hermes Telegram profile' },
         { c: './scripts/check-providers.sh', d: 'Verify API keys', run: 'providers' },
-        { c: 'hermes chat --cli -t no_mcp → /pmxtrader-scout', d: 'Hermes Scout bundle' },
+        { c: 'hermes chat --cli -t no_mcp → /pmxtrader', d: 'Hermes auto Scout/Trader bundle' },
       ]},
-      { id: 'safety', label: 'Safety', cmds: [
+      { id: 'safety', label: '🛡 Safety', lead: 'Kill switch, panic flatten, emergency stops — Terminal only.', cmds: [
         { c: './pmx status', d: 'Kill switch + balances', run: 'status' },
-        { c: './pmx stop on "reason"', d: 'Block new trades' },
-        { c: './pmx resume', d: 'Allow trading again' },
-        { c: './pmx stop orders', d: 'Halt + cancel resting orders' },
+        { c: './pmx stop on "reason"', d: 'Block new trades (kill switch ON)', tag: 'terminal' },
+        { c: './pmx resume', d: 'Allow trading again (go-live)', tag: 'terminal' },
+        { c: './pmx stop orders', d: 'Halt + cancel resting orders', tag: 'terminal' },
         { c: './pmx panic', d: 'Emergency flatten — type PANIC in Terminal', tag: 'trade' },
+        { c: './pmx panic --dry-run', d: 'Preview panic scope (Kalshi + Poly US)', run: 'panic-dry-run' },
+        { c: './pmx panic status', d: 'Show venues included in panic flatten' },
       ]},
-      { id: 'docs', label: 'Docs', cmds: [
-        { c: 'docs/commands.md', d: 'Master command reference' },
-        { c: 'docs/multi-agent.md', d: 'Scout / Trader workflow' },
-        { c: 'docs/polymarket-us-integration.md', d: 'Poly US keys + MCP' },
-        { c: 'docs/kalshi-integration.md', d: 'Kalshi ↔ scripts' },
-        { c: 'docs/providers.md', d: 'LLM routing' },
-        { c: 'hermes/README.md', d: 'Hermes setup + MCP policy' },
-        { c: 'pmxt/core/docs/SETUP_KALSHI.md', d: 'Kalshi API keys' },
-        { c: 'pmxt/core/docs/SETUP_POLYMARKET_US.md', d: 'Poly US API keys' },
+      { id: 'docs', label: '📚 Docs', lead: 'Published guides on GitHub Pages — open in new tab.', cmds: [
+        { c: `${DOCS_SITE}/commands/`, d: 'Master command reference', link: true },
+        { c: `${DOCS_SITE}/environment/`, d: 'Environment variables & safety defaults', link: true },
+        { c: `${DOCS_SITE}/known-risks/`, d: 'Real money, agents, execution surfaces', link: true },
+        { c: `${DOCS_SITE}/testing/`, d: 'pytest, CI, smoke scripts', link: true },
+        { c: `${DOCS_SITE}/architecture/`, d: 'System architecture overview', link: true },
+        { c: `${DOCS_SITE}/telegram-integration/`, d: 'Hermes Telegram + mobile UI', link: true },
+        { c: `${DOCS_SITE}/multi-agent/`, d: 'Scout / Trader workflow', link: true },
+        { c: 'docs/polymarket-us-integration.md', d: 'Poly US keys + MCP (repo path)' },
+        { c: 'docs/kalshi-integration.md', d: 'Kalshi ↔ scripts (repo path)' },
       ]},
     ];
 
@@ -84,21 +135,65 @@ const API = (location.protocol.startsWith('http') && location.port)
     // Theme: default light (user preference), persist toggle
     (function initTheme() {
       const saved = localStorage.getItem('pmxt-theme');
-      const theme = saved === 'dark' ? 'dark' : 'light';
+      const theme = saved === 'light' ? 'light' : 'dark';
       document.documentElement.dataset.theme = theme;
-      themeToggle.textContent = theme === 'light' ? 'Dark' : 'Light';
+      themeToggle.textContent = theme === 'dark' ? 'Light' : 'Dark';
     })();
 
     themeToggle.onclick = () => {
       const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
       document.documentElement.dataset.theme = next;
       localStorage.setItem('pmxt-theme', next);
-      themeToggle.textContent = next === 'light' ? 'Dark' : 'Light';
+      themeToggle.textContent = next === 'dark' ? 'Light' : 'Dark';
     };
 
     function appendOut(text) {
       termOut.textContent += text;
       termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    function renderActionStrip() {
+      const el = document.getElementById('action-strip');
+      if (!el) return;
+      el.innerHTML = `
+        <div class="action-strip">${ACTION_STRIP.map(item => {
+          if (item.action === 'analyze') {
+            return `<button type="button" class="strip-btn" id="btn-goto-analyze"><span class="strip-icon">${item.icon}</span>${item.label}</button>`;
+          }
+          if (item.action === 'dashboard') {
+            return `<button type="button" class="strip-btn strip-btn--muted" id="btn-strip-reload"><span class="strip-icon">${item.icon}</span>${item.label}</button>`;
+          }
+          return `<button type="button" class="strip-btn strip-btn--run" data-run="${item.run}"><span class="strip-icon">${item.icon}</span>${item.label}</button>`;
+        }).join('')}</div>`;
+      const reloadBtn = document.getElementById('btn-strip-reload');
+      if (reloadBtn) {
+        reloadBtn.onclick = () => {
+          checkLive();
+          refreshStatusBar();
+          if (!live && !location.protocol.startsWith('http')) {
+            window.open('http://127.0.0.1:8765/', '_blank');
+          } else if (!live) {
+            window.location.reload();
+          }
+        };
+      }
+    }
+
+    function renderQuickBlocks() {
+      renderActionStrip();
+    }
+
+    function renderRefDocs() {
+      const el = document.getElementById('doc-ref');
+      if (!el) return;
+      el.innerHTML = `
+        <div class="ref-grid">${REF_DOCS.map(doc => `
+          <a class="ref-card" href="${doc.href}" target="_blank" rel="noopener">
+            <span class="ref-card__icon">${doc.icon}</span>
+            <span class="ref-card__title">${doc.title}</span>
+            <span class="ref-card__desc">${doc.desc}</span>
+          </a>`).join('')}
+        </div>`;
     }
 
     function renderPanels(filter = '') {
@@ -110,18 +205,24 @@ const API = (location.protocol.startsWith('http') && location.port)
         if (!cmds.length && q) return '';
         const isActive = sec.id === activeTab;
         return `<div class="panel ${isActive?'active':''}" data-panel="${sec.id}">
-          <div class="cmd-list">${cmds.map(x => `
+          ${sec.lead ? `<p class="panel-lead">${sec.lead}</p>` : ''}
+          <div class="cmd-list">${cmds.map(x => {
+            const tag = x.tag || '';
+            const copyLabel = tag === 'trade' || tag === 'terminal' ? 'Terminal' : 'Copy';
+            const linkBtn = x.link ? `<a class="btn-link" href="${x.c}" target="_blank" rel="noopener">Open ↗</a>` : '';
+            return `
             <div class="cmd">
               <div>
-                ${x.tag ? `<div class="tag">${x.tag}</div>` : ''}
+                ${tag ? `<div class="tag tag--${tag}">${tag}</div>` : ''}
                 <code>${x.c}</code>
                 <small>${x.d||''}</small>
               </div>
               <div class="btn-row">
-                <button data-copy="${x.c.replace(/"/g,'&quot;')}">${x.tag === 'trade' ? 'Copy to Terminal' : 'Copy'}</button>
+                ${x.link ? linkBtn : `<button data-copy="${x.c.replace(/"/g,'&quot;')}">${copyLabel}</button>`}
                 ${x.run ? `<button class="primary" data-run="${x.run}">Run</button>` : ''}
               </div>
-            </div>`).join('')}</div>
+            </div>`;
+          }).join('')}</div>
         </div>`;
       }).join('');
       if (!document.querySelector('.panel.active')) {
@@ -142,6 +243,8 @@ const API = (location.protocol.startsWith('http') && location.port)
       ).join('');
     }
 
+    renderQuickBlocks();
+    renderRefDocs();
     renderTabs();
     renderPanels();
 
@@ -163,6 +266,11 @@ const API = (location.protocol.startsWith('http') && location.port)
     }
 
     document.body.addEventListener('click', async e => {
+      if (e.target.closest('#btn-goto-analyze')) {
+        document.getElementById('link-analyzer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('link-url')?.focus();
+        return;
+      }
       const copyBtn = e.target.closest('[data-copy]');
       if (copyBtn) {
         await copyText(copyBtn.getAttribute('data-copy'));
@@ -181,8 +289,8 @@ const API = (location.protocol.startsWith('http') && location.port)
       if (/^ENGAGED\b/m.test(stdout)) kill = 'ON';
       else if (/^OFF\b/m.test(stdout)) kill = 'OFF';
       else kill = stdout.match(/^(ON|OFF)\b/m)?.[1] || '?';
-      const kalshi = stdout.match(/Kalshi:[\s\S]*?available:\s*([\d.]+)/)?.[1];
-      const poly = stdout.match(/Polymarket US:[\s\S]*?available:\s*([\d.]+)/)?.[1];
+      const kalshi = stdout.match(/^Kalshi:\s*\n\s*available:\s*([\d.]+)/m)?.[1];
+      const poly = stdout.match(/^Polymarket US:\s*\n\s*available:\s*([\d.]+)/m)?.[1];
       const killStyle = kill === 'ON' ? 'color:var(--danger)' : kill === 'OFF' ? '' : 'color:var(--warn)';
       let parts = [`Kill switch: <strong style="${killStyle}">${kill}</strong>`];
       if (kalshi) parts.push(`Kalshi $${kalshi}`);
@@ -362,11 +470,6 @@ const API = (location.protocol.startsWith('http') && location.port)
       window.open('http://127.0.0.1:8765/', '_blank');
     };
 
-    document.getElementById('btn-goto-analyze').onclick = () => {
-      document.getElementById('link-analyzer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      linkUrl.focus();
-    };
-
     const linkUrl = document.getElementById('link-url');
     const linkOutcome = document.getElementById('link-outcome');
     const linkSide = document.getElementById('link-side');
@@ -503,7 +606,7 @@ const API = (location.protocol.startsWith('http') && location.port)
       if (!lastAnalyzeCmd) return;
       await copyText(lastAnalyzeCmd);
       btnAnalyzeCopy.textContent = 'Copied!';
-      setTimeout(() => { btnAnalyzeCopy.textContent = 'Copy terminal cmd'; }, 900);
+      setTimeout(() => { btnAnalyzeCopy.textContent = 'Copy cmd'; }, 900);
     };
     document.getElementById('btn-analyze-clear').onclick = () => {
       linkUrl.value = '';
