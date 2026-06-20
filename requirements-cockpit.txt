@@ -1,2 +1,4 @@
+# Cockpit TUI dependencies (pmxtrader-owned)
+# Tested 2026-06-19: textual==8.2.7, rich==15.0.0 — pip-audit clean
 textual>=0.80.0
 rich>=13.0.0
