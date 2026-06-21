@@ -342,7 +342,6 @@ except Exception as e:
         PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m apps.bridge.trading_agent doctor "$@"
         ;;
       propose|proposal)
-        shift || true
         exec python3 -m apps.bridge.trade_proposal "$@"
         ;;
       *)
