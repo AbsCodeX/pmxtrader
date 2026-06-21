@@ -25,6 +25,7 @@ __all__ = [
     "run_argv",
     "run_pmx",
     "run_script",
+    "trade_command_needs_assume_yes",
 ]
 
 
@@ -55,8 +56,23 @@ def run_argv(argv: list[str], timeout: int = 120) -> dict:
         return {"ok": False, "error": str(exc), "command": " ".join(argv), "stdout": "", "stderr": ""}
 
 
-def run_pmx(*args: str, timeout: int = 120) -> dict:
-    return run_argv([str(ROOT / "pmx"), *args], timeout=timeout)
+def trade_command_needs_assume_yes(args: tuple[str, ...] | list[str]) -> bool:
+    """True when pmx would prompt for interactive YES on stdin (live trade paths)."""
+    if not args:
+        return False
+    head = args[0].lower()
+    if head == "trade":
+        return True
+    if head == "poly" and len(args) > 1 and args[1].lower() in ("trade", "sell", "close"):
+        return True
+    return False
+
+
+def run_pmx(*args: str, timeout: int = 120, assume_yes: bool = False) -> dict:
+    argv: list[str] = [str(ROOT / "pmx"), *args]
+    if assume_yes and trade_command_needs_assume_yes(args) and "--yes" not in args and "-y" not in args:
+        argv.append("--yes")
+    return run_argv(argv, timeout=timeout)
 
 
 def run_script(relative: str, *args: str, timeout: int = 120) -> dict:

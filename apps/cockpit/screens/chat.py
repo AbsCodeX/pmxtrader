@@ -7,7 +7,7 @@ from textual.widgets import Button, Input, RichLog, Select, Static
 from textual.worker import Worker, WorkerState
 
 from apps.cockpit.bridge import ai, pmx
-from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal
+from apps.cockpit.widgets.confirm_modal import ConfirmCommandModal, TradeConfirmModal
 from apps.cockpit.widgets.rich_escape import escape_rich
 
 
@@ -152,27 +152,49 @@ class ChatPane(Vertical):
 
     def _run_command(self, cmd: str) -> None:
         kind = pmx.classify_command(cmd)
-        if kind in ("trade", "mutating"):
+        if kind == "trade":
+            def on_trade_confirm(run: bool) -> None:
+                if run:
+                    self._exec(cmd, assume_yes=True)
+
+            self.app.push_screen(
+                TradeConfirmModal(cmd, "Live trade — type YES to send order."),
+                on_trade_confirm,
+            )
+            return
+        if kind == "mutating":
             warning = "Dangerous command — confirm to run."
-        elif kind == "safe":
-            warning = "Run AI-suggested command?"
-        else:
-            self.app.notify(
-                f"Blocked: {cmd}\nUse Safety tab or Terminal for this command.",
-                severity="warning",
-                timeout=8,
+
+            def on_confirm(run: bool) -> None:
+                if run:
+                    self._exec(cmd)
+
+            self.app.push_screen(
+                ConfirmCommandModal(cmd, warning),
+                on_confirm,
+            )
+            return
+        if kind == "safe":
+            def on_safe(run: bool) -> None:
+                if run:
+                    self._exec(cmd)
+
+            self.app.push_screen(
+                ConfirmCommandModal(cmd, "Run AI-suggested command?"),
+                on_safe,
             )
             return
 
-        def on_confirm(run: bool) -> None:
-            if run:
-                self._exec(cmd)
-
-        self.app.push_screen(
-            ConfirmCommandModal(cmd, warning),
-            on_confirm,
+        self.app.notify(
+            f"Blocked: {cmd}\nUse Safety tab or Terminal for this command.",
+            severity="warning",
+            timeout=8,
         )
 
-    def _exec(self, cmd: str) -> None:
+    def _exec(self, cmd: str, *, assume_yes: bool = False) -> None:
         parts = cmd.replace("./pmx ", "").split()
-        self.run_worker(lambda: pmx.run_pmx(*parts, timeout=120), thread=True, group="chat-exec")
+        self.run_worker(
+            lambda: pmx.run_pmx(*parts, timeout=120, assume_yes=assume_yes),
+            thread=True,
+            group="chat-exec",
+        )

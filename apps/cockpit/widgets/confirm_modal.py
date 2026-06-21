@@ -71,6 +71,70 @@ class ConfirmCommandModal(ModalScreen[bool]):
             self.dismiss(True)
 
 
+class TradeConfirmModal(ModalScreen[bool]):
+    """Require typing YES before live trade commands (replaces stdin prompt)."""
+
+    DEFAULT_CSS = """
+    TradeConfirmModal {
+        align: center middle;
+    }
+    #trade-box {
+        width: 80;
+        height: auto;
+        max-height: 80%;
+        border: thick $error;
+        background: $panel;
+        padding: 1 2;
+    }
+    #trade-cmd {
+        color: $accent;
+        margin: 1 0;
+    }
+    #trade-input {
+        margin: 1 0;
+    }
+    """
+
+    def __init__(self, command: str, warning: str = "Live trade — real money.") -> None:
+        super().__init__()
+        self.command = command
+        self.warning = warning
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="trade-box"):
+            yield Static(f"[bold red]{self.warning}[/bold red]", markup=True)
+            yield Static(self.command, id="trade-cmd")
+            yield Static("Type [bold]YES[/bold] to confirm this order.", markup=True)
+            yield Input(placeholder="Type YES", id="trade-input")
+            with Horizontal():
+                yield Button("Cancel", variant="default", id="cancel")
+                yield Button("Copy", id="copy")
+                yield Button("Run live order", variant="error", id="run", disabled=True)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "trade-input":
+            ok = event.value.strip().upper() in ("YES", "Y")
+            self.query_one("#run", Button).disabled = not ok
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id == "trade-input" and event.value.strip().upper() in ("YES", "Y"):
+            self.dismiss(True)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "cancel":
+            self.dismiss(False)
+        elif event.button.id == "copy":
+            if copy_to_clipboard(self.command):
+                self.app.notify("Copied to clipboard")
+            else:
+                self.app.notify(self.command, title="Copy manually", timeout=10)
+            self.dismiss(False)
+        elif event.button.id == "run":
+            val = self.query_one("#trade-input", Input).value.strip().upper()
+            if val in ("YES", "Y"):
+                self.dismiss(True)
+
+
 class PanicConfirmModal(ModalScreen[bool]):
     """Require typing PANIC before emergency flatten."""
 
