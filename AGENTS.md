@@ -4,27 +4,22 @@
 
 This repo (`pmxtrader`) has two layers:
 
-- **Root `pmxtrader`** — a thin scaffold. Its *real* CI is Python‑based, defined in
-  `.github/workflows/ci.yml`: a secret scanner (`scripts/pre_commit_secret_check.py`),
-  `ruff check .`, and `mypy . --ignore-missing-imports`. The root `package.json`
-  `build`/`lint` scripts (`tsc`, `eslint`) are early‑stage placeholders and are **not**
-  functional yet (no root `.eslintrc`; the root `tsconfig` globs the vendored
-  `pmxt/**` test files). Don't rely on them — use the `pmxt-core` build below.
-- **`pmxt/`** — a vendored npm‑workspaces monorepo (the PMXT "ccxt for prediction
-  markets" engine). This is the actual runnable application: a sidecar HTTP server
-  (`pmxt-core`), a CLI (`@pmxt/cli`), and Python/TypeScript SDKs. See
-  `pmxt/CONTRIBUTING.md` and `pmxt/ARCHITECTURE.md`.
+- **Root `pmxtrader`** — operator tooling (CLI, dashboard, cockpit, agents). CI is Python-based
+  (`.github/workflows/ci.yml`): secret scanner, `ruff`, `mypy`, pytest. Root `package.json`
+  holds **npm script shortcuts** only (no TypeScript build). Real npm build/test lives in
+  **`pmxt-core`** — see below.
+- **`pmxt/`** — vendored PMXT monorepo (sidecar + exchange adapters). Planned conversion to
+  a git submodule: [`docs/pmxt-submodule-migration.md`](docs/pmxt-submodule-migration.md).
+  See `pmxt/CONTRIBUTING.md` and `pmxt/ARCHITECTURE.md`.
 
 ### Key gotchas
 
 - **`pmxt-mcp` and `molt-pmxt` are git submodules.** After cloning, run
-  `git submodule update --init`. URLs are in `.gitmodules`.
-- **`pmxt/node_modules` is committed to git** (~34k files) even though `.gitignore`
-  lists it, and the committed copy contains **macOS arm64** binaries. On the x86_64
-  Linux VM these don't run (e.g. esbuild/tsx fail). The startup update script runs
-  `npm --prefix pmxt install`, which adds the correct `linux-x64` platform packages
-  in place and fixes this. **Do not commit the resulting `node_modules` changes** —
-  they are environment artifacts, not source. Only commit real source files.
+  `git submodule update --init --recursive`. URLs are in `.gitmodules`.
+- **`pmxt/node_modules` is not tracked in git.** Run `npm --prefix pmxt install` (or
+  `./scripts/setup-dev.sh`) after clone. Committed copies previously bundled **macOS arm64**
+  binaries that failed on Linux CI; install refreshes platform-specific packages (esbuild,
+  tsx, native addons). **Do not commit** resulting `node_modules` changes.
 - **`ruff`/`mypy` install to `~/.local/bin`, which is not on `PATH`.** Invoke them as
   `python3 -m ruff check .` and `python3 -m mypy . --ignore-missing-imports` (works
   regardless of PATH).

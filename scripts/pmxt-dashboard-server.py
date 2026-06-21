@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from apps.bridge.analyze_link import analyze_link  # noqa: E402
 from apps.bridge.commands import resolve_dashboard_command  # noqa: E402
 from apps.bridge.dashboard_security import (  # noqa: E402
     inject_dashboard_token,
@@ -25,7 +26,6 @@ from apps.bridge.dashboard_security import (  # noqa: E402
     send_security_headers,
     write_secret_token,
 )
-from apps.bridge.parse import extract_trade_preview  # noqa: E402
 from apps.bridge.trade_safety import safety_snapshot  # noqa: E402
 
 PORT = int(os.environ.get("PMXT_DASHBOARD_PORT", "8765"))
@@ -37,58 +37,21 @@ INDEX_HTML = DASHBOARD_DIR / "index.html"
 _SUBPROCESS_ENV = minimal_subprocess_env(ROOT)
 
 
-def detect_venue(url: str) -> str | None:
-    lower = url.strip().lower()
-    if "kalshi" in lower:
-        return "kalshi"
-    if "polymarket" in lower:
-        return "poly"
-    return None
-
-
-def analyze_link(
+def _dashboard_analyze_link(
     url: str,
     outcome: str | None = None,
     side: str | None = None,
     size: float = 1.0,
 ) -> dict:
-    raw = url.strip()
-    if not raw:
-        return {"ok": False, "error": "URL is required"}
-
-    if raw.startswith("http://") or raw.startswith("https://"):
-        normalized = raw
-    else:
-        normalized = "https://" + raw.lstrip("/")
-
-    venue = detect_venue(normalized)
-    if venue == "kalshi":
-        argv = ["bash", str(ROOT / "scripts" / "pmx-link.sh"), normalized]
-        label = (outcome or "USA").strip()
-        if label:
-            argv.append(label)
-        argv.append(str(int(size) if size == int(size) else size))
-    elif venue == "poly":
-        argv = [
-            "bash",
-            str(ROOT / "scripts" / "polymarket-us-quickstart.sh"),
-            "link",
-            normalized,
-            (side or "long").strip().lower() or "long",
-        ]
-    else:
-        return {
-            "ok": False,
-            "error": "Unrecognized link — paste a kalshi.com or polymarket.us URL",
-        }
-
-    result = run_pmx(argv, timeout=180)
-    result["venue"] = venue
-    result["url"] = normalized
-    if result.get("stdout"):
-        preview = extract_trade_preview(result["stdout"])
-        if preview:
-            result["preview"] = preview
+    result = analyze_link(
+        url,
+        outcome=(outcome or "USA").strip() if outcome else "USA",
+        side=(side or "long").strip().lower() if side else "long",
+        size=size,
+        root=ROOT,
+    )
+    if "exit_code" in result and "exitCode" not in result:
+        result["exitCode"] = result["exit_code"]
     return result
 
 
@@ -235,7 +198,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 size = float(body.get("size", 1))
             except (TypeError, ValueError):
                 size = 1.0
-            result = analyze_link(
+            result = _dashboard_analyze_link(
                 url,
                 str(outcome).strip() if outcome else None,
                 str(side).strip() if side else None,

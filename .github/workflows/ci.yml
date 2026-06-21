@@ -49,6 +49,11 @@ jobs:
       - name: Build docs site
         run: bash scripts/docs-build.sh
 
+      - name: Install PMXT dependencies and build core
+        run: |
+          npm install --prefix pmxt
+          npm run build --workspace=pmxt-core --prefix pmxt
+
       - name: npm audit (root)
         run: npm audit --audit-level=high
 

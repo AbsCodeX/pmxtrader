@@ -39,9 +39,11 @@ def test_dashboard_server_imports():
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(mod)
-    assert mod.detect_venue("https://kalshi.com/markets/foo") == "kalshi"
-    assert mod.detect_venue("https://polymarket.us/market/bar") == "poly"
-    assert mod.detect_venue("https://evil.example.com") is None
+    from apps.bridge.analyze_link import detect_venue
+
+    assert detect_venue("https://kalshi.com/markets/foo") == "kalshi"
+    assert detect_venue("https://polymarket.us/market/bar") == "poly"
+    assert detect_venue("https://evil.example.com") is None
 
 
 def test_dashboard_analyze_rejects_unknown_host():
@@ -54,9 +56,9 @@ def test_dashboard_analyze_rejects_unknown_host():
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(mod)
-    result = mod.analyze_link("https://example.com/not-a-market")
+    result = mod._dashboard_analyze_link("https://example.com/not-a-market")
     assert result["ok"] is False
-    assert "Unrecognized link" in result.get("error", "")
+    assert "kalshi.com" in result.get("error", "") or "polymarket.us" in result.get("error", "")
 
 
 @pytest.mark.parametrize(

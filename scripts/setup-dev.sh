@@ -73,6 +73,10 @@ echo
 echo "Initializing git submodules..."
 git -C "$ROOT" submodule update --init --recursive
 
+echo
+echo "Installing PMXT workspace dependencies (platform-specific binaries)..."
+npm install --prefix "$PMXT_DIR"
+
 if [[ ! -f "$PMXT_DIR/core/dist/server/openapi.yaml" ]]; then
   echo "Building pmxt-core..."
   npm run build --workspace=pmxt-core --prefix "$PMXT_DIR"

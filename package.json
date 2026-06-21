@@ -2,12 +2,8 @@
   "name": "pmxtrader",
   "version": "0.1.0",
   "description": "Prediction market trading platform with PMXT, MCP, and agentic capabilities",
-  "main": "dist/index.js",
+  "private": true,
   "scripts": {
-    "build": "tsc",
-    "dev": "ts-node",
-    "lint": "eslint . --ext .ts",
-    "clean": "rm -rf dist",
     "setup": "./scripts/setup-dev.sh",
     "pmx": "./pmx",
     "pmxt-start": "./scripts/pmxt-start.sh",
@@ -58,12 +54,6 @@
   "author": "AbsCodeX",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.14.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
     "markdownlint-cli2": "^0.17.0"
   }
 }

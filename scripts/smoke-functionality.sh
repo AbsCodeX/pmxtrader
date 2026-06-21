@@ -23,13 +23,14 @@ fi
 
 echo "→ dashboard server import"
 "$VENV/bin/python" -c "
+from apps.bridge.analyze_link import detect_venue
+assert detect_venue('https://kalshi.com/x') == 'kalshi'
 import importlib.util
 from pathlib import Path
 p = Path('scripts/pmxt-dashboard-server.py')
 spec = importlib.util.spec_from_file_location('dash', p)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
-assert m.detect_venue('https://kalshi.com/x') == 'kalshi'
 "
 
 echo "OK: functionality smoke passed"

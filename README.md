@@ -60,8 +60,8 @@ Secrets stay in **`pmxt/.env`** — never committed.
 ### 1 — One-time setup
 
 ```bash
-git submodule update --init     # optional: pmxt-mcp, molt-pmxt
-./scripts/setup-dev.sh          # build PMXT, install CLI
+git submodule update --init --recursive   # pmxt-mcp, molt-pmxt
+./scripts/setup-dev.sh                    # npm install --prefix pmxt, build PMXT, install CLI
 # copy pmxt/.env.example → pmxt/.env and add keys (see table below)
 ./scripts/setup-direnv.sh       # optional: pmx from anywhere
 ```

@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+pmxt/node_modules/
+pmxt/**/node_modules/
 .pnp
 .pnp.js
 

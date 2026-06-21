@@ -106,9 +106,9 @@ Full audit: [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/m
 | Topic | Risk |
 |-------|------|
 | Sidecar replacement | CLI replaces manual dev server (`~/.pmxt/server.lock`) |
-| `pmxt/node_modules` | macOS binaries in git; run `npm --prefix pmxt install` on Linux |
-| Submodules | `git submodule update --init` for MCP |
-| CI | No live venue tests — manual `./pmx warm` before trading |
+| `pmxt/node_modules` | Not in git — run `npm --prefix pmxt install` after clone (Linux vs macOS binaries) |
+| Submodules | `git submodule update --init --recursive` for MCP; pmxt submodule planned — see [`pmxt-submodule-migration.md`](pmxt-submodule-migration.md) |
+| CI | Installs pmxt deps + builds pmxt-core; no live venue tests |
 
 ---
 
@@ -126,7 +126,8 @@ Full audit: [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/m
 
 | Gap | Mitigation |
 |-----|------------|
-| Root npm lint not functional | Python CI + `pmxt-core` build |
+| pmxt not yet a submodule | Vendored tree + migration doc [`pmxt-submodule-migration.md`](pmxt-submodule-migration.md) |
+| PMXT npm audit debt | Partial ws bump + `npm audit fix`; ethers v6 / viem chain deferred — see [`dependencies.md`](dependencies.md) |
 | No Hermes E2E in CI | Manual agent testing |
 | Order book not UI-tested | `./pmx watch` in Terminal |
 | No Poly US demo venue | Use `./pmx preview poly` |
