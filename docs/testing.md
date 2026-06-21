@@ -34,14 +34,39 @@ CI runs all three on every push. Published to **GitHub Pages** on `main` via `.g
 
 ---
 
+## Python venv (local = CI)
+
+CI (`.github/workflows/ci.yml`) installs `ruff`, `mypy`, `pytest`, `pip-audit`, then
+`requirements-cockpit.txt`, `requirements-docs.txt`, and `requirements-telegram.txt` before
+`python -m pytest tests/ -q`.
+
+One-time setup:
+
+```bash
+./scripts/setup-python-dev.sh
+```
+
+Or manually:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -U pip ruff mypy pytest pip-audit
+.venv/bin/pip install -r requirements-dev.txt
+```
+
+Run tests (use the project venv — system `python3` may lack pytest):
+
+```bash
+.venv/bin/python -m pytest tests/ -q
+```
+
+---
+
 ## Quick smoke (recommended after changes)
 
 ```bash
-# Full Python suite (~78 tests)
-python3 -m pip install -r requirements-cockpit.txt pytest ruff mypy pip-audit
-python3 -m pytest tests/ -q
-
-# Functionality smoke (pmx help, cockpit import, dashboard module)
+./scripts/setup-python-dev.sh   # if .venv not ready
+.venv/bin/python -m pytest tests/ -q
 ./scripts/smoke-functionality.sh
 ```
 

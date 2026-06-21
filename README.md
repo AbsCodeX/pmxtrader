@@ -197,7 +197,8 @@ Diagram: [`docs/project-structure.md`](docs/project-structure.md)
 ## Testing
 
 ```bash
-.venv-cockpit/bin/python -m pytest tests/ -q
+./scripts/setup-python-dev.sh
+.venv/bin/python -m pytest tests/ -q
 ./scripts/smoke-functionality.sh
 ```
 

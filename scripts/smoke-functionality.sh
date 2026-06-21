@@ -10,12 +10,10 @@ echo "=== pmxtrader functionality smoke ==="
 echo "→ pmx help"
 ./pmx help >/dev/null
 
-VENV="$ROOT/.venv-cockpit"
+VENV="$ROOT/.venv"
 if [[ ! -x "$VENV/bin/python" ]]; then
-  echo "→ creating .venv-cockpit"
-  python3 -m venv "$VENV"
-  "$VENV/bin/pip" install -q -U pip
-  "$VENV/bin/pip" install -q -r requirements-cockpit.txt pytest
+  echo "→ creating .venv (CI-matching deps)"
+  bash "$ROOT/scripts/setup-python-dev.sh"
 fi
 
 if [[ "${1:-}" != "--skip-pytest" ]]; then

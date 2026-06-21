@@ -41,8 +41,10 @@ This repo (`pmxtrader`) has two layers:
 
 Root CI checks (Python):
 
-- Lint: `python3 -m ruff check .`
-- Types: `python3 -m mypy . --ignore-missing-imports`
+- Setup (once): `./scripts/setup-python-dev.sh` → `.venv` with deps matching CI
+- Tests: `.venv/bin/python -m pytest tests/ -q`
+- Lint: `.venv/bin/python -m ruff check .` (or `python3 -m ruff` if on PATH)
+- Types: `.venv/bin/python -m mypy . --ignore-missing-imports`
 - Secrets: `python3 scripts/pre_commit_secret_check.py`
 
 PMXT engine (the app):

@@ -1,0 +1,6 @@
+# Local dev + CI parity (cockpit, telegram, docs).
+# One-shot: ./scripts/setup-python-dev.sh
+# Manual:  .venv/bin/pip install -U pip ruff mypy pytest pip-audit && .venv/bin/pip install -r requirements-dev.txt
+-r requirements-cockpit.txt
+-r requirements-telegram.txt
+-r requirements-docs.txt

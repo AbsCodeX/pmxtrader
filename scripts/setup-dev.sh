@@ -87,6 +87,10 @@ elif [[ -d "$ROOT/pmxt-mcp" ]]; then
 fi
 
 echo
+echo "Setting up Python .venv (pytest / lint — matches CI)..."
+bash "$ROOT/scripts/setup-python-dev.sh"
+
+echo
 echo "Warming local PMXT sidecar..."
 pmxt_cli kalshi balance --local --json >/dev/null
 echo "OK: sidecar warm (kalshi balance succeeded)"

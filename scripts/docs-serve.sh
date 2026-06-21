@@ -6,7 +6,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 PYTHON="${PYTHON:-python3}"
-if [[ -x "$ROOT/.venv-cockpit/bin/python" ]]; then
+if [[ -x "$ROOT/.venv/bin/python" ]]; then
+  PYTHON="$ROOT/.venv/bin/python"
+elif [[ -x "$ROOT/.venv-cockpit/bin/python" ]]; then
   PYTHON="$ROOT/.venv-cockpit/bin/python"
 fi
 

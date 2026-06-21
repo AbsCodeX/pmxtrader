@@ -4,13 +4,13 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PMXTRADER_ROOT="$ROOT"
-VENV="$ROOT/.venv-cockpit"
+VENV="$ROOT/.venv"
 
 # shellcheck source=pmxt-env.sh
 source "$ROOT/scripts/pmxt-env.sh"
 
 if [[ ! -x "$VENV/bin/python" ]]; then
-  echo "Creating cockpit venv at .venv-cockpit …" >&2
+  echo "Creating .venv (run ./scripts/setup-python-dev.sh for full CI deps) …" >&2
   python3 -m venv "$VENV"
   "$VENV/bin/pip" install -q -U pip
   "$VENV/bin/pip" install -q -r "$ROOT/requirements-cockpit.txt"
