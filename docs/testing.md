@@ -72,6 +72,18 @@ Run tests (use the project venv — system `python3` may lack pytest):
 
 CI runs pytest + `./scripts/smoke-functionality.sh --skip-pytest` (pytest already ran).
 
+### Preflight exit codes
+
+`./pmx preflight` (and `./pmx check`) use distinct exit codes for automation:
+
+| Code | Meaning |
+|------|---------|
+| `0` | **GO** — live trading allowed (sidecar OK, keys present, kill switch off, read-only off) |
+| `1` | **NO-GO (safe)** — expected safety blocks (read-only, kill switch, daily loss cap) |
+| `2` | **BROKEN** — fix infra first (sidecar down, no venue keys, invalid size cap) |
+
+Example: `./pmx preflight; echo $?`
+
 ---
 
 ## Lint and type check
@@ -100,7 +112,7 @@ See `docs/dependencies.md` for inventory and vendor policy.
 | Path | Covers |
 |------|--------|
 | `tests/test_functionality.py` | CLI routing, dashboard allowlist, parsers |
-| `tests/test_trade_safety.py` | Kill switch guards, dry-run, max size |
+| `tests/test_trade_safety.py` | Kill switch guards, dry-run, max size, preflight exit codes, panic dry-run |
 | `tests/test_project_structure.py` | Entry points, config separation |
 | `tests/test_documentation.py` | Doc links and referenced scripts exist |
 | `tests/test_dashboard_security.py` | Loopback bind, minimal env |

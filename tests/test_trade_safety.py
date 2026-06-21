@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 
 
-from apps.bridge.trade_audit import append_trade_log, parse_order_id
+from apps.bridge.trade_audit import append_trade_log, audit_log_paths, format_audit_entry, parse_order_id, tail_jsonl
+from apps.bridge.panic_runner import run_panic_venues
 from apps.bridge.trade_safety import (
     TradeGuardResult,
     agent_doctor_json,
@@ -26,6 +27,10 @@ from apps.bridge.trade_safety import (
     max_trade_contracts,
     panic_venues,
     preflight_enabled,
+    preflight_exit_code,
+    PREFLIGHT_EXIT_BROKEN,
+    PREFLIGHT_EXIT_GO,
+    PREFLIGHT_EXIT_NO_GO_SAFE,
     probe_exchange_balance,
     read_sidecar_port,
     run_preflight,
@@ -398,3 +403,148 @@ def test_trade_safety_dry_run_skips_read_only():
     text = Path("scripts/trade-safety-lib.sh").read_text(encoding="utf-8")
     assert "trade_safety_is_dry_run" in text
     assert "trade_safety_sidecar_ready" in text
+
+
+def test_preflight_exit_code_go(tmp_path: Path, monkeypatch):
+    (tmp_path / ".pmx-live").touch()
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setenv("PMX_READ_ONLY", "0")
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    report = run_preflight(tmp_path)
+    assert preflight_exit_code(report) == PREFLIGHT_EXIT_GO
+
+
+def test_preflight_exit_code_safe_no_go_read_only(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("PMX_READ_ONLY", "1")
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    report = run_preflight(tmp_path)
+    assert not report.go
+    assert preflight_exit_code(report) == PREFLIGHT_EXIT_NO_GO_SAFE
+
+
+def test_preflight_exit_code_broken_sidecar(tmp_path: Path, monkeypatch):
+    (tmp_path / ".pmx-live").touch()
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setenv("PMX_READ_ONLY", "0")
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(False, "Sidecar not reachable"),
+    )
+    report = run_preflight(tmp_path)
+    assert preflight_exit_code(report) == PREFLIGHT_EXIT_BROKEN
+
+
+def test_preflight_exit_code_broken_no_keys(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    report = run_preflight(tmp_path)
+    assert preflight_exit_code(report) == PREFLIGHT_EXIT_BROKEN
+
+
+def test_preflight_daily_loss_blocks_when_over_cap(tmp_path: Path, monkeypatch):
+    from apps.bridge.risk_engine import save_daily_ledger
+
+    (tmp_path / ".pmx-live").touch()
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text("KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n", encoding="utf-8")
+    monkeypatch.setenv("PMX_READ_ONLY", "0")
+    monkeypatch.setenv("PMX_MAX_DAILY_LOSS", "50")
+    save_daily_ledger({"date": "2026-06-21", "realized_pnl": -75.0, "trades": []}, tmp_path)
+    monkeypatch.setattr(
+        "apps.bridge.trade_safety.check_sidecar_health",
+        lambda **kwargs: TradeGuardResult(True, "Sidecar OK"),
+    )
+    monkeypatch.setattr("apps.bridge.risk_engine._today", lambda: "2026-06-21")
+    report = run_preflight(tmp_path)
+    daily = next(c for c in report.checks if c.name == "Daily loss cap")
+    assert not daily.ok
+    assert preflight_exit_code(report) == PREFLIGHT_EXIT_NO_GO_SAFE
+
+
+def test_pmx_preflight_script_uses_exit_codes():
+    text = Path("scripts/pmx-preflight.sh").read_text(encoding="utf-8")
+    assert "preflight_exit_code" in text
+
+
+def test_kill_switch_dry_run_uses_panic_runner():
+    text = Path("scripts/kill-switch.sh").read_text(encoding="utf-8")
+    assert "panic_runner.py" in text
+    assert "--resilient" in text
+
+
+def test_panic_runner_resilient_continues(tmp_path: Path, monkeypatch):
+    env = tmp_path / "pmxt" / ".env"
+    env.parent.mkdir()
+    env.write_text(
+        "KALSHI_API_KEY=k\nKALSHI_PRIVATE_KEY=p\n"
+        "POLYMARKET_US_KEY_ID=id\nPOLYMARKET_US_SECRET_KEY=sec\n",
+        encoding="utf-8",
+    )
+    scripts = {
+        tmp_path / "scripts" / "kalshi-emergency-exit.py",
+        tmp_path / "scripts" / "polymarket-us-emergency-exit.py",
+    }
+    for script in scripts:
+        script.parent.mkdir(parents=True, exist_ok=True)
+        script.write_text("#!/usr/bin/env python3\nimport sys\nsys.exit(1)\n", encoding="utf-8")
+
+    code, output = run_panic_venues(
+        tmp_path,
+        cancel_orders=True,
+        dry_run=True,
+        resilient=True,
+    )
+    assert code == 0
+    assert "WARNING:" in output
+    assert "Panic preview summary" in output
+
+
+def test_tail_jsonl_returns_recent_rows(tmp_path: Path):
+    path = tmp_path / "briefs" / "alerts" / "trades.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        '{"timestamp":"t1","venue":"kalshi"}\n'
+        '{"timestamp":"t2","venue":"poly"}\n',
+        encoding="utf-8",
+    )
+    rows = tail_jsonl(path, limit=1)
+    assert len(rows) == 1
+    assert rows[0]["timestamp"] == "t2"
+
+
+def test_format_audit_entry():
+    line = format_audit_entry(
+        {
+            "timestamp": "2026-06-21T12:00:00+00:00",
+            "venue": "kalshi",
+            "command": "buy",
+            "market": "MKT",
+            "outcome": "YES",
+            "size": 2,
+            "order_id": "abc",
+        }
+    )
+    assert "kalshi" in line
+    assert "abc" in line
+
+
+def test_audit_log_paths(tmp_path: Path):
+    paths = audit_log_paths(tmp_path)
+    assert paths["trades"].name == "trades.jsonl"
+    assert paths["fills"].name == "fills.jsonl"

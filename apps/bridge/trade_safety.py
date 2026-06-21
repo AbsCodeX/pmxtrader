@@ -223,6 +223,13 @@ class PreflightCheck:
     blocking: bool = True
 
 
+PREFLIGHT_EXIT_GO = 0
+PREFLIGHT_EXIT_NO_GO_SAFE = 1
+PREFLIGHT_EXIT_BROKEN = 2
+
+_BROKEN_PREFLIGHT_NAMES = frozenset({"Sidecar health", "Venue credentials"})
+
+
 @dataclass
 class PreflightReport:
     checks: list[PreflightCheck] = field(default_factory=list)
@@ -234,7 +241,21 @@ class PreflightReport:
         return "GO" if self.go else "NO-GO"
 
 
+def preflight_exit_code(report: PreflightReport) -> int:
+    """Exit code for ``./pmx preflight``: 0=GO, 1=safe NO-GO, 2=broken infra/config."""
+    if report.go:
+        return PREFLIGHT_EXIT_GO
+    for check in report.checks:
+        if check.name == "Max trade size" and not check.ok:
+            return PREFLIGHT_EXIT_BROKEN
+        if not check.ok and check.name in _BROKEN_PREFLIGHT_NAMES:
+            return PREFLIGHT_EXIT_BROKEN
+    return PREFLIGHT_EXIT_NO_GO_SAFE
+
+
 def run_preflight(root: Path) -> PreflightReport:
+    from apps.bridge.risk_engine import daily_loss_status
+
     snap = safety_snapshot(root)
     sidecar = check_sidecar_health()
     ks_ok = snap.kill_switch == "OFF"
@@ -243,6 +264,9 @@ def run_preflight(root: Path) -> PreflightReport:
     poly = has_poly_us_keys(root)
     keys_ok = kalshi or poly
     cap = snap.max_trade_contracts
+    daily = daily_loss_status(root)
+    daily_limit = daily.get("limit")
+    daily_blocked = bool(daily_limit is not None and daily.get("blocked"))
 
     checks = [
         PreflightCheck(
@@ -290,6 +314,13 @@ def run_preflight(root: Path) -> PreflightReport:
             keys_ok,
             "at least one venue configured" if keys_ok else "no venue keys found",
             fix="Configure Kalshi or Polymarket US keys in pmxt/.env",
+        ),
+        PreflightCheck(
+            "Daily loss cap",
+            not daily_blocked,
+            str(daily.get("reason", "")),
+            fix="Wait until tomorrow or raise PMX_MAX_DAILY_LOSS after review",
+            blocking=daily_limit is not None,
         ),
     ]
 
@@ -467,9 +498,13 @@ def format_preflight_report(report: PreflightReport, *, root: Path) -> str:
     lines.append("")
     lines.extend(format_panic_scope(root).splitlines())
     lines.append("")
-    lines.append(f"Live trading: {report.verdict}")
+    code = preflight_exit_code(report)
+    code_label = {0: "exit 0 (GO)", 1: "exit 1 (NO-GO — safe)", 2: "exit 2 (BROKEN)"}[code]
+    lines.append(f"Live trading: {report.verdict} — {code_label}")
     if report.go:
         lines.append("You may place live orders when ready (still confirm each order).")
+    elif code == PREFLIGHT_EXIT_BROKEN:
+        lines.append("Fix broken infra/config above before ./pmx go-live and live trades.")
     else:
-        lines.append("Fix blocking items above before ./pmx go-live and live trades.")
+        lines.append("Expected safety blocks (read-only / kill switch / daily cap) — use ./pmx go-live when ready.")
     return "\n".join(lines)

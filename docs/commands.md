@@ -156,7 +156,7 @@ Does: ensure PMXT sidecar (loads `pmxt/.env`), warm Kalshi + Poly US balances, `
 | Command | Purpose |
 |---------|---------|
 | `./pmx status` | Kill switch + panic scope + venue balances |
-| `./pmx preflight` | Pre-live GO/NO-GO checklist (alias `./pmx check`) |
+| `./pmx preflight` | Pre-live GO/NO-GO checklist (alias `./pmx check`); exit **0**=GO, **1**=safe NO-GO (read-only/kill switch/daily cap), **2**=broken (sidecar/keys/config) |
 | `./pmx preview trade MKT OUT 1` | Dry-run Kalshi order (no execution) |
 | `./pmx preview poly trade SLUG long 1` | Dry-run Poly US order |
 | `./pmx warm` | Start/warm PMXT sidecar |

@@ -117,6 +117,14 @@ print(format_panic_scope(Path(sys.argv[1])))
 
     exit_code=0
     ran=0
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      PANIC_PY_ARGS=(--cancel-orders)
+      [[ "$CASH_OUT" -eq 1 ]] && PANIC_PY_ARGS+=(--close-positions)
+      PANIC_PY_ARGS+=(--dry-run --resilient)
+      PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 "$ROOT/apps/bridge/panic_runner.py" \
+        --root "$ROOT" "${PANIC_PY_ARGS[@]}" || exit_code=$?
+      exit "$exit_code"
+    fi
     if has_kalshi_env; then
       ran=1
       python3 "$ROOT/scripts/kalshi-emergency-exit.py" "${EXIT_ARGS[@]}" || exit_code=1

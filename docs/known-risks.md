@@ -36,7 +36,7 @@ real orders require an explicit <code>./pmx go-live</code> and operator confirma
 |------|--------|
 | Live orders | `./pmx trade`, `./pmx poly trade/sell/close` use real funds after go-live |
 | Panic | `./pmx panic` flattens Kalshi + Poly US when keys present |
-| No daily loss cap | Use brief `max-loss`, `./pmx stop`, discipline |
+| Daily loss cap | Set `PMX_MAX_DAILY_LOSS` — wired into `./pmx preflight` and `./pmx risk status` |
 | No auto-retry on failed POST | Failed orders are not repeated |
 
 ---
@@ -76,14 +76,15 @@ real orders require an explicit <code>./pmx go-live</code> and operator confirma
 
 | Control | What it does | Limitation |
 |---------|--------------|------------|
-| `./pmx preflight` | GO/NO-GO checklist | Read-only NO-GO is expected until go-live |
+| `./pmx preflight` | GO/NO-GO checklist | Exit **1** is expected in read-only; **2** means fix sidecar/keys |
 | `PMX_READ_ONLY=1` | Blocks live trades | Default ON; cleared by `./pmx go-live` |
 | Kill switch | Blocks new trades | Does not undo fills |
 | `PMX_MAX_TRADE_CONTRACTS` | Per-order cap (default 10) | Not portfolio exposure |
+| `PMX_MAX_DAILY_LOSS` | Blocks new trades when today's ledger exceeds cap | Requires ledger updates via `./pmx risk` / trade P&L recording |
 | Trade confirm | Type YES | Skipped with `--yes` / `PMX_TRADE_CONFIRM=0` |
 | Dry-run / preview | No `order:create` | Script-level only |
-| `./pmx panic --dry-run` | Preview flatten scope | Test on your network |
-| Trade audit | `briefs/alerts/trades.jsonl` | Gitignored; no UI yet |
+| `./pmx panic --dry-run` | Preview flatten scope | One venue API failure logs warning and continues |
+| Trade audit | `briefs/alerts/trades.jsonl` | Cockpit **Audit** tab (key `8`) tails jsonl logs |
 
 Full audit: [trading-safety review](https://github.com/AbsCodeX/pmxtrader/blob/main/reviews/2026-06-19/trading-safety-review.md)
 

@@ -17,6 +17,7 @@ from textual.worker import Worker, WorkerState
 from apps.cockpit.bridge import pmx
 from apps.cockpit.bridge.live import LiveSnapshot, fetch_dashboard
 from apps.cockpit.screens.analyze import AnalyzePane
+from apps.cockpit.screens.audit import AuditPane
 from apps.cockpit.screens.chat import ChatPane
 from apps.cockpit.screens.diagnostics import DiagnosticsPane
 from apps.cockpit.screens.home import HomePane
@@ -137,6 +138,7 @@ class CockpitApp(App):
         Binding("5", "tab('markets')", "Markets", show=True),
         Binding("6", "tab('diagnostics')", "Diag", show=True),
         Binding("7", "tab('safety')", "Safety", show=True),
+        Binding("8", "tab('audit')", "Audit", show=True),
         Binding("slash", "palette", "Search", show=True),
         Binding("ctrl+p", "palette", "Search", show=False),
         Binding("r", "refresh_all", "Refresh", show=True),
@@ -160,6 +162,7 @@ class CockpitApp(App):
                 yield MarketsPane(id="markets")
                 yield DiagnosticsPane(id="diagnostics")
                 yield SafetyPane(id="safety")
+                yield AuditPane(id="audit")
         yield ActivityLog(id="activity", markup=True, wrap=True)
         yield Footer()
 
@@ -272,6 +275,8 @@ class CockpitApp(App):
             self.query_one(MarketsPane).search_markets("")
         elif self._current == "diagnostics":
             self.query_one(DiagnosticsPane).run_checks()
+        elif self._current == "audit":
+            self.query_one(AuditPane).reload()
 
     def action_run_suggested(self) -> None:
         try:

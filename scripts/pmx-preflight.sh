@@ -12,9 +12,9 @@ PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" python3 -c "
 import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
-from apps.bridge.trade_safety import format_preflight_report, run_preflight
+from apps.bridge.trade_safety import format_preflight_report, preflight_exit_code, run_preflight
 root = Path(sys.argv[1])
 report = run_preflight(root)
 print(format_preflight_report(report, root=root))
-raise SystemExit(0 if report.go else 1)
+raise SystemExit(preflight_exit_code(report))
 " "$ROOT"

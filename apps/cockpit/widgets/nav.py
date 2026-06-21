@@ -12,6 +12,7 @@ NAV_ITEMS = [
     ("markets", "Mkt", "5"),
     ("diagnostics", "Diag", "6"),
     ("safety", "Safe", "7"),
+    ("audit", "Audit", "8"),
 ]
 
 
